@@ -1,0 +1,7 @@
+{
+  "name": "CreatorFlow ",
+  "description": "Dashboard de produtividade para criadores de conteúdo com agentes de IA especializados.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
