@@ -2,6 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message, AgentId } from "../types";
 
+const isQuotaError = (err: any) => {
+  const status = err?.status || err?.code || err?.cause?.status;
+  const msg = String(err?.message || err?.cause?.message || '');
+  return status === 429 || msg.includes('RESOURCE_EXHAUSTED') || msg.toLowerCase().includes('quota');
+};
+
 const getAgentConfig = (agentId: string) => {
     let temperature = 0.7;
     let useThinking = false;
@@ -165,12 +171,6 @@ export const sendMessageToAgent = async (
         config.tools = [{ googleSearch: {} }];
     }
 
-    const isQuotaError = (err: any) => {
-      const status = err?.status || err?.code || err?.cause?.status;
-      const msg = String(err?.message || err?.cause?.message || '');
-      return status === 429 || msg.includes('RESOURCE_EXHAUSTED') || msg.toLowerCase().includes('quota');
-    };
-
     const runGenerate = async (model: string, cfg: any, contentsToUse: any[] = contents) => {
       return ai.models.generateContent({
         model,
@@ -246,6 +246,9 @@ export const sendMessageToAgent = async (
     console.error("Error communicating with Gemini:", error);
     if (error.message?.includes("Requested entity was not found")) {
         return { text: "ERRO_KEY: É necessário selecionar uma API Key com faturamento ativo para usar modelos Pro." };
+    }
+    if (isQuotaError(error)) {
+      return { text: "⚠️ Limite de uso da API Gemini excedido (cota/429). Ative o billing na Google AI Studio ou aguarde o reset da cota. Se você está usando o modelo Pro, ele precisa de faturamento ativo." };
     }
     const status = error?.status || error?.code || error?.cause?.status;
     const rawMessage = error?.message || error?.cause?.message || "Erro desconhecido";
