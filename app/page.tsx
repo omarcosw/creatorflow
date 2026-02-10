@@ -1,26 +1,40 @@
-import Link from 'next/link';
+import type { Metadata } from 'next';
+import Navbar from '@/components/landing/Navbar';
+import HeroSection from '@/components/landing/HeroSection';
+import FeaturesSection from '@/components/landing/FeaturesSection';
+import WorkflowSection from '@/components/landing/WorkflowSection';
+import AboutSection from '@/components/landing/AboutSection';
+import PricingSection from '@/components/landing/PricingSection';
+import Footer from '@/components/landing/Footer';
+import FilmGrain from '@/components/landing/FilmGrain';
+
+export const metadata: Metadata = {
+  title: 'CreatorFlow \u2014 IA para Criadores de Conte\u00fado',
+  description:
+    'Suite de IA com 24 agentes especializados para criadores de v\u00eddeo. Roteiros, storyboards, SEO, or\u00e7amentos e muito mais.',
+  keywords:
+    'IA para creators, intelig\u00eancia artificial v\u00eddeo, roteiro IA, storyboard IA, YouTube SEO, criador de conte\u00fado',
+  openGraph: {
+    title: 'CreatorFlow \u2014 IA para Criadores de Conte\u00fado',
+    description:
+      'Suite de IA com 24 agentes especializados para criadores de v\u00eddeo.',
+    url: 'https://creatorflowia.com',
+    siteName: 'CreatorFlow',
+    type: 'website',
+  },
+};
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white">
-      <div className="text-center space-y-6 max-w-2xl px-4">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-bold uppercase tracking-widest border border-emerald-500/20">
-          Em breve
-        </div>
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight font-display">
-          CreatorFlow AI
-        </h1>
-        <p className="text-xl text-zinc-400 leading-relaxed">
-          Suite de produtividade com IA para criadores de conteúdo.
-          Planeje, produza e publique com agilidade.
-        </p>
-        <Link
-          href="/app"
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-zinc-900 font-bold text-lg shadow-lg hover:opacity-90 transition-all"
-        >
-          Acessar Dashboard
-        </Link>
-      </div>
-    </div>
+    <main className="bg-[#0A0A0A] text-white min-h-screen overflow-x-hidden">
+      <FilmGrain />
+      <Navbar />
+      <HeroSection />
+      <FeaturesSection />
+      <WorkflowSection />
+      <AboutSection />
+      <PricingSection />
+      <Footer />
+    </main>
   );
 }

@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
 import { AgentId, ChatSession, InstagramProfile, ShotList, BrandKit } from '@/types';
 import AgentView from '@/components/AgentView';
 import ShotListManager from '@/components/ShotListManager';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle } from 'lucide-react';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -167,6 +169,7 @@ const ReferralModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [activeAgentId, setActiveAgentId] = useState<AgentId | null>(null);
   const [isLightingHubOpen, setIsLightingHubOpen] = useState(false);
   const [isProductionHubOpen, setIsProductionHubOpen] = useState(false);
@@ -439,6 +442,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <AuthGuard>
     <div className="min-h-screen font-body selection:bg-indigo-500/30 relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-48 right-0 h-[520px] w-[520px] rounded-full bg-emerald-400/20 blur-3xl dark:bg-emerald-500/10" />
@@ -602,6 +606,13 @@ export default function DashboardPage() {
              </button>
              <button onClick={toggleTheme} className="p-2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+             </button>
+             <button
+                onClick={() => { localStorage.removeItem('cf_logged_in'); localStorage.removeItem('cf_email'); localStorage.removeItem('cf_name'); router.push('/login'); }}
+                className="p-2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                title="Sair"
+             >
+                <LogOut className="w-5 h-5" />
              </button>
           </div>
 
@@ -774,6 +785,7 @@ export default function DashboardPage() {
         </main>
       )}
     </div>
+    </AuthGuard>
   );
 }
 

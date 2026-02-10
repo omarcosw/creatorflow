@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import React from 'react';
-import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, Check, CheckCircle2, XCircle, List, Eye, History, Plus, MessageSquare, Keyboard, Command, Sparkles, PlayCircle, ThumbsUp, ThumbsDown, UserPlus, UserCircle, Target, MessageSquarePlus, ChevronRight, Mic, MicOff, Loader2, Maximize2, Minimize2, Clock, Copy, ExternalLink, Wand2, Monitor, ShieldAlert, Zap, ListChecks, Palette, Printer, Upload, Play, BookOpen, Layers, Film, Video, Pause, Music } from 'lucide-react';
-import { AgentConfig, AgentId, Message, StylePreset, ChatSession, Feedback, InstagramProfile, ShotList, ShotItem, BrandKit } from '@/types';
+import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, Check, CheckCircle2, History, Plus, MessageSquare, Keyboard, Sparkles, PlayCircle, ThumbsUp, ThumbsDown, UserPlus, UserCircle, ChevronRight, Mic, Loader2, Maximize2, Minimize2, Clock, Copy, ExternalLink, Wand2, Monitor, Zap, ListChecks, Palette, Printer, Upload, Play, Layers, Film, Pause, Music } from 'lucide-react';
+import { AgentConfig, AgentId, Message, StylePreset, ChatSession, InstagramProfile, ShotList, ShotItem, BrandKit } from '@/types';
 import { sendMessageToAgent, transcribeAudio } from '@/lib/api';
 import MarkdownRenderer from './MarkdownRenderer';
 
@@ -1111,7 +1111,7 @@ const PresetCard: React.FC<{ preset: StylePreset; onClick: () => void }> = ({ pr
     const [isHovered, setIsHovered] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     useEffect(() => { if (preset.audioUrl) { audioRef.current = new Audio(preset.audioUrl); audioRef.current.volume = 0.5; } return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } } }, [preset.audioUrl]);
-    const handleMouseEnter = () => { setIsHovered(true); if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(e => console.log(e)); } };
+    const handleMouseEnter = () => { setIsHovered(true); if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); } };
     const handleMouseLeave = () => { setIsHovered(false); if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } };
     const displayImage = (isHovered && preset.gifUrl) ? preset.gifUrl : preset.thumbnail;
     return (
@@ -1291,7 +1291,6 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
   };
 
   const handlePrint = () => {
-      console.log("Iniciando processo de impressão...");
       setTimeout(() => {
           window.print();
       }, 100);

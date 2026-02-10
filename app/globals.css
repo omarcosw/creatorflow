@@ -10,6 +10,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body,
 #__next {
@@ -52,6 +56,50 @@ body {
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #52525b;
+}
+
+/* Light sweep animation for FLOW title */
+@keyframes lightSweep {
+  0%, 100% { transform: translateX(-120%); }
+  50% { transform: translateX(120%); }
+}
+
+/* Animated border glow for cards */
+@keyframes borderGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Pulsing glow for W logo */
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(139,92,246,0.3)); }
+  50% { filter: drop-shadow(0 0 20px rgba(139,92,246,0.6)); }
+}
+
+/* Scan line scroll */
+@keyframes scanlineScroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+
+/* Mockup typing cursor blink */
+.mockup-typing {
+  display: inline;
+}
+
+/* Mockup input placeholder shimmer */
+.mockup-input-typing {
+  background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.2) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: inputShimmer 3s ease-in-out infinite;
+}
+
+@keyframes inputShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

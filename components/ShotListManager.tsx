@@ -1,19 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Trash2, 
-  CheckCircle2, 
-  Circle, 
-  Video, 
-  MoreVertical, 
-  ChevronRight, 
-  Search, 
-  Calendar,
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Circle,
+  Video,
   Layers,
-  Sparkles,
   X
 } from 'lucide-react';
 import { ShotList, ShotItem } from '@/types';
