@@ -2,6 +2,24 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message, AgentId } from "@/types";
 
+const ALLOWED_AUDIO_MIMES = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/mp4'];
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_RESPONSE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+function parseDataUri(dataUri: string): { base64Data: string; mimeType: string } | null {
+  const match = dataUri.match(/^data:([^;]+);base64,(.+)$/s);
+  if (!match || !match[1] || !match[2]) return null;
+  return { mimeType: match[1], base64Data: match[2] };
+}
+
+function parseMediaDataUri(dataUri: string, allowedMimes: string[]): { base64Data: string; mimeType: string } {
+  const parsed = parseDataUri(dataUri);
+  if (!parsed) throw new Error('Invalid data URI format');
+  if (!allowedMimes.includes(parsed.mimeType)) throw new Error(`MIME type not allowed: ${parsed.mimeType}`);
+  return parsed;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isQuotaError = (err: any) => {
   const status = err?.status || err?.code || err?.cause?.status;
   const msg = String(err?.message || err?.cause?.message || '');
@@ -51,8 +69,7 @@ export const transcribeAudio = async (audioBase64: string): Promise<string> => {
       throw new Error("API_KEY_MISSING");
     }
     const ai = new GoogleGenAI({ apiKey });
-    const base64Data = audioBase64.split(',')[1];
-    const mimeType = audioBase64.split(';')[0].split(':')[1];
+    const { base64Data, mimeType } = parseMediaDataUri(audioBase64, ALLOWED_AUDIO_MIMES);
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -101,16 +118,15 @@ export const sendMessageToAgent = async (
     const baseContents: any[] = [];
 
     history.forEach(msg => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parts: any[] = [{ text: msg.text }];
         if (msg.image && msg.image.includes(',')) {
-            const base64Data = msg.image.split(',')[1];
-            const mimeType = msg.image.split(';')[0].split(':')[1];
-            parts.push({ inlineData: { mimeType, data: base64Data } });
+            const parsed = parseDataUri(msg.image);
+            if (parsed) parts.push({ inlineData: { mimeType: parsed.mimeType, data: parsed.base64Data } });
         }
         if (msg.audio && msg.audio.includes(',')) {
-            const base64Data = msg.audio.split(',')[1];
-            const mimeType = msg.audio.split(';')[0].split(':')[1];
-            parts.push({ inlineData: { mimeType, data: base64Data } });
+            const parsed = parseDataUri(msg.audio);
+            if (parsed) parts.push({ inlineData: { mimeType: parsed.mimeType, data: parsed.base64Data } });
         }
         baseContents.push({ role: msg.role, parts });
     });
@@ -118,15 +134,13 @@ export const sendMessageToAgent = async (
     const currentParts: any[] = [{ text: message || (audio ? "Por favor, processe este áudio." : "") }];
 
     if (image) {
-      const base64Data = image.split(',')[1];
-      const mimeType = image.split(';')[0].split(':')[1];
-      currentParts.push({ inlineData: { mimeType, data: base64Data } });
+      const parsed = parseMediaDataUri(image, ALLOWED_IMAGE_MIMES);
+      currentParts.push({ inlineData: { mimeType: parsed.mimeType, data: parsed.base64Data } });
     }
 
     if (audio) {
-      const base64Data = audio.split(',')[1];
-      const mimeType = audio.split(';')[0].split(':')[1];
-      currentParts.push({ inlineData: { mimeType, data: base64Data } });
+      const parsed = parseMediaDataUri(audio, ALLOWED_AUDIO_MIMES);
+      currentParts.push({ inlineData: { mimeType: parsed.mimeType, data: parsed.base64Data } });
     }
 
     baseContents.push({ role: 'user', parts: currentParts });
@@ -207,7 +221,9 @@ export const sendMessageToAgent = async (
                 if (part.text) responseText += part.text;
                 if (part.inlineData) {
                     const mimeType = part.inlineData.mimeType || 'image/png';
-                    generatedImage = `data:${mimeType};base64,${part.inlineData.data}`;
+                    if (ALLOWED_RESPONSE_MIMES.includes(mimeType)) {
+                      generatedImage = `data:${mimeType};base64,${part.inlineData.data}`;
+                    }
                 }
             }
         }
