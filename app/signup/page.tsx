@@ -41,14 +41,14 @@ export default function SignupPage() {
     localStorage.setItem('cf_logged_in', 'true');
     localStorage.setItem('cf_email', email);
     localStorage.setItem('cf_name', name);
-    router.push('/app');
+    router.push('/dashboard');
   };
 
   const handleGoogle = () => {
     localStorage.setItem('cf_logged_in', 'true');
     localStorage.setItem('cf_email', 'user@gmail.com');
     localStorage.setItem('cf_name', 'Creator');
-    router.push('/app');
+    router.push('/dashboard');
   };
 
   const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;

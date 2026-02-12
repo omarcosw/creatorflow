@@ -153,7 +153,7 @@ export default function PricingSection() {
                   </ul>
 
                   <GradientButton
-                    href="/app"
+                    href="/dashboard"
                     variant={plan.highlighted ? 'solid' : 'outline'}
                     size="md"
                     className="w-full"

@@ -32,14 +32,14 @@ export default function LoginPage() {
     await new Promise((r) => setTimeout(r, 800));
     localStorage.setItem('cf_logged_in', 'true');
     localStorage.setItem('cf_email', email);
-    router.push('/app');
+    router.push('/dashboard');
   };
 
   const handleGoogle = () => {
     localStorage.setItem('cf_logged_in', 'true');
     localStorage.setItem('cf_email', 'user@gmail.com');
     localStorage.setItem('cf_name', 'Creator');
-    router.push('/app');
+    router.push('/dashboard');
   };
 
   const isValid = email && password && password.length >= 8;

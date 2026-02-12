@@ -20,7 +20,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     if (isLoggedIn && (pathname === '/login' || pathname === '/signup')) {
-      router.replace('/app');
+      router.replace('/dashboard');
       return;
     }
 

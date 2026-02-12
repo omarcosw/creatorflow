@@ -121,7 +121,7 @@ export default function MockupChat() {
         </div>
         <div className="flex-1 h-5 rounded-md bg-white/[0.04] flex items-center px-2">
           <div className="h-2 w-2 rounded-full bg-[#8B5CF6]/40 mr-1.5" />
-          <span className="text-[6px] text-white/25 font-mono">creatorflowia.com/app</span>
+          <span className="text-[6px] text-white/25 font-mono">creatorflowia.com/dashboard</span>
         </div>
       </div>
 

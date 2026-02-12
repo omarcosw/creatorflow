@@ -147,7 +147,7 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 0.72 }}
           className="mt-8 flex flex-col sm:flex-row items-center gap-4"
         >
-          <GradientButton href="/app" variant="solid" size="lg">
+          <GradientButton href="/dashboard" variant="solid" size="lg">
             Começar Agora
           </GradientButton>
           <GradientButton href="#ferramenta" variant="outline" size="lg">
