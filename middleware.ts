@@ -45,6 +45,11 @@ setInterval(() => {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip rate limiting for Stripe webhooks (Stripe sends its own signature verification)
+  if (pathname === '/api/stripe/webhook') {
+    return addSecurityHeaders(NextResponse.next());
+  }
+
   // --- Rate limiting for API routes ---
   if (pathname.startsWith('/api/')) {
     const ip = getClientIp(request);

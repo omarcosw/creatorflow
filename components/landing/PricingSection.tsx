@@ -31,7 +31,7 @@ const plans = [
     name: 'Starter',
     icon: Zap,
     description: 'Tudo que voc\u00ea precisa pra come\u00e7ar',
-    price: 49,
+    price: 79,
     highlighted: false,
     features: [
       '15 mensagens por dia',
@@ -45,7 +45,7 @@ const plans = [
     name: 'Professional',
     icon: Rocket,
     description: 'Para criadores em crescimento',
-    price: 99,
+    price: 159,
     highlighted: true,
     badge: 'Recomendado',
     features: [
@@ -62,7 +62,7 @@ const plans = [
     name: 'Agency',
     icon: Building2,
     description: 'Para equipes e ag\u00eancias',
-    price: 249,
+    price: 319,
     highlighted: false,
     features: [
       'Tudo do Professional',
