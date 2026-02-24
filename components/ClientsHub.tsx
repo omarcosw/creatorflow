@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {
   ArrowLeft, Plus, Users, Trash2, ChevronRight, AlertTriangle, Calendar,
-  X, UserPlus, MoreVertical, Pencil, CheckCircle,
+  X, UserPlus, MoreVertical, Pencil, CheckCircle, Clock, Video,
 } from 'lucide-react';
 import { Client } from '@/types';
 import ClientOnboardingModal from './ClientOnboardingModal';
@@ -40,9 +40,76 @@ interface ClientAlerts {
 
 interface _WorkflowCard  { dueDate: string; }
 interface _WorkflowColumn { id: string; cards: _WorkflowCard[]; }
-interface _AgendaEvent   { date: string; }
+interface _AgendaEvent {
+  date: string;
+  startTime: string;
+  title: string;
+  type: string;
+}
+
+interface _AgendaEventWithClient extends _AgendaEvent {
+  clientId: string;
+  clientName: string;
+}
 
 const _getTodayStr = (): string => new Date().toISOString().split('T')[0];
+
+// ─────────────────────────────────────────────
+// Agenda aggregation — reads all clients' localStorage
+// ─────────────────────────────────────────────
+const getUpcomingEvents = (clients: Client[]): _AgendaEventWithClient[] => {
+  const todayStr = _getTodayStr();
+  const all: _AgendaEventWithClient[] = [];
+
+  for (const client of clients) {
+    try {
+      const stored = localStorage.getItem(`creator_flow_agenda_${client.id}`);
+      if (!stored) continue;
+      const events: _AgendaEvent[] = JSON.parse(stored);
+      for (const e of events) {
+        if (e.date >= todayStr) {
+          all.push({ ...e, clientId: client.id, clientName: client.brandName });
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  all.sort((a, b) => {
+    const dateCmp = a.date.localeCompare(b.date);
+    if (dateCmp !== 0) return dateCmp;
+    return (a.startTime || '').localeCompare(b.startTime || '');
+  });
+
+  return all.slice(0, 5);
+};
+
+// ─────────────────────────────────────────────
+// Format date for mini-card
+// ─────────────────────────────────────────────
+const formatEventDate = (dateStr: string): string => {
+  const todayStr    = _getTodayStr();
+  const tomorrowStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  if (dateStr === todayStr)    return 'Hoje';
+  if (dateStr === tomorrowStr) return 'Amanhã';
+
+  const [, m, d] = dateStr.split('-');
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return `${parseInt(d)} ${months[parseInt(m) - 1]}`;
+};
+
+// ─────────────────────────────────────────────
+// Event type → icon helper
+// ─────────────────────────────────────────────
+const getEventIcon = (type: string) => {
+  if (type === 'Gravação')        return <Video    className="w-3.5 h-3.5" />;
+  if (type === 'Entrega de Vídeo') return <Video   className="w-3.5 h-3.5" />;
+  return                                   <Calendar className="w-3.5 h-3.5" />;
+};
 
 const getClientAlerts = (clientId: string): ClientAlerts => {
   const todayStr = _getTodayStr();
@@ -113,6 +180,82 @@ const INITIAL_TEAM: TeamMember[] = [
 const LABEL_CLS  = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
 const INPUT_CLS  = 'w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400';
 const SELECT_CLS = `${INPUT_CLS} cursor-pointer`;
+
+// ─────────────────────────────────────────────
+// UpcomingScheduleSection
+// ─────────────────────────────────────────────
+interface UpcomingScheduleSectionProps {
+  clients: Client[];
+  onSelectClient: (client: Client) => void;
+}
+
+const UpcomingScheduleSection: React.FC<UpcomingScheduleSectionProps> = ({ clients, onSelectClient }) => {
+  const events = getUpcomingEvents(clients);
+
+  return (
+    <section className="mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        <Calendar className="w-4 h-4 text-violet-500" />
+        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+          Próximos Compromissos
+        </h2>
+      </div>
+
+      {events.length === 0 ? (
+        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
+          <Calendar className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+          <p className="text-sm text-zinc-400">
+            Você não tem gravações agendadas para os próximos dias.
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+          {events.map((evt, i) => {
+            const client = clients.find(c => c.id === evt.clientId);
+            const dateLabel = formatEventDate(evt.date);
+            const isToday   = evt.date === _getTodayStr();
+
+            return (
+              <button
+                key={`${evt.clientId}-${evt.date}-${i}`}
+                onClick={() => client && onSelectClient(client)}
+                className="group flex-shrink-0 w-52 flex flex-col gap-2.5 p-4 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-violet-400 dark:hover:border-violet-700 hover:shadow-md transition-all text-left"
+              >
+                {/* Date + time row */}
+                <div className="flex items-center justify-between">
+                  <span className={`text-sm font-black ${isToday ? 'text-violet-600 dark:text-violet-400' : 'text-zinc-900 dark:text-white'}`}>
+                    {dateLabel}
+                  </span>
+                  {evt.startTime && (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-zinc-400">
+                      <Clock className="w-3 h-3" />
+                      {evt.startTime}
+                    </span>
+                  )}
+                </div>
+
+                {/* Event title */}
+                <div className="flex items-start gap-1.5">
+                  <span className={`mt-0.5 flex-shrink-0 text-zinc-400 group-hover:text-violet-500 transition-colors`}>
+                    {getEventIcon(evt.type)}
+                  </span>
+                  <p className="text-sm font-bold text-zinc-700 dark:text-zinc-200 leading-tight line-clamp-2">
+                    {evt.title}
+                  </p>
+                </div>
+
+                {/* Client badge */}
+                <span className="self-start text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-300/40 dark:border-emerald-700/40 truncate max-w-full">
+                  {evt.clientName}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+};
 
 // ─────────────────────────────────────────────
 // TeamModal
@@ -428,6 +571,14 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
       {/* ══ Main ══ */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+          {/* ══ Upcoming schedule ══ */}
+          {clients.length > 0 && (
+            <UpcomingScheduleSection
+              clients={clients}
+              onSelectClient={setSelectedClient}
+            />
+          )}
 
           {/* Empty state */}
           {clients.length === 0 && (
