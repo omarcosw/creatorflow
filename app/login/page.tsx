@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -14,6 +14,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+
+  // Demo mode: auto-fill credentials when ?demo=true
+  useEffect(() => {
+    if (window.location.search.includes('demo=true')) {
+      setEmail('demo@creatorflowia.com');
+      setPassword('demo12345');
+    }
+  }, []);
 
   const validate = () => {
     const errs: typeof errors = {};
@@ -32,6 +40,9 @@ export default function LoginPage() {
     await new Promise((r) => setTimeout(r, 800));
     localStorage.setItem('cf_logged_in', 'true');
     localStorage.setItem('cf_email', email);
+    if (email === 'demo@creatorflowia.com') {
+      localStorage.setItem('cf_name', 'Demo User');
+    }
     router.push('/dashboard');
   };
 

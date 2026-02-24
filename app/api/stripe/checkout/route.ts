@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json(
+      { error: 'Stripe is not configured. Set STRIPE_SECRET_KEY.' },
+      { status: 503 }
+    );
+  }
+
   try {
     const { priceId, customerEmail } = await req.json();
 

@@ -258,7 +258,7 @@ const KANBAN_ASSIGNEES: { id: string; name: string; initials: string; color: str
 // ─────────────────────────────────────────────
 // Agenda Tab — types & constants
 // ─────────────────────────────────────────────
-type EventType     = 'Gravação' | 'Reunião' | 'Entrega de Vídeo' | 'Visita Técnica';
+type _EventType    = 'Gravação' | 'Reunião' | 'Entrega de Vídeo' | 'Visita Técnica';
 type EventLocation = 'Interna' | 'Externa' | 'Remoto';
 type AgendaFilter  = 'todas' | 'gravacoes' | 'reunioes' | 'entregas';
 
@@ -3064,7 +3064,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
         pendingTasks = active.length;
         urgentCards  = active.filter(c => c.priority === 'Urgente' || c.priority === 'Alta').slice(0, 2);
       }
-    } catch {}
+    } catch { /* ignore parse errors */ }
 
     // ── Roteiros: aprovados ──────────────────────
     try {
@@ -3078,7 +3078,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           .slice(0, 3)
           .map(sc => ({ title: sc.title, status: sc.status }));
       }
-    } catch {}
+    } catch { /* ignore parse errors */ }
 
     // ── Agenda: próximos ────────────────────────
     try {
@@ -3089,7 +3089,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
         upcomingEvents = future.length;
         agendaItems    = future.slice(0, 2);
       }
-    } catch {}
+    } catch { /* ignore parse errors */ }
 
     // ── Acervo: backups ─────────────────────────
     try {
@@ -3098,7 +3098,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
         const recs: Recording[] = JSON.parse(s);
         totalBackups = recs.filter(r => r.clientId === client.id).length;
       }
-    } catch {}
+    } catch { /* ignore parse errors */ }
 
     return { pendingTasks, approvedScripts, upcomingEvents, totalBackups, recentScripts, agendaItems, urgentCards };
   });
