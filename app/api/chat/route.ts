@@ -6,8 +6,27 @@ const VALID_AGENT_IDS = new Set(Object.values(AgentId));
 const MAX_HISTORY_LENGTH = 100;
 const MAX_MESSAGE_LENGTH = 50000; // 50k chars
 
+const ALLOWED_ORIGINS = [
+  'https://creatorflowia.com',
+  'https://www.creatorflowia.com',
+  'http://localhost:3000',
+];
+
+function isValidOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+  // Allow server-side calls (no origin/referer)
+  if (!origin && !referer) return true;
+  if (origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return true;
+  if (referer && ALLOWED_ORIGINS.some(o => referer.startsWith(o))) return true;
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    if (!isValidOrigin(request)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const body = await request.json();
     const { agentId, message, image, audio, history, systemInstruction, imageSize } = body;
 

@@ -1,11 +1,34 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// In-memory rate limit store (resets on server restart — good enough without Redis)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// --- CORS ---
+const ALLOWED_ORIGINS = [
+  'https://creatorflowia.com',
+  'https://www.creatorflowia.com',
+  'http://localhost:3000',
+];
 
+// --- Rate Limiting ---
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 30; // 30 requests per minute per IP
+
+// --- Bot Protection ---
+const BOT_PATTERNS = [
+  'python-requests',
+  'python-urllib',
+  'curl/',
+  'wget/',
+  'scrapy',
+  'httpclient',
+  'java/',
+  'libwww-perl',
+  'go-http-client',
+  'node-fetch',
+  'axios/',
+  'postman',
+  'insomnia',
+];
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -32,7 +55,17 @@ function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count };
 }
 
-// Clean up stale entries every 5 minutes
+function isBot(request: NextRequest): boolean {
+  const ua = (request.headers.get('user-agent') || '').toLowerCase();
+  if (!ua) return true; // No user-agent = suspicious
+  return BOT_PATTERNS.some((pattern) => ua.includes(pattern));
+}
+
+function generateRequestId(): string {
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Clean up stale rate limit entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of rateLimitMap) {
@@ -45,9 +78,33 @@ setInterval(() => {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip rate limiting for Stripe webhooks (Stripe sends its own signature verification)
+  // --- Health endpoint: skip rate limiting and bot blocking ---
+  if (pathname === '/api/health') {
+    return addSecurityHeaders(NextResponse.next(), request);
+  }
+
+  // --- Stripe webhook: skip everything except security headers ---
   if (pathname === '/api/stripe/webhook') {
-    return addSecurityHeaders(NextResponse.next());
+    return addSecurityHeaders(NextResponse.next(), request);
+  }
+
+  // --- Bot protection for API routes ---
+  if (pathname.startsWith('/api/') && isBot(request)) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  // --- CORS enforcement for API routes ---
+  if (pathname.startsWith('/api/')) {
+    const origin = request.headers.get('origin');
+    if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
   }
 
   // --- Rate limiting for API routes ---
@@ -81,15 +138,27 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set('X-RateLimit-Limit', String(RATE_LIMIT_MAX));
     response.headers.set('X-RateLimit-Remaining', String(remaining));
-    return addSecurityHeaders(response);
+    return addSecurityHeaders(response, request);
   }
 
   // --- Security headers for all other routes ---
   const response = NextResponse.next();
-  return addSecurityHeaders(response);
+  return addSecurityHeaders(response, request);
 }
 
-function addSecurityHeaders(response: NextResponse): NextResponse {
+function addSecurityHeaders(response: NextResponse, request: NextRequest): NextResponse {
+  // Request ID for tracing
+  const requestId = generateRequestId();
+  response.headers.set('X-Request-ID', requestId);
+
+  // CORS headers for API routes
+  const origin = request.headers.get('origin');
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  }
+
   // Prevent clickjacking
   response.headers.set('X-Frame-Options', 'DENY');
 
@@ -108,10 +177,16 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     'max-age=31536000; includeSubDomains'
   );
 
-  // Restrict browser features
+  // DNS prefetch control
+  response.headers.set('X-DNS-Prefetch-Control', 'off');
+
+  // Cross-domain policies
+  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
+
+  // Restrict browser features (allow camera + mic for audio/image features)
   response.headers.set(
     'Permissions-Policy',
-    'geolocation=(), camera=(), accelerometer=(), gyroscope=()'
+    'geolocation=(), camera=(self), microphone=(self), accelerometer=(), gyroscope=()'
   );
 
   // Content Security Policy
@@ -123,7 +198,8 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://images.unsplash.com https://cdn.pixabay.com https://upload.wikimedia.org",
-      "connect-src 'self'",
+      "media-src 'self' blob:",
+      "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
