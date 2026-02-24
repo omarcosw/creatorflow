@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import {
   ArrowLeft, Plus, Users, Trash2, ChevronRight, AlertTriangle, Calendar,
-  X, UserPlus, MoreVertical, Pencil, CheckCircle, Clock, Video,
+  X, UserPlus, MoreVertical, Pencil, CheckCircle, Clock, Video, Globe,
 } from 'lucide-react';
 import { Client } from '@/types';
 import ClientOnboardingModal from './ClientOnboardingModal';
 import ClientDashboard from './ClientDashboard';
+import ClientPortalView from './ClientPortalView';
 
 // ─────────────────────────────────────────────
 // Props
@@ -508,6 +509,16 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
   const [isModalOpen, setIsModalOpen]   = useState(false);
   const [isTeamOpen, setIsTeamOpen]     = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [portalClient, setPortalClient]     = useState<Client | null>(null);
+
+  if (portalClient) {
+    return (
+      <ClientPortalView
+        client={portalClient}
+        onBack={() => setPortalClient(null)}
+      />
+    );
+  }
 
   if (selectedClient) {
     return (
@@ -668,13 +679,22 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
                       </p>
                     )}
 
-                    {/* Entrar no Painel */}
-                    <button
-                      className="mt-auto w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-emerald-400 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"
-                      onClick={() => setSelectedClient(client)}
-                    >
-                      Entrar no Painel <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Action buttons */}
+                    <div className="mt-auto flex gap-2">
+                      <button
+                        className="flex-1 flex items-center justify-between px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-emerald-400 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"
+                        onClick={() => setSelectedClient(client)}
+                      >
+                        Entrar no Painel <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-500 hover:border-violet-400 dark:hover:border-violet-700 hover:text-violet-600 dark:hover:text-violet-400 transition-all"
+                        onClick={() => setPortalClient(client)}
+                        title="Ver Portal do Cliente"
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
