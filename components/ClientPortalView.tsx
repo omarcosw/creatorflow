@@ -14,6 +14,8 @@ import {
   DollarSign,
   LayoutDashboard,
   ChevronRight,
+  ChevronDown,
+  Calendar,
   Star,
   ThumbsUp,
   MessageSquare,
@@ -674,6 +676,176 @@ const PortalVideosTab: React.FC = () => {
 };
 
 // ─────────────────────────────────────────────
+// Reuniões tab (read-only portal view)
+// ─────────────────────────────────────────────
+interface PortalMeetingNextStep {
+  id: string;
+  text: string;
+  assignedTo: 'agencia' | 'cliente';
+  done: boolean;
+}
+
+interface PortalMeeting {
+  id: string;
+  title: string;
+  date: string;
+  executiveSummary: string;
+  decisions: string[];
+  nextSteps: PortalMeetingNextStep[];
+  createdAt: number;
+}
+
+const PortalReunioeTab: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const [meetings] = useState<PortalMeeting[]>(() => {
+    try {
+      const s = localStorage.getItem(`creator_flow_meetings_${clientId}`);
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const formatDate = (dateStr: string): string => {
+    const [y, m, d] = dateStr.split('-');
+    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
+  };
+
+  if (meetings.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
+        <div className="text-4xl mb-4">🤝</div>
+        <h2 className="text-base font-black text-gray-400 mb-1">Nenhuma reunião registrada</h2>
+        <p className="text-sm text-gray-600">Os resumos das suas reuniões aparecerão aqui assim que a equipe os registrar.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5 animate-in fade-in duration-200">
+
+      {/* Header */}
+      <div>
+        <h2 className="text-base font-black text-white">Resumos de Reuniões</h2>
+        <p className="text-xs text-gray-500 mt-0.5">{meetings.length} reunião{meetings.length > 1 ? 'ões' : ''} registrada{meetings.length > 1 ? 's' : ''}</p>
+      </div>
+
+      {/* Meeting cards */}
+      <div className="space-y-3">
+        {meetings.map(meeting => {
+          const isExpanded  = expandedId === meeting.id;
+          const clientSteps = meeting.nextSteps.filter(s => s.assignedTo === 'cliente');
+          const agencySteps = meeting.nextSteps.filter(s => s.assignedTo === 'agencia');
+
+          return (
+            <div key={meeting.id} className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden transition-all">
+
+              {/* Card header */}
+              <button
+                onClick={() => setExpandedId(isExpanded ? null : meeting.id)}
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-gray-800/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 flex-shrink-0 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-base select-none">
+                    🤝
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-white truncate">{meeting.title}</p>
+                    <p className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                      <Calendar className="w-3 h-3" />
+                      {formatDate(meeting.date)}
+                      {clientSteps.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-[10px] font-black border border-emerald-500/25">
+                          {clientSteps.length} tarefa{clientSteps.length > 1 ? 's' : ''} sua{clientSteps.length > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-600 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Expanded body */}
+              {isExpanded && (
+                <div className="border-t border-gray-800 px-5 py-5 space-y-6">
+
+                  {/* 1. Resumo Executivo */}
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
+                      <FileText className="w-3 h-3" /> 📝 Resumo Executivo
+                    </p>
+                    <p className="text-sm text-gray-300 leading-relaxed">{meeting.executiveSummary}</p>
+                  </div>
+
+                  {/* 2. Decisões Tomadas */}
+                  {meeting.decisions.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5">
+                        <Users className="w-3 h-3" /> 🤝 Decisões Tomadas
+                      </p>
+                      <ul className="space-y-2">
+                        {meeting.decisions.map((d, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                            <span className="w-4 h-4 rounded-full bg-violet-600/20 text-violet-400 flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 border border-violet-500/25">
+                              {i + 1}
+                            </span>
+                            {d}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 3. Próximos Passos */}
+                  {meeting.nextSteps.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3 h-3" /> ✅ Próximos Passos
+                      </p>
+                      <div className="space-y-4">
+
+                        {/* Client tasks — highlighted */}
+                        {clientSteps.length > 0 && (
+                          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                            <p className="text-[10px] font-black text-emerald-400 mb-2.5">👤 Suas Tarefas</p>
+                            <ul className="space-y-2">
+                              {clientSteps.map(s => (
+                                <li key={s.id} className="flex items-start gap-2 text-sm text-emerald-200">
+                                  <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                                  {s.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Agency tasks */}
+                        {agencySteps.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black text-violet-400 mb-2.5">🏢 Equipe CreatorFlow</p>
+                            <ul className="space-y-2">
+                              {agencySteps.map(s => (
+                                <li key={s.id} className="flex items-start gap-2 text-sm text-gray-400">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-violet-500 flex-shrink-0 mt-0.5" />
+                                  {s.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
 // Placeholder for remaining tabs
 // ─────────────────────────────────────────────
 const TabPlaceholder: React.FC = () => (
@@ -768,7 +940,9 @@ const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) =
 
           {activeTab === 'videos' && <PortalVideosTab />}
 
-          {(activeTab === 'reunioes' || activeTab === 'financeiro') && <TabPlaceholder />}
+          {activeTab === 'reunioes' && <PortalReunioeTab clientId={client.id} />}
+
+          {activeTab === 'financeiro' && <TabPlaceholder />}
 
         </div>
       </main>

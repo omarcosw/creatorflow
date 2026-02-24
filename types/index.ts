@@ -96,6 +96,24 @@ export interface Client {
   createdAt: number;
 }
 
+export interface MeetingNextStep {
+  id: string;
+  text: string;
+  assignedTo: 'agencia' | 'cliente';
+  done: boolean;
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  date: string;            // YYYY-MM-DD
+  rawTranscript?: string;
+  executiveSummary: string;
+  decisions: string[];
+  nextSteps: MeetingNextStep[];
+  createdAt: number;
+}
+
 export interface HDD {
   id: string;
   name: string;

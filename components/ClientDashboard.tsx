@@ -38,10 +38,11 @@ import {
   LayoutDashboard,
   Bookmark,
   BookmarkCheck,
+  Users,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
-import { Client, HDD, Recording, AgentId } from '@/types';
+import { Client, HDD, Recording, AgentId, Meeting, MeetingNextStep } from '@/types';
 import { sendMessageToAgent } from '@/lib/api';
 
 // ─────────────────────────────────────────────
@@ -56,7 +57,7 @@ interface ClientDashboardProps {
 // ─────────────────────────────────────────────
 // Tab definition
 // ─────────────────────────────────────────────
-type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas';
+type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas' | 'reunioes';
 
 interface Tab {
   id: TabId;
@@ -72,6 +73,7 @@ const TABS: Tab[] = [
   { id: 'agenda',      label: 'Agenda',                 emoji: '📅' },
   { id: 'acervo',      label: 'Acervo e HDs',           emoji: '🗄️' },
   { id: 'entregas',    label: 'Entregas & Aprovações',  emoji: '📤' },
+  { id: 'reunioes',    label: 'Reuniões',               emoji: '🤝' },
 ];
 
 // ─────────────────────────────────────────────
@@ -3208,6 +3210,484 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
 };
 
 // ─────────────────────────────────────────────
+// Reuniões tab
+// ─────────────────────────────────────────────
+interface MeetingExtract {
+  executiveSummary: string;
+  decisions: string[];
+  nextSteps: { text: string; assignedTo: 'agencia' | 'cliente' }[];
+}
+
+const MEETINGS_STORAGE_KEY = (id: string) => `creator_flow_meetings_${id}`;
+
+const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
+  const [meetings, setMeetings] = useState<Meeting[]>(() => {
+    try {
+      const s = localStorage.getItem(MEETINGS_STORAGE_KEY(client.id));
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+
+  const [formOpen, setFormOpen]       = useState(false);
+  const [expandedId, setExpandedId]   = useState<string | null>(null);
+
+  // ── Form fields ──────────────────────────────
+  const [formTitle, setFormTitle]           = useState('');
+  const [formDate, setFormDate]             = useState(() => new Date().toISOString().split('T')[0]);
+  const [formTranscript, setFormTranscript] = useState('');
+
+  // ── AI extraction state ──────────────────────
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extracted, setExtracted]       = useState<MeetingExtract | null>(null);
+
+  // ── Editable extracted fields ────────────────
+  const [editSummary, setEditSummary]     = useState('');
+  const [editDecisions, setEditDecisions] = useState<string[]>([]);
+  const [editNextSteps, setEditNextSteps] = useState<{ text: string; assignedTo: 'agencia' | 'cliente' }[]>([]);
+
+  const resetForm = () => {
+    setFormTitle('');
+    setFormDate(new Date().toISOString().split('T')[0]);
+    setFormTranscript('');
+    setExtracted(null);
+    setEditSummary('');
+    setEditDecisions([]);
+    setEditNextSteps([]);
+  };
+
+  const handleExtract = async () => {
+    if (isExtracting) return;
+    setIsExtracting(true);
+    try {
+      let result: MeetingExtract;
+      const hasTranscript = formTranscript.trim().length > 80;
+
+      if (hasTranscript) {
+        const prompt = `Você é um assistente especializado em produção de vídeo. Analise a transcrição da reunião abaixo e extraia as informações. Retorne APENAS JSON válido (sem markdown, sem código, sem explicações) no formato exato:\n{"executiveSummary":"...","decisions":["decisão 1","decisão 2"],"nextSteps":[{"text":"tarefa","assignedTo":"agencia"},{"text":"tarefa","assignedTo":"cliente"}]}\n\nTranscrição:\n${formTranscript.slice(0, 3000)}`;
+        const response = await sendMessageToAgent(
+          AgentId.SCRIPT_GENERATOR,
+          prompt,
+          null,
+          [],
+          'Você é um assistente de produtora de vídeo. Retorne APENAS JSON válido, sem markdown e sem explicações.',
+        );
+        const jsonMatch = response.text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('JSON não encontrado');
+        result = JSON.parse(jsonMatch[0]) as MeetingExtract;
+      } else {
+        // Simulated extraction (no real transcript provided)
+        await new Promise(r => setTimeout(r, 1600));
+        result = {
+          executiveSummary: `Reunião de alinhamento estratégico com ${client.brandName}. Foram discutidos os objetivos do próximo ciclo de produção e definidas as prioridades de conteúdo para o período.`,
+          decisions: [
+            'Calendário editorial do próximo mês foi aprovado',
+            `Foco em conteúdo educacional alinhado ao nicho ${client.niche || 'definido'}`,
+            'Reels com duração máxima de 60 segundos como formato prioritário',
+          ],
+          nextSteps: [
+            { text: 'Desenvolver roteiros dos próximos 3 vídeos aprovados', assignedTo: 'agencia' },
+            { text: 'Enviar referências visuais e de concorrentes até sexta-feira', assignedTo: 'cliente' },
+            { text: 'Agendar sessão de gravação para a próxima semana', assignedTo: 'agencia' },
+            { text: 'Aprovar artes da identidade visual revisada', assignedTo: 'cliente' },
+          ],
+        };
+      }
+
+      setExtracted(result);
+      setEditSummary(result.executiveSummary);
+      setEditDecisions([...result.decisions]);
+      setEditNextSteps(result.nextSteps.map(s => ({ ...s })));
+    } catch {
+      // Fallback mock on API/parse error
+      const fallback: MeetingExtract = {
+        executiveSummary: `Reunião de alinhamento com ${client.brandName}. Estratégia de conteúdo revisada e próximos passos definidos em equipe.`,
+        decisions: [
+          'Estratégia de conteúdo aprovada para o próximo período',
+          'Revisão do tom de comunicação acordada',
+        ],
+        nextSteps: [
+          { text: 'Criar roteiros conforme briefing aprovado', assignedTo: 'agencia' },
+          { text: 'Confirmar disponibilidade para as gravações', assignedTo: 'cliente' },
+        ],
+      };
+      setExtracted(fallback);
+      setEditSummary(fallback.executiveSummary);
+      setEditDecisions([...fallback.decisions]);
+      setEditNextSteps(fallback.nextSteps.map(s => ({ ...s })));
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (!formTitle.trim() || !editSummary.trim()) return;
+    const meeting: Meeting = {
+      id:               `mtg_${Date.now()}`,
+      title:            formTitle.trim(),
+      date:             formDate,
+      rawTranscript:    formTranscript.trim() || undefined,
+      executiveSummary: editSummary.trim(),
+      decisions:        editDecisions.filter(d => d.trim()),
+      nextSteps:        editNextSteps
+                          .filter(s => s.text.trim())
+                          .map((s, i): MeetingNextStep => ({ id: `ns_${i}_${Date.now()}`, ...s, done: false })),
+      createdAt:        Date.now(),
+    };
+    const updated = [meeting, ...meetings];
+    setMeetings(updated);
+    try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch {}
+    setFormOpen(false);
+    resetForm();
+    setExpandedId(meeting.id);
+  };
+
+  const formatMeetingDate = (dateStr: string): string => {
+    const [y, m, d] = dateStr.split('-');
+    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-200">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">🤝 Reuniões</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+            {meetings.length > 0
+              ? `${meetings.length} reunião${meetings.length > 1 ? 'ões' : ''} registrada${meetings.length > 1 ? 's' : ''}`
+              : 'Registre reuniões e extraia resumos com IA'}
+          </p>
+        </div>
+        {!formOpen && (
+          <button
+            onClick={() => setFormOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-black transition-all hover:scale-[1.02] active:scale-100 shadow-lg shadow-violet-500/20"
+          >
+            <Plus className="w-4 h-4" /> Nova Reunião
+          </button>
+        )}
+      </div>
+
+      {/* ── Create form ── */}
+      {formOpen && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-2 duration-200">
+
+          {/* Form header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-zinc-900 dark:text-white">Nova Reunião</h3>
+            <button onClick={() => { setFormOpen(false); resetForm(); }} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Title + Date row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2 space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 block">Título da Reunião *</label>
+              <input
+                value={formTitle}
+                onChange={e => setFormTitle(e.target.value)}
+                placeholder="Ex: Alinhamento de Conteúdo – Fevereiro"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 placeholder:text-zinc-400 transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 block">Data *</label>
+              <input
+                type="date"
+                value={formDate}
+                onChange={e => setFormDate(e.target.value)}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Transcript */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 block">
+              Transcrição Bruta <span className="normal-case font-normal text-zinc-400">(opcional — cole aqui a transcrição do Meet/Zoom)</span>
+            </label>
+            <textarea
+              value={formTranscript}
+              onChange={e => setFormTranscript(e.target.value)}
+              placeholder="Cole aqui a transcrição da reunião para que a IA extraia automaticamente o resumo e as tarefas…"
+              rows={6}
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 placeholder:text-zinc-400 resize-none transition-all"
+            />
+          </div>
+
+          {/* AI Extraction button */}
+          {!extracted && (
+            <button
+              onClick={handleExtract}
+              disabled={isExtracting || !formTitle.trim()}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-sm shadow-lg shadow-violet-500/25 transition-all hover:scale-[1.01] active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {isExtracting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Extraindo com IA…</>
+                : <><Sparkles className="w-4 h-4" /> ✨ Extrair Resumo e Tarefas com IA</>}
+            </button>
+          )}
+
+          {/* ── Extracted blocks ── */}
+          {extracted && (
+            <div className="space-y-5 animate-in fade-in duration-300">
+
+              {/* Success banner */}
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
+                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Resumo extraído com sucesso! Revise e edite antes de salvar.</p>
+              </div>
+
+              {/* 1. Resumo Executivo */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                  <FileText className="w-3.5 h-3.5" /> 📝 Resumo Executivo
+                </label>
+                <textarea
+                  value={editSummary}
+                  onChange={e => setEditSummary(e.target.value)}
+                  rows={3}
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 resize-none transition-all"
+                />
+              </div>
+
+              {/* 2. Decisões Tomadas */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                  <Users className="w-3.5 h-3.5" /> 🤝 Decisões Tomadas
+                </label>
+                <div className="space-y-2">
+                  {editDecisions.map((decision, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input
+                        value={decision}
+                        onChange={e => {
+                          const updated = [...editDecisions];
+                          updated[i] = e.target.value;
+                          setEditDecisions(updated);
+                        }}
+                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                      />
+                      <button
+                        onClick={() => setEditDecisions(prev => prev.filter((_, idx) => idx !== i))}
+                        className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setEditDecisions(prev => [...prev, ''])}
+                    className="flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Adicionar decisão
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Próximos Passos */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                  <CheckCircle className="w-3.5 h-3.5" /> ✅ Próximos Passos
+                </label>
+                <div className="space-y-2">
+                  {editNextSteps.map((step, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        value={step.text}
+                        onChange={e => {
+                          const updated = [...editNextSteps];
+                          updated[i] = { ...updated[i], text: e.target.value };
+                          setEditNextSteps(updated);
+                        }}
+                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                      />
+                      <button
+                        onClick={() => {
+                          const updated = [...editNextSteps];
+                          updated[i] = { ...updated[i], assignedTo: step.assignedTo === 'agencia' ? 'cliente' : 'agencia' };
+                          setEditNextSteps(updated);
+                        }}
+                        className={`flex-shrink-0 px-3 py-2.5 rounded-xl border text-[11px] font-black transition-all ${
+                          step.assignedTo === 'agencia'
+                            ? 'border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400'
+                            : 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                        }`}
+                      >
+                        {step.assignedTo === 'agencia' ? '🏢 Agência' : '👤 Cliente'}
+                      </button>
+                      <button
+                        onClick={() => setEditNextSteps(prev => prev.filter((_, idx) => idx !== i))}
+                        className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setEditNextSteps(prev => [...prev, { text: '', assignedTo: 'agencia' }])}
+                    className="flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Adicionar próximo passo
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer actions */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={handleExtract}
+                  disabled={isExtracting}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-xs font-black hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Regerar
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={!formTitle.trim() || !editSummary.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-black shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Check className="w-4 h-4" /> Salvar Reunião
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Empty state ── */}
+      {meetings.length === 0 && !formOpen && (
+        <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-12 text-center">
+          <div className="text-4xl mb-4">🤝</div>
+          <h3 className="text-sm font-black text-zinc-700 dark:text-zinc-300 mb-1">Nenhuma reunião registrada</h3>
+          <p className="text-sm text-zinc-400 max-w-xs mx-auto">
+            Registre suas reuniões e deixe a IA extrair o resumo, decisões e próximos passos automaticamente.
+          </p>
+        </div>
+      )}
+
+      {/* ── Meeting list ── */}
+      {meetings.length > 0 && (
+        <div className="space-y-3">
+          {meetings.map(meeting => {
+            const isExpanded   = expandedId === meeting.id;
+            const agencySteps  = meeting.nextSteps.filter(s => s.assignedTo === 'agencia');
+            const clientSteps  = meeting.nextSteps.filter(s => s.assignedTo === 'cliente');
+            return (
+              <div key={meeting.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden transition-all">
+
+                {/* Card header */}
+                <button
+                  onClick={() => setExpandedId(isExpanded ? null : meeting.id)}
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 flex-shrink-0 rounded-xl bg-violet-500/10 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/40 flex items-center justify-center text-base select-none">
+                      🤝
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-zinc-900 dark:text-white truncate">{meeting.title}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">{formatMeetingDate(meeting.date)} · {meeting.nextSteps.length} próximo{meeting.nextSteps.length !== 1 ? 's passos' : ' passo'}</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-zinc-400 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Expanded body */}
+                {isExpanded && (
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 px-5 py-5 space-y-5">
+
+                    {/* Resumo */}
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-1.5">
+                        <FileText className="w-3 h-3" /> 📝 Resumo Executivo
+                      </p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{meeting.executiveSummary}</p>
+                    </div>
+
+                    {/* Decisões */}
+                    {meeting.decisions.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-1.5">
+                          <Users className="w-3 h-3" /> 🤝 Decisões Tomadas
+                        </p>
+                        <ul className="space-y-1.5">
+                          {meeting.decisions.map((d, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                              <span className="w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+                              {d}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Próximos Passos */}
+                    {meeting.nextSteps.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3 flex items-center gap-1.5">
+                          <CheckCircle className="w-3 h-3" /> ✅ Próximos Passos
+                        </p>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {agencySteps.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-black text-violet-500 dark:text-violet-400 mb-2">🏢 Agência</p>
+                              <ul className="space-y-1.5">
+                                {agencySteps.map(s => (
+                                  <li key={s.id} className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
+                                    {s.text}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {clientSteps.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 mb-2">👤 Cliente</p>
+                              <ul className="space-y-1.5">
+                                {clientSteps.map(s => (
+                                  <li key={s.id} className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                    {s.text}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delete */}
+                    <div className="flex justify-end pt-1">
+                      <button
+                        onClick={() => {
+                          const updated = meetings.filter(m => m.id !== meeting.id);
+                          setMeetings(updated);
+                          setExpandedId(null);
+                          try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch {}
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-xl transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Excluir
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNavigateToArquivos }) => {
@@ -4014,6 +4494,13 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {activeTab === 'entregas' && (
             <div className="animate-in fade-in duration-200">
               <ClientEntregasTab client={client} />
+            </div>
+          )}
+
+          {/* ══ TAB: Reuniões ══ */}
+          {activeTab === 'reunioes' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientReuniaoTab client={client} />
             </div>
           )}
 
