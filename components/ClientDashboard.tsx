@@ -36,6 +36,8 @@ import {
   CheckSquare,
   PenTool,
   LayoutDashboard,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -3223,6 +3225,14 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [isGenerating, setIsGenerating]             = useState(false);
   const [copiedId, setCopiedId]                     = useState<string | null>(null);
   const [quantidadeIdeias, setQuantidadeIdeias]     = useState(5);
+  const [ideasView, setIdeasView]                   = useState<'generator' | 'banco'>('generator');
+  const [savedIdeas, setSavedIdeas]                 = useState<IdeaCard[]>(() => {
+    try {
+      const stored = localStorage.getItem(`creator_flow_saved_ideas_${client.id}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+  const [savedIdeaToast, setSavedIdeaToast]         = useState(false);
 
   const addTheme = (value: string) => {
     const t = value.trim();
@@ -3358,6 +3368,27 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const toggleSaveIdea = (idea: IdeaCard) => {
+    const isAlreadySaved = savedIdeas.some(s => s.id === idea.id);
+    setSavedIdeas(prev => {
+      const updated = isAlreadySaved ? prev.filter(s => s.id !== idea.id) : [idea, ...prev];
+      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    if (!isAlreadySaved) {
+      setSavedIdeaToast(true);
+      setTimeout(() => setSavedIdeaToast(false), 3000);
+    }
+  };
+
+  const removeFromBank = (ideaId: string) => {
+    setSavedIdeas(prev => {
+      const updated = prev.filter(s => s.id !== ideaId);
+      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  };
+
   const canGenerate = selectedFormats.length > 0 || selectedAngles.length > 0 || themes.length > 0;
 
   const [isHowToUseOpen, setIsHowToUseOpen]     = useState(false);
@@ -3488,8 +3519,35 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {activeTab === 'ideias' && (
             <div className="space-y-6 animate-in fade-in duration-200">
 
-              {/* Como Usar */}
-              <div className="flex justify-end -mb-2">
+              {/* Sub-nav + Como Usar */}
+              <div className="flex items-center justify-between flex-wrap gap-2 -mb-2">
+                <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                  <button
+                    onClick={() => setIdeasView('generator')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                      ideasView === 'generator'
+                        ? 'bg-white dark:bg-zinc-900 shadow text-violet-600 dark:text-violet-400'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Gerador com IA
+                  </button>
+                  <button
+                    onClick={() => setIdeasView('banco')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                      ideasView === 'banco'
+                        ? 'bg-white dark:bg-zinc-900 shadow text-amber-500 dark:text-amber-400'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Bookmark className="w-3.5 h-3.5" /> Banco de Ideias
+                    {savedIdeas.length > 0 && (
+                      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black">
+                        {savedIdeas.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
                 <button
                   onClick={() => setIsHowToUseOpen(true)}
                   className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 px-3 py-1.5 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
@@ -3498,6 +3556,15 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                 </button>
               </div>
 
+              {/* Saved toast */}
+              {savedIdeaToast && (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 animate-in fade-in duration-200">
+                  <BookmarkCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <p className="text-xs font-bold text-amber-700 dark:text-amber-300">✅ Ideia salva no Banco de Ideias!</p>
+                </div>
+              )}
+
+              {ideasView === 'generator' && (<>
               <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 p-6 text-white shadow-xl shadow-violet-500/20">
                 <div className="flex items-center gap-2 mb-2">
                   <Rocket className="w-5 h-5" />
@@ -3756,6 +3823,19 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
                       <div className="px-5 pb-5 flex gap-2">
                         <button
+                          onClick={() => toggleSaveIdea(idea)}
+                          className={`p-2.5 rounded-xl border transition-all flex-shrink-0 ${
+                            savedIdeas.some(s => s.id === idea.id)
+                              ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-500'
+                              : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-500'
+                          }`}
+                          title="Salvar no Banco de Ideias"
+                        >
+                          {savedIdeas.some(s => s.id === idea.id)
+                            ? <BookmarkCheck className="w-3.5 h-3.5" />
+                            : <Bookmark className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
                           onClick={() => copyStructure(idea)}
                           className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-xl font-bold text-xs text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 transition-all"
                         >
@@ -3782,6 +3862,105 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   >
                     <Sparkles className="w-4 h-4" /> Gerar Mais Ideias
                   </button>
+                </section>
+              )}
+
+              </>)}
+
+              {/* ── BANCO DE IDEIAS ── */}
+              {ideasView === 'banco' && (
+                <section className="space-y-4 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-500/10 text-amber-500 rounded-xl border border-amber-500/20">
+                      <Bookmark className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-sm text-zinc-900 dark:text-white">Banco de Ideias</h2>
+                      <p className="text-xs text-zinc-400">
+                        {savedIdeas.length} {savedIdeas.length === 1 ? 'ideia salva' : 'ideias salvas'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {savedIdeas.length === 0 ? (
+                    <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
+                      <div className="text-4xl mb-3">⭐</div>
+                      <h3 className="font-bold text-zinc-700 dark:text-zinc-300 mb-1">Nenhuma ideia salva ainda</h3>
+                      <p className="text-sm text-zinc-400 mb-4">
+                        Use o Gerador com IA para começar e salve suas favoritas aqui.
+                      </p>
+                      <button
+                        onClick={() => setIdeasView('generator')}
+                        className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-bold hover:opacity-90 transition-all"
+                      >
+                        ✨ Ir para o Gerador
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {savedIdeas.map(idea => (
+                        <div
+                          key={idea.id}
+                          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden hover:border-amber-300 dark:hover:border-amber-700 transition-all hover:shadow-lg"
+                        >
+                          <div className="px-5 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                            <div className="flex items-start justify-between gap-3">
+                              <h3 className="font-black text-base text-zinc-900 dark:text-white leading-snug">
+                                {idea.title}
+                              </h3>
+                              <button
+                                onClick={() => removeFromBank(idea.id)}
+                                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                title="Remover do Banco de Ideias"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {idea.tags.map(tag => (
+                                <span key={tag} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="px-5 py-4 space-y-4">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">🎣 Gancho</p>
+                              <p className="text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed">&ldquo;{idea.gancho}&rdquo;</p>
+                            </div>
+                            <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">📋 Estrutura</p>
+                              <ul className="space-y-1.5">
+                                {idea.estrutura.map((item, i) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                    <ChevronRight className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">📣 CTA</p>
+                              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{idea.cta}</p>
+                            </div>
+                          </div>
+
+                          <div className="px-5 pb-5">
+                            <button
+                              onClick={() => setScriptIdea(idea)}
+                              className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-xs shadow-md shadow-amber-500/20 hover:opacity-90 transition-all"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" /> ✨ Criar Roteiro
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
               )}
 
