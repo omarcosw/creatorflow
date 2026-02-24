@@ -4,17 +4,30 @@ import { useState, useEffect } from 'react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
-import { AgentId, ChatSession, InstagramProfile, ShotList, BrandKit } from '@/types';
+import { AgentId, ChatSession, InstagramProfile, ShotList, BrandKit, HDD, Recording, StudioProfile, Client } from '@/types';
 import AgentView from '@/components/AgentView';
 import ShotListManager from '@/components/ShotListManager';
+import HubArquivos from '@/components/HubArquivos';
+import ClientsHub from '@/components/ClientsHub';
+import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
-const SHOT_LISTS_KEY = 'creator_flow_shot_lists'; 
+const SHOT_LISTS_KEY = 'creator_flow_shot_lists';
 const BRAND_KITS_KEY = 'creator_flow_brand_kits';
 const THEME_KEY = 'creator_flow_theme';
+const HDDS_KEY = 'creator_flow_hdds';
+const RECORDINGS_KEY = 'creator_flow_recordings';
+const STUDIO_KEY = 'creator_flow_studio_profile';
+const CLIENTS_KEY = 'creator_flow_clients';
+
+const INITIAL_STUDIO: StudioProfile = {
+  name: '',
+  type: '',
+  equipment: { cameras: [], lenses: [], audio: [], lighting: [] },
+};
 
 // --- SUPPORT MODAL COMPONENT ---
 const SupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
@@ -175,10 +188,14 @@ export default function DashboardPage() {
   const [isProductionHubOpen, setIsProductionHubOpen] = useState(false);
   const [isEditingHubOpen, setIsEditingHubOpen] = useState(false);
   const [isSfxHubOpen, setIsSfxHubOpen] = useState(false);
-  
+  const [isArquivosHubOpen, setIsArquivosHubOpen] = useState(false);
+  const [isClientesHubOpen, setIsClientesHubOpen] = useState(false);
+  const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
+  const [studioProfile, setStudioProfile] = useState<StudioProfile>(INITIAL_STUDIO);
+
   // Feedback Modal State
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-  
+
   // Referral Modal State
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   
@@ -187,8 +204,11 @@ export default function DashboardPage() {
   
   const [sessions, setSessions] = useState<Record<string, ChatSession[]>>({});
   const [instagramProfiles, setInstagramProfiles] = useState<InstagramProfile[]>([]);
-  const [shotLists, setShotLists] = useState<ShotList[]>([]); 
-  const [brandKits, setBrandKits] = useState<BrandKit[]>([]); // New Brand Kit State
+  const [shotLists, setShotLists] = useState<ShotList[]>([]);
+  const [brandKits, setBrandKits] = useState<BrandKit[]>([]);
+  const [hdds, setHdds] = useState<HDD[]>([]);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [agentQuery, setAgentQuery] = useState('');
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -217,6 +237,9 @@ export default function DashboardPage() {
     const savedProfiles = localStorage.getItem(PROFILES_KEY);
     const savedShotLists = localStorage.getItem(SHOT_LISTS_KEY);
     const savedBrandKits = localStorage.getItem(BRAND_KITS_KEY);
+    const savedHdds = localStorage.getItem(HDDS_KEY);
+    const savedRecordings = localStorage.getItem(RECORDINGS_KEY);
+    const savedClients = localStorage.getItem(CLIENTS_KEY);
 
     if (savedSessions) {
       try { setSessions(JSON.parse(savedSessions)); } catch (e) { console.error(e); }
@@ -229,6 +252,19 @@ export default function DashboardPage() {
     }
     if (savedBrandKits) {
       try { setBrandKits(JSON.parse(savedBrandKits)); } catch (e) { console.error(e); }
+    }
+    if (savedHdds) {
+      try { setHdds(JSON.parse(savedHdds)); } catch (e) { console.error(e); }
+    }
+    if (savedRecordings) {
+      try { setRecordings(JSON.parse(savedRecordings)); } catch (e) { console.error(e); }
+    }
+    const savedStudio = localStorage.getItem(STUDIO_KEY);
+    if (savedStudio) {
+      try { setStudioProfile(JSON.parse(savedStudio)); } catch (e) { console.error(e); }
+    }
+    if (savedClients) {
+      try { setClients(JSON.parse(savedClients)); } catch (e) { console.error(e); }
     }
   }, []);
 
@@ -247,6 +283,22 @@ export default function DashboardPage() {
   useEffect(() => {
     localStorage.setItem(BRAND_KITS_KEY, JSON.stringify(brandKits));
   }, [brandKits]);
+
+  useEffect(() => {
+    localStorage.setItem(HDDS_KEY, JSON.stringify(hdds));
+  }, [hdds]);
+
+  useEffect(() => {
+    localStorage.setItem(RECORDINGS_KEY, JSON.stringify(recordings));
+  }, [recordings]);
+
+  useEffect(() => {
+    localStorage.setItem(STUDIO_KEY, JSON.stringify(studioProfile));
+  }, [studioProfile]);
+
+  useEffect(() => {
+    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
+  }, [clients]);
 
   const handleSaveSession = (agentId: string, updatedSession: ChatSession) => {
     setSessions(prev => {
@@ -319,6 +371,40 @@ export default function DashboardPage() {
       setBrandKits(prev => prev.filter(k => k.id !== id));
   };
 
+  const handleSaveHDD = (hdd: HDD) => {
+    setHdds(prev => [hdd, ...prev]);
+  };
+
+  const handleDeleteHDD = (id: string) => {
+    setHdds(prev => prev.filter(h => h.id !== id));
+  };
+
+  const handleSaveRecording = (recording: Recording) => {
+    setRecordings(prev => [recording, ...prev]);
+  };
+
+  const handleDeleteRecording = (id: string) => {
+    setRecordings(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleSaveClient = (client: Client) => {
+    setClients(prev => [client, ...prev]);
+  };
+
+  const handleDeleteClient = (id: string) => {
+    setClients(prev => prev.filter(c => c.id !== id));
+  };
+
+  // Dá baixa em uma pendência: mantém a gravação, apenas limpa os campos de alerta.
+  // O card some do Dashboard automaticamente pois pendingRecordings filtra hasPendingTakes === true.
+  const handleResolveAlert = (id: string) => {
+    setRecordings(prev =>
+      prev.map(r =>
+        r.id === id ? { ...r, hasPendingTakes: false, pendingTakesDescription: undefined } : r
+      )
+    );
+  };
+
   const handleShare = async () => {
     const shareData = {
       title: 'CreatorFlow AI',
@@ -370,6 +456,8 @@ export default function DashboardPage() {
       else if (isProductionHubOpen) setIsProductionHubOpen(false);
       else if (isEditingHubOpen) setIsEditingHubOpen(false);
       else if (isSfxHubOpen) setIsSfxHubOpen(false);
+      else if (isArquivosHubOpen) setIsArquivosHubOpen(false);
+      else if (isClientesHubOpen) setIsClientesHubOpen(false);
   };
 
   const handleNavigateToAgent = (id: AgentId, prompt: string) => {
@@ -424,6 +512,12 @@ export default function DashboardPage() {
     { label: 'Brand Kits', value: brandKits.length },
   ];
 
+  // Gravações com takes pendentes — alimenta a seção de Alertas de Produção
+  const pendingRecordings = recordings.filter(r => r.hasPendingTakes === true);
+
+  const fmtAlertDate = (d: string) =>
+    new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+
   const handleSubAgentClick = (id: AgentId) => {
       const agent = AGENTS[id];
       if (agent.isLocked && !agent.externalUrl) {
@@ -451,6 +545,12 @@ export default function DashboardPage() {
       </div>
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
       <ReferralModal isOpen={isReferralModalOpen} onClose={() => setIsReferralModalOpen(false)} />
+      <StudioProfileModal
+        isOpen={isStudioModalOpen}
+        profile={studioProfile}
+        onSave={setStudioProfile}
+        onClose={() => setIsStudioModalOpen(false)}
+      />
       
       {activeAgentId === AgentId.SHOT_LIST ? (
         <ShotListManager 
@@ -561,6 +661,25 @@ export default function DashboardPage() {
                })}
            </div>
         </main>
+     ) : isClientesHubOpen ? (
+        <ClientsHub
+          clients={clients}
+          onSaveClient={handleSaveClient}
+          onDeleteClient={handleDeleteClient}
+          onBack={handleBack}
+          onNavigateToArquivos={() => { setIsClientesHubOpen(false); setIsArquivosHubOpen(true); }}
+        />
+     ) : isArquivosHubOpen ? (
+        <HubArquivos
+          hdds={hdds}
+          recordings={recordings}
+          studioProfile={studioProfile}
+          onSaveHDD={handleSaveHDD}
+          onDeleteHDD={handleDeleteHDD}
+          onSaveRecording={handleSaveRecording}
+          onDeleteRecording={handleDeleteRecording}
+          onBack={handleBack}
+        />
      ) : isLightingHubOpen ? (
           <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
@@ -590,7 +709,14 @@ export default function DashboardPage() {
       ) : (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative z-10">
           <div className="flex flex-wrap items-center justify-end mb-6 gap-3">
-             <button 
+             <button
+                onClick={() => setIsStudioModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-violet-200 dark:border-violet-900/40 bg-violet-50 dark:bg-violet-900/10 text-violet-600 dark:text-violet-400 text-xs font-bold uppercase tracking-wide hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-all"
+             >
+                <Clapperboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Meu Estúdio</span>
+             </button>
+             <button
                 onClick={handleShare}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wide hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
              >
@@ -689,6 +815,98 @@ export default function DashboardPage() {
             </div>
           </section>
 
+          {/* ══ Alertas de Produção ══
+               Aparece apenas quando há gravações com takes pendentes.
+               Localização: entre o hero e o grid de hubs.           */}
+          {pendingRecordings.length > 0 && (
+            <section className="mb-8 animate-in fade-in slide-in-from-top-3 duration-500">
+              {/* Cabeçalho da seção */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <h2 className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                    Alertas de Produção
+                  </h2>
+                  <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-black bg-amber-500 text-white rounded-full">
+                    {pendingRecordings.length}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsArquivosHubOpen(true)}
+                  className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                >
+                  Ver Acervo <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Cards — scroll horizontal quando há múltiplas pendências */}
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 snap-x snap-mandatory">
+                {pendingRecordings.map(rec => (
+                  <div
+                    key={rec.id}
+                    className="snap-start flex-shrink-0 w-72 sm:w-80 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 p-4 shadow-sm shadow-amber-100 dark:shadow-amber-950/20"
+                  >
+                    {/* Header do card */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-9 h-9 flex items-center justify-center bg-amber-100 dark:bg-amber-900/40 rounded-xl flex-shrink-0 text-lg">
+                        ⚠️
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        {rec.clientName ? (
+                          <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-0.5 truncate">
+                            {rec.clientName}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] font-black uppercase tracking-wider text-amber-600/60 dark:text-amber-600 mb-0.5">
+                            Sem cliente vinculado
+                          </p>
+                        )}
+                        <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight truncate">
+                          {rec.title}
+                        </p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          📅 {fmtAlertDate(rec.recordedAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-amber-200 dark:border-amber-800/40 mb-3" />
+
+                    {/* O que faltou */}
+                    {rec.pendingTakesDescription ? (
+                      <p className="text-xs italic text-amber-900 dark:text-amber-200 leading-relaxed line-clamp-3">
+                        &ldquo;{rec.pendingTakesDescription}&rdquo;
+                      </p>
+                    ) : (
+                      <p className="text-xs text-amber-700/60 dark:text-amber-500 italic">
+                        Nenhum detalhe registrado.
+                      </p>
+                    )}
+
+                    {/* Ações do card */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={() => handleResolveAlert(rec.id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm shadow-emerald-500/20 active:scale-95"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Marcar como Gravado
+                      </button>
+                      <button
+                        onClick={() => setIsArquivosHubOpen(true)}
+                        className="p-2 rounded-xl border border-amber-200 dark:border-amber-800/50 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                        title="Ver no Acervo"
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center gap-3 mb-10">
             <div className="relative flex-1">
               <input
@@ -746,6 +964,56 @@ export default function DashboardPage() {
                 );
               })
             )}
+          </div>
+
+          {/* Hub de Clientes card + Hub de Arquivos card */}
+          <div className="mb-10">
+            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Gestão & CRM</h2>
+            <div className="flex flex-col sm:flex-row gap-3 md:max-w-2xl">
+              <button
+                onClick={() => setIsClientesHubOpen(true)}
+                className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
+              >
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Users className="w-7 h-7" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
+                    Hub de Clientes
+                  </h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Briefings, tom de voz e alvo de cada cliente.
+                  </p>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    🤝 {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
+              </button>
+
+              <button
+                onClick={() => setIsArquivosHubOpen(true)}
+                className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
+              >
+                <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/50 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Archive className="w-7 h-7" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
+                    Hub de Arquivos
+                  </h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Gerencie HDs e registre ingests com o Quiz de Backup.
+                  </p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
+                    <span>💾 {hdds.length} HD{hdds.length !== 1 ? 's' : ''}</span>
+                    <span>&middot;</span>
+                    <span>🎬 {recordings.length} ingest{recordings.length !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-violet-500 dark:group-hover:text-violet-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
+              </button>
+            </div>
           </div>
 
           <div className="mb-16">

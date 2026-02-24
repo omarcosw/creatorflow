@@ -68,6 +68,69 @@ export interface BrandKit {
   createdAt: number;
 }
 
+export interface StudioProfile {
+  name: string;
+  type: 'mobile_creator' | 'solo_filmmaker' | 'produtora' | '';
+  equipment: {
+    cameras: string[];
+    lenses: string[];
+    audio: string[];
+    lighting: string[];
+  };
+}
+
+export interface Client {
+  id: string;
+  // Identidade
+  brandName: string;
+  niche: string;
+  subniche: string;
+  // Alvo
+  idealClient: string;
+  mainPains: string;
+  mainDesires: string;
+  // Comunicação
+  voiceTone: 'Autoritário' | 'Descontraído' | 'Educacional' | 'Agressivo';
+  visualStyle: string;
+  defaultCta: string;
+  createdAt: number;
+}
+
+export interface HDD {
+  id: string;
+  name: string;
+  addedAt: number;
+}
+
+export interface Recording {
+  id: string;
+  title: string;
+  clientName?: string;               // Nome do cliente / projeto (texto livre)
+  clientId?: string;                 // ID do cliente vinculado (Client.id)
+  summary?: string;
+  recordedAt: string;                // YYYY-MM-DD
+
+  // Vínculo de roteiro
+  scriptLocation?: 'external' | 'creatorflow';
+  scriptUrl?: string;                // URL externa (Notion, Docs…)
+  scriptId?: string;                 // ID do roteiro no CreatorFlow (fase futura)
+
+  // Câmeras e mídia
+  mediaDevices?: string[];           // ['camera_a', 'camera_b', 'drone', 'audio_externo', 'outros']
+  cameraModels?: string;             // "FX30, A7S3"
+  otherEquipmentDetails?: string;    // Descrição livre de outros equipamentos
+
+  // Armazenamento
+  hddIds: string[];
+  technicalNotes?: string;
+
+  // Pendências de takes
+  hasPendingTakes?: boolean;
+  pendingTakesDescription?: string;
+
+  createdAt: number;
+}
+
 export interface PresetDetails {
   steps: string[];
   usage: string;

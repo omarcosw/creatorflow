@@ -1,0 +1,3847 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  ArrowLeft,
+  Sparkles,
+  Rocket,
+  Plus,
+  X,
+  Copy,
+  Loader2,
+  Target,
+  ChevronRight,
+  Calendar,
+  HardDrive,
+  CheckCircle2,
+  Circle,
+  Trash2,
+  AlertTriangle,
+  Clock,
+  ChevronLeft,
+  MapPin,
+  Briefcase,
+  Camera,
+  Folder,
+  BookOpen,
+  ChevronDown,
+  PenLine,
+  Film,
+  FileText,
+  Check,
+  UploadCloud,
+  Link as LinkIcon,
+  Star,
+  CheckCircle,
+  CheckSquare,
+  PenTool,
+  LayoutDashboard,
+} from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
+import { Client, HDD, Recording, AgentId } from '@/types';
+import { sendMessageToAgent } from '@/lib/api';
+
+// ─────────────────────────────────────────────
+// Props
+// ─────────────────────────────────────────────
+interface ClientDashboardProps {
+  client: Client;
+  onBack: () => void;
+  onNavigateToArquivos?: () => void;
+}
+
+// ─────────────────────────────────────────────
+// Tab definition
+// ─────────────────────────────────────────────
+type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas';
+
+interface Tab {
+  id: TabId;
+  label: string;
+  emoji: string;
+}
+
+const TABS: Tab[] = [
+  { id: 'visao_geral', label: 'Visão Geral',           emoji: '📊' },
+  { id: 'ideias',      label: 'Ideias Infinitas',       emoji: '💡' },
+  { id: 'roteiros',    label: 'Sala de Roteiros',       emoji: '📝' },
+  { id: 'kanban',      label: 'Workflow',               emoji: '📋' },
+  { id: 'agenda',      label: 'Agenda',                 emoji: '📅' },
+  { id: 'acervo',      label: 'Acervo e HDs',           emoji: '🗄️' },
+  { id: 'entregas',    label: 'Entregas & Aprovações',  emoji: '📤' },
+];
+
+// ─────────────────────────────────────────────
+// Motor de Ideias — constants
+// ─────────────────────────────────────────────
+interface SuggestedThemeGroup {
+  label: string;
+  emoji: string;
+  themes: string[];
+}
+
+const SUGGESTED_THEME_GROUPS: SuggestedThemeGroup[] = [
+  {
+    label: 'Alta Demanda',
+    emoji: '🔥',
+    themes: ['Estratégias de vendas', 'Como reter clientes', 'Precificação correta', 'Como escalar o negócio'],
+  },
+  {
+    label: 'Educacional',
+    emoji: '📚',
+    themes: ['Rotina matinal produtiva', 'Ferramentas essenciais do mercado', 'Dicas para iniciantes', 'Como evitar os erros mais comuns'],
+  },
+  {
+    label: 'Autoridade',
+    emoji: '🏆',
+    themes: ['Bastidores do processo criativo', 'Resultados reais de clientes', 'Minha história de superação', 'O que aprendi nos primeiros anos'],
+  },
+];
+
+const FORMATS = ['Reels', 'Carrossel', 'Stories', 'YouTube Shorts'];
+
+const ANGLES = [
+  'Mitos e Verdades',
+  'Erros Comuns',
+  'Passo a Passo',
+  'FAQ',
+  'Checklist',
+  'Bastidores',
+];
+
+interface IdeaScript {
+  slides: { visual: string; audio: string }[];
+  caption: string;
+  hashtags: string;
+}
+
+interface IdeaCard {
+  id: string;
+  title: string;
+  tags: string[];
+  gancho: string;
+  estrutura: string[];
+  cta: string;
+  script: IdeaScript;
+}
+
+const buildMockIdeas = (client: Client): IdeaCard[] => [
+  {
+    id: '1',
+    title: `5 Erros que Destroem Seu Resultado em ${client.niche || 'Seu Nicho'} (e como evitar)`,
+    tags: ['Reels', 'Erros Comuns', 'Iniciante'],
+    gancho: `${client.idealClient || 'Você'} já passou por aquela situação onde fez tudo "certo" e ainda assim o resultado foi uma decepção total? Eu vou te mostrar o que realmente está acontecendo.`,
+    estrutura: [
+      'Erro #1: Subestimar o planejamento inicial',
+      'Erro #2: Ignorar os sinais do público',
+      'Erro #3: Copiar fórmulas sem adaptar para o seu contexto',
+      'Erro #4: Não medir os resultados',
+      'Erro #5: Desistir cedo demais',
+    ],
+    cta: client.defaultCta || 'Salva esse conteúdo e me conta qual erro você já cometeu!',
+    script: {
+      slides: [
+        { visual: `Close no rosto com expressão de surpresa — fundo simples`, audio: `Você sabia que 80% das pessoas em ${client.niche || 'seu nicho'} cometem esses 5 erros?` },
+        { visual: `Texto animado na tela: "Erro #1" com ícone de alerta`, audio: `Erro #1: Subestimar o planejamento. Parece básico, mas é o mais fatal.` },
+        { visual: `Câmera mostrando uma agenda ou quadro de planejamento vazio`, audio: `Sem um plano claro, você vai improvisar — e improvisar custa caro.` },
+        { visual: `Texto: "Erro #2" + gráfico de queda simples`, audio: `Erro #2: Ignorar os sinais do público. Métricas existem para te guiar, não assustar.` },
+        { visual: `Transição rápida mostrando os 5 pontos em lista com check`, audio: `Os outros três erros são igualmente comuns — e todos têm solução simples.` },
+        { visual: `Volta ao rosto, sorriso confiante, apontando para a câmera`, audio: client.defaultCta || `Salva esse vídeo e comenta qual erro você já cometeu!` },
+      ],
+      caption: `Você está cometendo esses erros sem perceber? 👀\n\nDepois de trabalhar com dezenas de ${client.niche ? `clientes do setor de ${client.niche}` : 'clientes'}, percebi que existem 5 erros que aparecem sempre.\n\nSe você quer resultados diferentes, precisa identificar qual desses está freando o seu crescimento.\n\n✅ Salva esse conteúdo para consultar depois!\n💬 Me conta nos comentários qual desses você já cometeu.`,
+      hashtags: `#${(client.niche || 'negocio').replace(/\s+/g, '')} #estrategia #crescimento #empreendedorismo #marketingdigital #dicasdenegocios #${(client.brandName || 'marca').replace(/\s+/g, '').toLowerCase()}`,
+    },
+  },
+  {
+    id: '2',
+    title: `O Segredo que os Profissionais de ${client.niche || 'Sucesso'} Não Revelam`,
+    tags: ['Carrossel', 'Bastidores', 'Autoridade'],
+    gancho: `Depois de anos no mercado de ${client.niche || 'nosso nicho'}, resolvi finalmente revelar o que aprendi observando os melhores do setor.`,
+    estrutura: [
+      'Segredo 1: A preparação vale mais do que a execução',
+      'Segredo 2: Consistência supera talento na longa jornada',
+      'Segredo 3: Relacionamento com o cliente é o maior diferencial',
+      'Segredo 4: Qualidade dos insumos define o resultado final',
+      'Encerramento: O verdadeiro segredo é a disciplina diária',
+    ],
+    cta: client.defaultCta || 'Comente aqui se você quer que eu aprofunde algum desses pontos!',
+    script: {
+      slides: [
+        { visual: `Capa do carrossel: título impactante com degradê escuro e tipografia grande`, audio: `(Texto) Os Segredos que Ninguém te Conta em ${client.niche || 'Seu Mercado'}` },
+        { visual: `Slide 2: Bastidores do processo de trabalho — foto real ou ilustração`, audio: `(Texto) Segredo #1: A preparação vale mais do que a execução` },
+        { visual: `Slide 3: Gráfico de crescimento consistente ao longo do tempo`, audio: `(Texto) Segredo #2: Consistência supera talento — sempre` },
+        { visual: `Slide 4: Foto de interação com cliente (reunião, entrega, handshake)`, audio: `(Texto) Segredo #3: Relacionamento é o seu maior diferencial` },
+        { visual: `Slide 5: Close em produto ou entrega final de alta qualidade`, audio: `(Texto) Segredo #4: Insumos de qualidade definem o resultado` },
+        { visual: `Slide final CTA: fundo com cor da marca, texto grande e claro`, audio: `(Texto) ${client.defaultCta || 'Comente qual segredo foi mais valioso para você!'}` },
+      ],
+      caption: `Passei anos guardando esses segredos. Hoje resolvi compartilhar. 🔓\n\nOs profissionais de sucesso em ${client.niche || 'qualquer mercado'} não têm sorte — eles têm método.\n\nE o método está nesse carrossel.\n\n→ Arraste para ver todos os segredos\n💾 Salva para não perder\n💬 ${client.defaultCta || 'Comente qual segredo foi mais valioso para você!'}`,
+      hashtags: `#${(client.niche || 'mercado').replace(/\s+/g, '')} #segredos #sucesso #metodologia #profissional #desenvolvimento #resultados #${(client.brandName || 'marca').replace(/\s+/g, '').toLowerCase()}`,
+    },
+  },
+];
+
+// ─────────────────────────────────────────────
+// Workflow Tab — types & constants
+// ─────────────────────────────────────────────
+type TodoPriority = 'Baixa' | 'Média' | 'Urgente';
+
+interface TodoItem {
+  id: string;
+  text: string;
+  priority: TodoPriority;
+  createdAt: number;
+}
+
+type KanbanPriority = 'Alta' | 'Normal' | 'Baixa' | 'Urgente';
+
+interface KanbanCard {
+  id: string;
+  title: string;
+  priority: KanbanPriority;
+  startDate: string;
+  dueDate: string;
+  notes: string;
+  assignedTo?: string;
+}
+
+interface KanbanColumn {
+  id: string;
+  emoji: string;
+  title: string;
+  cards: KanbanCard[];
+}
+
+const KANBAN_PRIORITIES: KanbanPriority[] = ['Urgente', 'Alta', 'Normal', 'Baixa'];
+
+const KANBAN_PRIORITY_COLORS: Record<string, string> = {
+  'Alta':    'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50',
+  'Normal':  'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/50',
+  'Baixa':   'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700',
+  'Urgente': 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50',
+};
+
+const TODO_PRIORITY_STYLES: Record<TodoPriority, { btn: string; badge: string }> = {
+  'Baixa':   {
+    btn:   'border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50',
+    badge: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400',
+  },
+  'Média':   {
+    btn:   'border-sky-400 dark:border-sky-600 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20',
+    badge: 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400',
+  },
+  'Urgente': {
+    btn:   'border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+    badge: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+  },
+};
+
+const INITIAL_TODOS: TodoItem[] = [
+  { id: 't1', text: 'Solicitar senha do Instagram', priority: 'Urgente', createdAt: Date.now() - 3600000 },
+  { id: 't2', text: 'Lembrar de emitir nota fiscal dia 15', priority: 'Baixa', createdAt: Date.now() - 1800000 },
+];
+
+const KANBAN_INITIAL_COLUMNS: KanbanColumn[] = [
+  { id: 'preproducao', emoji: '📝', title: 'Pré-produção',  cards: [] },
+  { id: 'gravar',      emoji: '🎥', title: 'Para Gravar',   cards: [] },
+  { id: 'edicao',      emoji: '✂️', title: 'Em Edição',     cards: [] },
+  { id: 'aprovacao',   emoji: '⏱️', title: 'Ag. Aprovação', cards: [] },
+  { id: 'finalizado',  emoji: '✅', title: 'Finalizado',    cards: [] },
+];
+
+const KANBAN_ASSIGNEES: { id: string; name: string; initials: string; color: string }[] = [
+  { id: 'you',   name: 'Você (Admin)',            initials: 'VC', color: 'bg-violet-600' },
+  { id: 'ana',   name: 'Ana Costa (Roteirista)',   initials: 'AC', color: 'bg-emerald-600' },
+  { id: 'pedro', name: 'Pedro Lima (Videomaker)',  initials: 'PL', color: 'bg-sky-600' },
+];
+
+// ─────────────────────────────────────────────
+// Agenda Tab — types & constants
+// ─────────────────────────────────────────────
+type EventType     = 'Gravação' | 'Reunião' | 'Entrega de Vídeo' | 'Visita Técnica';
+type EventLocation = 'Interna' | 'Externa' | 'Remoto';
+type AgendaFilter  = 'todas' | 'gravacoes' | 'reunioes' | 'entregas';
+
+interface AgendaEvent {
+  id: string;
+  title: string;
+  type: string;       // EventType or custom user-defined string
+  location: EventLocation;
+  address: string;
+  date: string;       // YYYY-MM-DD
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+  notes: string;
+  createdAt: number;
+}
+
+const EVENT_TYPES: string[]            = ['Gravação', 'Reunião', 'Entrega de Vídeo', 'Visita Técnica'];
+const EVENT_LOCATIONS: EventLocation[] = ['Interna', 'Externa', 'Remoto'];
+
+const EVENT_TYPE_STYLES: { [key: string]: { bg: string; text: string; border: string; emoji: string } } = {
+  'Gravação':         { bg: 'bg-violet-500/10 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-300 dark:border-violet-700/50', emoji: '🎬' },
+  'Reunião':          { bg: 'bg-sky-500/10 dark:bg-sky-900/20',       text: 'text-sky-600 dark:text-sky-400',       border: 'border-sky-300 dark:border-sky-700/50',       emoji: '🤝' },
+  'Entrega de Vídeo': { bg: 'bg-emerald-500/10 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-300 dark:border-emerald-700/50', emoji: '📦' },
+  'Visita Técnica':   { bg: 'bg-amber-500/10 dark:bg-amber-900/20',   text: 'text-amber-600 dark:text-amber-400',   border: 'border-amber-300 dark:border-amber-700/50',   emoji: '🔍' },
+};
+
+const EVENT_LOCATION_LABELS: Record<EventLocation, { label: string; emoji: string }> = {
+  'Interna': { label: 'Estúdio', emoji: '🎙️' },
+  'Externa': { label: 'Externa', emoji: '☀️'  },
+  'Remoto':  { label: 'Remoto',  emoji: '💻'  },
+};
+
+const AGENDA_FILTERS: { id: AgendaFilter; label: string }[] = [
+  { id: 'todas',     label: '📅 Todas'      },
+  { id: 'gravacoes', label: '🎬 Gravações'  },
+  { id: 'reunioes',  label: '🤝 Reuniões'   },
+  { id: 'entregas',  label: '📦 Entregas'   },
+];
+
+const MONTHS_PT   = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const DOW_PT      = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+const DOW_FULL_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+const DEFAULT_EVENT_STYLE = {
+  bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-400',
+  border: 'border-zinc-200 dark:border-zinc-700', emoji: '📌',
+};
+
+const getEventTypeStyle = (type: string) => EVENT_TYPE_STYLES[type] ?? DEFAULT_EVENT_STYLE;
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+const formatDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  });
+};
+
+const getTodayStr = (): string => new Date().toISOString().split('T')[0];
+
+const getTomorrowStr = (): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+};
+
+
+// ─────────────────────────────────────────────
+// Shared modal style constants
+// ─────────────────────────────────────────────
+const MODAL_INPUT_CLS =
+  'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400';
+const MODAL_LABEL_CLS = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
+
+// ─────────────────────────────────────────────
+// AddCardModal
+// ─────────────────────────────────────────────
+interface AddCardModalProps {
+  columnTitle: string;
+  onSave: (card: Omit<KanbanCard, 'id'>) => void;
+  onClose: () => void;
+}
+
+const AddCardModal: React.FC<AddCardModalProps> = ({ columnTitle, onSave, onClose }) => {
+  const [title, setTitle]           = useState('');
+  const [priority, setPriority]     = useState<KanbanPriority>('Normal');
+  const [startDate, setStartDate]   = useState('');
+  const [dueDate, setDueDate]       = useState('');
+  const [notes, setNotes]           = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+
+  const handleSave = () => {
+    if (!title.trim()) return;
+    onSave({ title: title.trim(), priority, startDate, dueDate, notes: notes.trim(), assignedTo: assignedTo || undefined });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Novo Card</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Coluna: {columnTitle}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          <div>
+            <label className={MODAL_LABEL_CLS}>Título *</label>
+            <input
+              autoFocus
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+              placeholder="Ex: Reels de bastidores da produção"
+              className={MODAL_INPUT_CLS}
+            />
+          </div>
+
+          <div>
+            <label className={MODAL_LABEL_CLS}>Prioridade</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {KANBAN_PRIORITIES.map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPriority(p)}
+                  className={`py-2 px-1 rounded-xl border-2 text-[10px] font-black transition-all text-center ${
+                    priority === p
+                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={MODAL_LABEL_CLS}>Data de Início</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className={MODAL_INPUT_CLS}
+              />
+            </div>
+            <div>
+              <label className={MODAL_LABEL_CLS}>Data de Entrega</label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+                className={MODAL_INPUT_CLS}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={MODAL_LABEL_CLS}>Notas</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Detalhes adicionais sobre o conteúdo…"
+              rows={3}
+              className={`${MODAL_INPUT_CLS} resize-none`}
+            />
+          </div>
+
+          <div>
+            <label className={MODAL_LABEL_CLS}>Atribuir a (Opcional)</label>
+            <select
+              value={assignedTo}
+              onChange={e => setAssignedTo(e.target.value)}
+              className={`${MODAL_INPUT_CLS} cursor-pointer`}
+            >
+              <option value="">— Ninguém —</option>
+              {KANBAN_ASSIGNEES.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!title.trim()}
+            className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Salvar Card
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// CardDetailModal
+// ─────────────────────────────────────────────
+interface CardDetailModalProps {
+  card: KanbanCard;
+  columnTitle: string;
+  onSave: (card: KanbanCard) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}
+
+const CardDetailModal: React.FC<CardDetailModalProps> = ({
+  card,
+  columnTitle,
+  onSave,
+  onDelete,
+  onClose,
+}) => {
+  const [draft, setDraft] = useState<KanbanCard>(card);
+
+  const handleSave = () => {
+    if (!draft.title.trim()) return;
+    onSave({ ...draft, title: draft.title.trim(), notes: draft.notes.trim() });
+  };
+
+  const set = <K extends keyof KanbanCard>(key: K, value: KanbanCard[K]) =>
+    setDraft(p => ({ ...p, [key]: value }));
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Editar Card</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Coluna: {columnTitle}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          <div>
+            <label className={MODAL_LABEL_CLS}>Título *</label>
+            <input
+              autoFocus
+              type="text"
+              value={draft.title}
+              onChange={e => set('title', e.target.value)}
+              className={MODAL_INPUT_CLS}
+            />
+          </div>
+
+          <div>
+            <label className={MODAL_LABEL_CLS}>Prioridade</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {KANBAN_PRIORITIES.map(p => (
+                <button
+                  key={p}
+                  onClick={() => set('priority', p)}
+                  className={`py-2 px-1 rounded-xl border-2 text-[10px] font-black transition-all text-center ${
+                    draft.priority === p
+                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={MODAL_LABEL_CLS}>Data de Início</label>
+              <input
+                type="date"
+                value={draft.startDate}
+                onChange={e => set('startDate', e.target.value)}
+                className={MODAL_INPUT_CLS}
+              />
+            </div>
+            <div>
+              <label className={MODAL_LABEL_CLS}>Data de Entrega</label>
+              <input
+                type="date"
+                value={draft.dueDate}
+                onChange={e => set('dueDate', e.target.value)}
+                className={MODAL_INPUT_CLS}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={MODAL_LABEL_CLS}>Notas</label>
+            <textarea
+              value={draft.notes}
+              onChange={e => set('notes', e.target.value)}
+              placeholder="Detalhes adicionais sobre o conteúdo…"
+              rows={3}
+              className={`${MODAL_INPUT_CLS} resize-none`}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+          <button
+            onClick={onDelete}
+            className="p-3 rounded-xl border border-red-200 dark:border-red-800/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex-shrink-0"
+            title="Excluir card"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!draft.title.trim()}
+            className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// NewEventModal
+// ─────────────────────────────────────────────
+interface NewEventModalProps {
+  initialEvent?: Partial<AgendaEvent>;
+  onSave: (event: Omit<AgendaEvent, 'id' | 'createdAt'>) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+}
+
+const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onDelete, onClose }) => {
+  const isEdit       = !!initialEvent;
+  const initIsCustom = !!initialEvent && !EVENT_TYPES.includes(initialEvent.type);
+
+  const [title, setTitle]                   = useState(initialEvent?.title ?? '');
+  const [type, setType]                     = useState<string>(initIsCustom ? 'Gravação' : (initialEvent?.type ?? 'Gravação'));
+  const [useCustomType, setUseCustomType]   = useState(initIsCustom);
+  const [customTypeText, setCustomTypeText] = useState(initIsCustom ? (initialEvent?.type ?? '') : '');
+  const [location, setLocation]             = useState<EventLocation>(initialEvent?.location ?? 'Interna');
+  const [address, setAddress]               = useState(initialEvent?.address ?? '');
+  const [date, setDate]                     = useState(initialEvent?.date ?? getTodayStr());
+  const [startTime, setStartTime]           = useState(initialEvent?.startTime ?? '09:00');
+  const [endTime, setEndTime]               = useState(initialEvent?.endTime ?? '10:00');
+  const [notes, setNotes]                   = useState(initialEvent?.notes ?? '');
+
+  const effectiveType = useCustomType ? customTypeText.trim() : type;
+
+  const handleSave = () => {
+    if (!title.trim() || !date) return;
+    if (useCustomType && !customTypeText.trim()) return;
+    onSave({ title: title.trim(), type: effectiveType || 'Outro', location, address: address.trim(), date, startTime, endTime, notes: notes.trim() });
+  };
+
+  const addressPlaceholder =
+    location === 'Remoto'  ? 'Ex: meet.google.com/abc-xyz' :
+    location === 'Externa' ? 'Ex: Rua das Flores, 123 — São Paulo' :
+                             'Ex: Estúdio A, 2º andar';
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{isEdit ? 'Editar Evento' : 'Novo Evento'}</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Agenda de produção audiovisual</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+          {/* Title */}
+          <div>
+            <label className={MODAL_LABEL_CLS}>Título do Evento *</label>
+            <input
+              autoFocus
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+              placeholder="Ex: Gravação Comercial de Produto"
+              className={MODAL_INPUT_CLS}
+            />
+          </div>
+
+          {/* Event type */}
+          <div>
+            <label className={MODAL_LABEL_CLS}>Tipo de Evento</label>
+            <div className="grid grid-cols-2 gap-2">
+              {EVENT_TYPES.map(t => {
+                const s = getEventTypeStyle(t);
+                return (
+                  <button
+                    key={t}
+                    onClick={() => { setType(t); setUseCustomType(false); }}
+                    className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-left transition-all flex items-center gap-2 ${
+                      !useCustomType && type === t
+                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                    }`}
+                  >
+                    <span>{s.emoji}</span> {t}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setUseCustomType(true)}
+                className={`col-span-2 py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-left transition-all flex items-center gap-2 ${
+                  useCustomType
+                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                }`}
+              >
+                <span>✏️</span> Outros...
+              </button>
+            </div>
+            {useCustomType && (
+              <input
+                type="text"
+                value={customTypeText}
+                onChange={e => setCustomTypeText(e.target.value)}
+                placeholder="Ex: Viagem, Scouting, Teste de Câmera…"
+                className={`${MODAL_INPUT_CLS} mt-2`}
+              />
+            )}
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className={MODAL_LABEL_CLS}>Data</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} className={MODAL_INPUT_CLS} />
+          </div>
+
+          {/* Start + End time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={MODAL_LABEL_CLS}>Início</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className={MODAL_INPUT_CLS} />
+            </div>
+            <div>
+              <label className={MODAL_LABEL_CLS}>Término</label>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className={MODAL_INPUT_CLS} />
+            </div>
+          </div>
+
+          {/* Location toggle */}
+          <div>
+            <label className={MODAL_LABEL_CLS}>Local / Formato</label>
+            <div className="flex gap-2">
+              {EVENT_LOCATIONS.map(loc => {
+                const l = EVENT_LOCATION_LABELS[loc];
+                return (
+                  <button
+                    key={loc}
+                    onClick={() => setLocation(loc)}
+                    className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 text-xs font-bold transition-all ${
+                      location === loc
+                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                    }`}
+                  >
+                    <span className="text-base">{l.emoji}</span>
+                    <span>{l.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Address / Link */}
+          <div>
+            <label className={MODAL_LABEL_CLS}>{location === 'Remoto' ? 'Link da Reunião' : 'Endereço'}</label>
+            <input
+              type="text"
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              placeholder={addressPlaceholder}
+              className={MODAL_INPUT_CLS}
+            />
+          </div>
+
+          {/* Equipment & Notes */}
+          <div>
+            <label className={MODAL_LABEL_CLS}>Equipamentos e Notas</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Ex: Levar drone, baterias extras, lente 35mm…"
+              rows={3}
+              className={`${MODAL_INPUT_CLS} resize-none`}
+            />
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-red-200 dark:border-red-800/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex-shrink-0 text-xs font-bold"
+              title="Excluir evento"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Excluir</span>
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!title.trim() || !date || (useCustomType && !customTypeText.trim())}
+            className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isEdit ? 'Salvar Alterações' : 'Salvar Evento'}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// ClientWorkflowTab sub-component
+// ─────────────────────────────────────────────
+const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
+  // ── To-Do state ──────────────────────────────────────────
+  const [todos, setTodos]               = useState<TodoItem[]>(INITIAL_TODOS);
+  const [doneTodos, setDoneTodos]       = useState<TodoItem[]>([]);
+  const [todoInput, setTodoInput]       = useState('');
+  const [todoPriority, setTodoPriority] = useState<TodoPriority>('Média');
+  const [showDone, setShowDone]         = useState(false);
+
+  // ── Kanban state ──────────────────────────────────────────
+  const [columns, setColumns] = useState<KanbanColumn[]>(() => {
+    try {
+      const stored = localStorage.getItem(`creator_flow_kanban_${client.id}`);
+      return stored ? (JSON.parse(stored) as KanbanColumn[]) : KANBAN_INITIAL_COLUMNS;
+    } catch {
+      return KANBAN_INITIAL_COLUMNS;
+    }
+  });
+  const [addingToCol, setAddingToCol] = useState<string | null>(null);
+  const [editingCard, setEditingCard] = useState<{ card: KanbanCard; colId: string } | null>(null);
+
+  // ── Date helpers (computed each render) ──────────────────
+  const todayStr    = getTodayStr();
+  const tomorrowStr = getTomorrowStr();
+
+  // ── Alert counts (exclude "finalizado" column) ───────────
+  const activeCards = columns
+    .filter(c => c.id !== 'finalizado')
+    .flatMap(c => c.cards)
+    .filter(c => c.dueDate);
+
+  const overdueCount  = activeCards.filter(c => c.dueDate < todayStr).length;
+  const dueSoonCount  = activeCards.filter(c => c.dueDate >= todayStr && c.dueDate <= tomorrowStr).length;
+
+  // ── Persist kanban columns to localStorage ────────────────
+  useEffect(() => {
+    localStorage.setItem(`creator_flow_kanban_${client.id}`, JSON.stringify(columns));
+  }, [columns, client.id]);
+
+  // ── To-Do handlers ────────────────────────────────────────
+  const addTodo = () => {
+    if (!todoInput.trim()) return;
+    setTodos(prev => [
+      { id: crypto.randomUUID(), text: todoInput.trim(), priority: todoPriority, createdAt: Date.now() },
+      ...prev,
+    ]);
+    setTodoInput('');
+  };
+
+  const completeTodo = (id: string) => {
+    const item = todos.find(t => t.id === id);
+    if (!item) return;
+    setTodos(prev => prev.filter(t => t.id !== id));
+    setDoneTodos(prev => [item, ...prev]);
+  };
+
+  const undoTodo = (id: string) => {
+    const item = doneTodos.find(t => t.id === id);
+    if (!item) return;
+    setDoneTodos(prev => prev.filter(t => t.id !== id));
+    setTodos(prev => [item, ...prev]);
+  };
+
+  // ── Kanban handlers ───────────────────────────────────────
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination) return;
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) return;
+
+    setColumns(prev => {
+      const cols = prev.map(c => ({ ...c, cards: [...c.cards] }));
+      const src = cols.find(c => c.id === source.droppableId)!;
+      const dst = cols.find(c => c.id === destination.droppableId)!;
+      const [moved] = src.cards.splice(source.index, 1);
+      dst.cards.splice(destination.index, 0, moved);
+      return cols;
+    });
+  };
+
+  const addCard = (colId: string, draft: Omit<KanbanCard, 'id'>) => {
+    setColumns(prev =>
+      prev.map(c =>
+        c.id === colId
+          ? { ...c, cards: [{ id: crypto.randomUUID(), ...draft }, ...c.cards] }
+          : c,
+      ),
+    );
+    setAddingToCol(null);
+  };
+
+  const updateCard = (colId: string, updated: KanbanCard) => {
+    setColumns(prev =>
+      prev.map(c =>
+        c.id === colId
+          ? { ...c, cards: c.cards.map(card => (card.id === updated.id ? updated : card)) }
+          : c,
+      ),
+    );
+    setEditingCard(null);
+  };
+
+  const deleteCard = (colId: string, cardId: string) => {
+    setColumns(prev =>
+      prev.map(c =>
+        c.id === colId
+          ? { ...c, cards: c.cards.filter(card => card.id !== cardId) }
+          : c,
+      ),
+    );
+    setEditingCard(null);
+  };
+
+  const clearColumn = (colId: string) => {
+    setColumns(prev => prev.map(c => c.id === colId ? { ...c, cards: [] } : c));
+  };
+
+  // ─────────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col gap-3 lg:h-[calc(100vh-200px)]">
+
+      {/* ── Alerts Banner ── */}
+      {(overdueCount > 0 || dueSoonCount > 0) && (
+        <div className="flex flex-col gap-2 flex-shrink-0">
+          {overdueCount > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 animate-in fade-in duration-200">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-500 dark:text-red-400" />
+              <p className="text-xs font-bold text-red-700 dark:text-red-400">
+                Atenção: Há {overdueCount} tarefa{overdueCount !== 1 ? 's' : ''} atrasada{overdueCount !== 1 ? 's' : ''} para este cliente!
+              </p>
+            </div>
+          )}
+          {dueSoonCount > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 animate-in fade-in duration-200">
+              <Clock className="w-4 h-4 flex-shrink-0 text-amber-500 dark:text-amber-400" />
+              <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                Há {dueSoonCount} tarefa{dueSoonCount !== 1 ? 's' : ''} que precisa{dueSoonCount !== 1 ? 'm' : ''} ser entregue{dueSoonCount !== 1 ? 's' : ''} hoje ou amanhã.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Content Row: To-Do + Kanban ── */}
+      <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0">
+
+        {/* ── To-Do List ── */}
+        <aside className="lg:w-64 flex-shrink-0 flex flex-col min-h-0">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col flex-1 min-h-0">
+
+            {/* Header */}
+            <div className="px-4 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-white">🗒️ Tarefas & Lembretes</h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {todos.length} pendente{todos.length !== 1 ? 's' : ''} · {client.brandName}
+              </p>
+            </div>
+
+            {/* Input + priority selector */}
+            <div className="px-3 py-3 border-b border-zinc-100 dark:border-zinc-800 space-y-2 flex-shrink-0">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={todoInput}
+                  onChange={e => setTodoInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addTodo(); }}
+                  placeholder="Nova tarefa..."
+                  className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400"
+                />
+                <button
+                  onClick={addTodo}
+                  disabled={!todoInput.trim()}
+                  className="p-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg disabled:opacity-40 transition-colors flex-shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Priority buttons */}
+              <div className="flex gap-1.5">
+                {(['Baixa', 'Média', 'Urgente'] as TodoPriority[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setTodoPriority(p)}
+                    className={`flex-1 text-[10px] font-black py-1 rounded-lg border-2 transition-all ${
+                      todoPriority === p
+                        ? TODO_PRIORITY_STYLES[p].btn
+                        : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Active list — scrollable */}
+            <ul className="px-3 py-3 space-y-2.5 flex-1 min-h-0 overflow-y-auto">
+              {todos.length === 0 && (
+                <li className="text-xs text-zinc-400 italic text-center py-4">
+                  Nenhuma tarefa pendente 🎉
+                </li>
+              )}
+              {todos.map(todo => (
+                <li key={todo.id} className="flex items-start gap-2.5 group">
+                  <button
+                    onClick={() => completeTodo(todo.id)}
+                    className="mt-0.5 flex-shrink-0"
+                    title="Marcar como concluída"
+                  >
+                    <Circle className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-emerald-500 transition-colors" />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs leading-relaxed block text-zinc-700 dark:text-zinc-300">
+                      {todo.text}
+                    </span>
+                    <span className={`mt-0.5 inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded ${TODO_PRIORITY_STYLES[todo.priority].badge}`}>
+                      {todo.priority}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Footer: done archive */}
+            {doneTodos.length > 0 && (
+              <div className="border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+                <button
+                  onClick={() => setShowDone(v => !v)}
+                  className="w-full px-4 py-2.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 font-bold flex items-center justify-between transition-colors"
+                >
+                  <span>Ver {doneTodos.length} tarefa{doneTodos.length !== 1 ? 's' : ''} concluída{doneTodos.length !== 1 ? 's' : ''}</span>
+                  <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${showDone ? 'rotate-90' : ''}`} />
+                </button>
+                {showDone && (
+                  <ul className="px-3 pb-3 space-y-2 animate-in fade-in duration-200">
+                    {doneTodos.map(todo => (
+                      <li key={todo.id} className="flex items-start gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs leading-relaxed block line-through text-zinc-400">
+                            {todo.text}
+                          </span>
+                          <button
+                            onClick={() => undoTodo(todo.id)}
+                            className="text-[10px] font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                          >
+                            Desfazer
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* ── Kanban Board ── */}
+        <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="h-full overflow-x-auto">
+              <div className="flex gap-3 h-full" style={{ width: 'max-content', minWidth: '100%' }}>
+                {columns.map(col => {
+                  const isLastCol = col.id === 'finalizado';
+                  return (
+                    <div key={col.id} className="w-56 flex-shrink-0 flex flex-col h-full">
+
+                      {/* Column header */}
+                      <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0">
+                        <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
+                          <span className="flex-shrink-0">{col.emoji}</span>
+                          <span className="truncate">{col.title}</span>
+                          <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                            {col.cards.length}
+                          </span>
+                        </h4>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* Clear button — only on "Finalizado" when it has cards */}
+                          {isLastCol && col.cards.length > 0 && (
+                            <button
+                              onClick={() => {
+                                if (confirm('Limpar todos os cards de "Finalizado"?')) clearColumn(col.id);
+                              }}
+                              className="text-[9px] font-bold px-1.5 py-0.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              Limpar
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setAddingToCol(col.id)}
+                            className="p-1 text-zinc-400 hover:text-violet-500 rounded transition-colors"
+                            title="Adicionar card"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Column body — Droppable (scrollable) */}
+                      <Droppable droppableId={col.id}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`flex-1 min-h-0 overflow-y-auto rounded-2xl p-2 flex flex-col gap-2 transition-colors ${
+                              snapshot.isDraggingOver
+                                ? 'bg-violet-50 dark:bg-violet-900/20'
+                                : 'bg-zinc-50 dark:bg-zinc-800/30'
+                            }`}
+                          >
+                            {col.cards.map((card, index) => {
+                              const isOverdue  = !!card.dueDate && card.dueDate < todayStr;
+                              const isDueSoon  = !isOverdue && !!card.dueDate && card.dueDate <= tomorrowStr;
+                              const dateLabel  = card.startDate && card.dueDate
+                                ? `${formatDate(card.startDate)} → ${formatDate(card.dueDate)}`
+                                : card.dueDate
+                                ? formatDate(card.dueDate)
+                                : card.startDate
+                                ? `Início: ${formatDate(card.startDate)}`
+                                : null;
+
+                              return (
+                                <Draggable key={card.id} draggableId={card.id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      onClick={() => setEditingCard({ card, colId: col.id })}
+                                      className={`bg-white dark:bg-zinc-800 border rounded-xl p-3 cursor-pointer select-none transition-all ${
+                                        snapshot.isDragging
+                                          ? 'border-violet-400 dark:border-violet-600 shadow-lg shadow-violet-500/20 rotate-[1deg]'
+                                          : isOverdue
+                                          ? 'border-red-300 dark:border-red-700/60 hover:border-red-400 dark:hover:border-red-600'
+                                          : isDueSoon
+                                          ? 'border-amber-300 dark:border-amber-700/60 hover:border-amber-400 dark:hover:border-amber-600'
+                                          : 'border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md'
+                                      }`}
+                                    >
+                                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 leading-snug mb-2">
+                                        {card.title}
+                                      </p>
+
+                                      <div className="flex items-center gap-1 mb-2">
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${KANBAN_PRIORITY_COLORS[card.priority] ?? ''}`}>
+                                          {card.priority}
+                                        </span>
+                                        {isOverdue && (
+                                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                                            Atrasado
+                                          </span>
+                                        )}
+                                        {isDueSoon && (
+                                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                                            Hoje/Amanhã
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {dateLabel && (
+                                        <div className={`flex items-center gap-1 text-[10px] ${isOverdue ? 'text-red-500 dark:text-red-400 font-bold' : 'text-zinc-400'}`}>
+                                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                                          {dateLabel}
+                                        </div>
+                                      )}
+
+                                      {card.notes && (
+                                        <p className="mt-1.5 text-[10px] text-zinc-400 line-clamp-2 leading-relaxed italic">
+                                          {card.notes}
+                                        </p>
+                                      )}
+
+                                      {card.assignedTo && (() => {
+                                        const assignee = KANBAN_ASSIGNEES.find(a => a.id === card.assignedTo);
+                                        if (!assignee) return null;
+                                        return (
+                                          <div className="flex justify-end mt-2">
+                                            <div
+                                              className={`w-6 h-6 rounded-full ${assignee.color} flex items-center justify-center text-white text-[9px] font-black border-2 border-white dark:border-zinc-800`}
+                                              title={assignee.name}
+                                            >
+                                              {assignee.initials}
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
+
+                            {provided.placeholder}
+
+                            {/* Empty state */}
+                            {col.cards.length === 0 && !snapshot.isDraggingOver && (
+                              <div className="flex-1 flex items-center justify-center py-6">
+                                <p className="text-[11px] text-zinc-400 italic text-center">Vazio</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Droppable>
+
+                      {/* Add card button — pinned below the droppable */}
+                      <button
+                        onClick={() => setAddingToCol(col.id)}
+                        className="mt-2 w-full flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-500 transition-all text-[11px] font-bold flex-shrink-0"
+                      >
+                        <Plus className="w-3 h-3" /> Adicionar card
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </DragDropContext>
+        </div>
+      </div>
+
+      {/* ── Modals ── */}
+      {addingToCol && (
+        <AddCardModal
+          columnTitle={columns.find(c => c.id === addingToCol)?.title ?? ''}
+          onSave={draft => addCard(addingToCol, draft)}
+          onClose={() => setAddingToCol(null)}
+        />
+      )}
+
+      {editingCard && (
+        <CardDetailModal
+          card={editingCard.card}
+          columnTitle={columns.find(c => c.id === editingCard.colId)?.title ?? ''}
+          onSave={updated => updateCard(editingCard.colId, updated)}
+          onDelete={() => {
+            if (confirm(`Excluir card "${editingCard.card.title}"?`)) {
+              deleteCard(editingCard.colId, editingCard.card.id);
+            }
+          }}
+          onClose={() => setEditingCard(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// ClientAgendaTab sub-component
+// ─────────────────────────────────────────────
+interface ClientAgendaTabProps {
+  client: Client;
+  pendingEventTitle?: string | null;
+  onPendingConsumed?: () => void;
+}
+
+const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventTitle, onPendingConsumed }) => {
+  const [events, setEvents] = useState<AgendaEvent[]>(() => {
+    try {
+      const stored = localStorage.getItem(`creator_flow_agenda_${client.id}`);
+      return stored ? (JSON.parse(stored) as AgendaEvent[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeFilter, setActiveFilter]         = useState<AgendaFilter>('todas');
+  const [calYear, setCalYear]                   = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth]                 = useState(() => new Date().getMonth());
+  const [isModalOpen, setIsModalOpen]           = useState(false);
+  const [editingEvent, setEditingEvent]         = useState<AgendaEvent | null>(null);
+  const [viewMode, setViewMode]                 = useState<'list' | 'grid'>('list');
+  const [selectedDay, setSelectedDay]           = useState<string | null>(null);
+  const [pendingInitialTitle, setPendingInitialTitle] = useState('');
+
+  // Auto-open the "New Event" modal when a title is injected from the Ideias tab
+  useEffect(() => {
+    if (pendingEventTitle) {
+      setPendingInitialTitle(pendingEventTitle);
+      setEditingEvent(null);
+      setIsModalOpen(true);
+      onPendingConsumed?.();
+    }
+  }, [pendingEventTitle]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const todayStr    = getTodayStr();
+  const tomorrowStr = getTomorrowStr();
+
+  // ── Persist agenda events to localStorage ─────
+  useEffect(() => {
+    localStorage.setItem(`creator_flow_agenda_${client.id}`, JSON.stringify(events));
+  }, [events, client.id]);
+
+  // ── Mini-calendar ───────────────────────────
+  const prevCalMonth = () => {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
+    else setCalMonth(m => m - 1);
+  };
+  const nextCalMonth = () => {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
+    else setCalMonth(m => m + 1);
+  };
+
+  const calCells: (number | null)[] = (() => {
+    const firstDow    = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const cells: (number | null)[] = Array(firstDow).fill(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    return cells;
+  })();
+
+  const eventDates = new Set(events.map(e => e.date));
+
+  const toDayStr = (d: number) =>
+    `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  // ── Filtered + sorted events ─────────────────
+  const filteredEvents = events
+    .filter(e => {
+      if (selectedDay && viewMode === 'list') return e.date === selectedDay;
+      if (activeFilter === 'gravacoes') return e.type === 'Gravação';
+      if (activeFilter === 'reunioes')  return e.type === 'Reunião';
+      if (activeFilter === 'entregas')  return e.type === 'Entrega de Vídeo';
+      return true;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+  // Grid: all events for the displayed month (ignores filters for full visibility)
+  const monthStr    = `${calYear}-${String(calMonth + 1).padStart(2, '0')}`;
+  const monthEvents = events.filter(e => e.date.startsWith(monthStr));
+
+  // ── Handlers ────────────────────────────────
+  const saveEvent = (draft: Omit<AgendaEvent, 'id' | 'createdAt'>) => {
+    if (editingEvent) {
+      setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, ...draft } : e));
+      setEditingEvent(null);
+    } else {
+      setEvents(prev => [...prev, { id: crypto.randomUUID(), ...draft, createdAt: Date.now() }]);
+      setIsModalOpen(false);
+    }
+  };
+
+  const deleteEvent = (id: string) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
+    setEditingEvent(null);
+  };
+
+  // ── Date display helper ───────────────────────
+  const formatEventDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return {
+      day:   d.getDate().toString().padStart(2, '0'),
+      month: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+    };
+  };
+
+  // ─────────────────────────────────────────────
+  return (
+    <div className="flex flex-col lg:flex-row gap-5">
+
+      {/* ── Left: Mini Calendar + Filters ── */}
+      <aside className="lg:w-60 flex-shrink-0 space-y-3">
+
+        {/* Mini Calendar */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
+
+          {/* Month navigation */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevCalMonth} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              {MONTHS_PT[calMonth]} {calYear}
+            </span>
+            <button onClick={nextCalMonth} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Day-of-week header */}
+          <div className="grid grid-cols-7 mb-1">
+            {DOW_PT.map((d, i) => (
+              <div key={i} className="text-center text-[10px] font-bold text-zinc-400 py-1">{d}</div>
+            ))}
+          </div>
+
+          {/* Day cells — clickable for day filter */}
+          <div className="grid grid-cols-7 gap-y-0.5">
+            {calCells.map((day, i) => {
+              if (!day) return <div key={i} />;
+              const ds         = toDayStr(day);
+              const isToday    = ds === todayStr;
+              const hasEvent   = eventDates.has(ds);
+              const isSelected = selectedDay === ds;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setSelectedDay(prev => prev === ds ? null : ds)}
+                  className="flex flex-col items-center py-0.5 cursor-pointer"
+                >
+                  <div
+                    className={`w-7 h-7 flex items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
+                      isSelected
+                        ? 'ring-2 ring-violet-500 ring-offset-1 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300'
+                        : isToday
+                        ? 'bg-violet-600 text-white'
+                        : hasEvent
+                        ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    {day}
+                  </div>
+                  {hasEvent && (
+                    <div className={`w-1 h-1 rounded-full mt-0.5 ${isToday ? 'bg-violet-300' : 'bg-violet-400 dark:bg-violet-500'}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Clear day filter */}
+          {selectedDay && (
+            <button
+              onClick={() => setSelectedDay(null)}
+              className="mt-3 w-full text-center text-xs font-bold text-violet-600 dark:text-violet-400 py-1.5 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl transition-colors border border-violet-200 dark:border-violet-800/50"
+            >
+              Ver todos ✕
+            </button>
+          )}
+        </div>
+
+        {/* Filter buttons */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-2 mb-2">Filtrar por</p>
+          <div className="space-y-1">
+            {AGENDA_FILTERS.map(btn => (
+              <button
+                key={btn.id}
+                onClick={() => setActiveFilter(btn.id)}
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeFilter === btn.id
+                    ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+      </aside>
+
+      {/* ── Right: View Toggle + Content ── */}
+      <div className="flex-1 min-w-0 space-y-3">
+
+        {/* View toggle */}
+        <div className="flex bg-zinc-100 dark:bg-zinc-800/60 rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'list'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            📄 Visão em Lista
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'grid'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            📅 Visão Mensal
+          </button>
+        </div>
+
+        {/* New event CTA */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all"
+        >
+          <Plus className="w-4 h-4" /> Novo Evento
+        </button>
+
+        {/* ══ LIST VIEW ══ */}
+        {viewMode === 'list' && (
+          <>
+            {/* Selected day indicator */}
+            {selectedDay && (
+              <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 rounded-xl">
+                <span className="text-xs font-bold text-violet-700 dark:text-violet-400">
+                  📅 {new Date(selectedDay + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                </span>
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="text-[10px] font-black text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                >
+                  Limpar ✕
+                </button>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {filteredEvents.length === 0 && (
+              <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center">
+                <div className="text-4xl mb-3">📅</div>
+                <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+                  {selectedDay ? 'Nenhum evento neste dia' : 'Nenhum evento encontrado'}
+                </p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                  {selectedDay
+                    ? 'Selecione outro dia ou clique em "Ver todos".'
+                    : 'Clique em "Novo Evento" para adicionar.'}
+                </p>
+              </div>
+            )}
+
+            {/* Event cards */}
+            {filteredEvents.map(event => {
+              const { day, month } = formatEventDate(event.date);
+              const isToday    = event.date === todayStr;
+              const isTomorrow = event.date === tomorrowStr;
+              const style      = getEventTypeStyle(event.type);
+              const locLabel   = EVENT_LOCATION_LABELS[event.location];
+
+              return (
+                <div
+                  key={event.id}
+                  onClick={() => setEditingEvent(event)}
+                  className={`bg-white dark:bg-zinc-900 border rounded-2xl p-4 flex gap-4 transition-all hover:shadow-md cursor-pointer ${
+                    isToday
+                      ? 'border-indigo-400 dark:border-indigo-600/70 shadow-sm shadow-indigo-500/10'
+                      : isTomorrow
+                      ? 'border-amber-300 dark:border-amber-700/50'
+                      : 'border-zinc-200 dark:border-zinc-800'
+                  }`}
+                >
+                  {/* Date block */}
+                  <div className={`flex-shrink-0 flex flex-col items-center justify-center w-14 h-14 rounded-2xl ${style.bg}`}>
+                    <span className={`text-xl font-black leading-none ${style.text}`}>{day}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wide mt-0.5 ${style.text}`}>{month}</span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+
+                    {/* Alert badge */}
+                    {(isToday || isTomorrow) && (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        isToday
+                          ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                          : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {isToday ? '🚨 Ocorre Hoje!' : '⏰ Amanhã'}
+                      </span>
+                    )}
+
+                    {/* Title */}
+                    <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug">
+                      {event.title}
+                    </h4>
+
+                    {/* Time + type + location badges */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                        {event.startTime} — {event.endTime}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
+                        {style.emoji} {event.type}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700">
+                        {locLabel.emoji} {locLabel.label}
+                      </span>
+                    </div>
+
+                    {/* Address */}
+                    {event.address && (
+                      <div className="flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{event.address}</span>
+                      </div>
+                    )}
+
+                    {/* Equipment notes */}
+                    {event.notes && (
+                      <div className="flex items-start gap-1 text-[11px] text-zinc-400 dark:text-zinc-500 italic">
+                        <Briefcase className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{event.notes}</span>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* ══ GRID VIEW ══ */}
+        {viewMode === 'grid' && (
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+
+            {/* Grid month header — synced with mini-calendar */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 dark:border-zinc-800">
+              <button onClick={prevCalMonth} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                {MONTHS_PT[calMonth]} {calYear}
+              </span>
+              <button onClick={nextCalMonth} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* DOW header */}
+            <div className="grid grid-cols-7 border-b border-zinc-100 dark:border-zinc-800">
+              {DOW_FULL_PT.map(d => (
+                <div key={d} className="py-2 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Day cells */}
+            <div className="grid grid-cols-7">
+              {calCells.map((day, i) => {
+                const isLastCol = (i + 1) % 7 === 0;
+                if (!day) return (
+                  <div
+                    key={i}
+                    className={`min-h-24 border-b border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/60 dark:bg-zinc-950/40 ${!isLastCol ? 'border-r' : ''}`}
+                  />
+                );
+                const ds      = toDayStr(day);
+                const isToday = ds === todayStr;
+                const dayEvs  = monthEvents.filter(e => e.date === ds);
+                return (
+                  <div
+                    key={i}
+                    className={`min-h-24 border-b border-zinc-100 dark:border-zinc-800/60 p-1.5 ${!isLastCol ? 'border-r' : ''} ${isToday ? 'bg-violet-50/60 dark:bg-violet-950/20' : ''}`}
+                  >
+                    <div className={`w-6 h-6 flex items-center justify-center rounded-full text-[11px] font-bold mb-1 ${
+                      isToday ? 'bg-violet-600 text-white' : 'text-zinc-500 dark:text-zinc-400'
+                    }`}>
+                      {day}
+                    </div>
+                    <div className="space-y-0.5">
+                      {dayEvs.slice(0, 3).map(ev => {
+                        const s = getEventTypeStyle(ev.type);
+                        return (
+                          <button
+                            key={ev.id}
+                            onClick={() => setEditingEvent(ev)}
+                            title={`${ev.startTime} — ${ev.title}`}
+                            className={`w-full text-left px-1.5 py-0.5 rounded text-[9px] font-bold truncate transition-opacity hover:opacity-80 ${s.bg} ${s.text}`}
+                          >
+                            {ev.startTime} {ev.title}
+                          </button>
+                        );
+                      })}
+                      {dayEvs.length > 3 && (
+                        <p className="text-[9px] font-bold text-zinc-400 px-1">+{dayEvs.length - 3} mais</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* Modal — new event */}
+      {isModalOpen && (
+        <NewEventModal
+          initialEvent={pendingInitialTitle ? { title: pendingInitialTitle, type: 'Gravação' } : undefined}
+          onSave={saveEvent}
+          onClose={() => { setIsModalOpen(false); setPendingInitialTitle(''); }}
+        />
+      )}
+
+      {/* Modal — edit event */}
+      {editingEvent && (
+        <NewEventModal
+          initialEvent={editingEvent}
+          onSave={saveEvent}
+          onDelete={() => deleteEvent(editingEvent.id)}
+          onClose={() => setEditingEvent(null)}
+        />
+      )}
+
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// ClientAcervoTab sub-component
+// ─────────────────────────────────────────────
+const ACERVO_DEVICE_LABELS: Record<string, string> = {
+  camera_a: 'Câm-A', camera_b: 'Câm-B', drone: 'Drone',
+  audio_externo: 'Áudio Ext.', outros: 'Outros',
+};
+
+
+const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => void }> = ({ client, onNavigateToArquivos }) => {
+  // ── Read global recordings from localStorage ──────────────
+  const [allRecordings] = useState<Recording[]>(() => {
+    try {
+      const stored = localStorage.getItem('creator_flow_recordings');
+      return stored ? (JSON.parse(stored) as Recording[]) : [];
+    } catch { return []; }
+  });
+
+  // ── Read global HDDs from localStorage ────────────────────
+  const [allHdds] = useState<HDD[]>(() => {
+    try {
+      const stored = localStorage.getItem('creator_flow_hdds');
+      return stored ? (JSON.parse(stored) as HDD[]) : [];
+    } catch { return []; }
+  });
+
+  const displayItems = allRecordings.filter(r => r.clientId === client.id);
+
+  const getHddName = (id: string): string =>
+    allHdds.find(h => h.id === id)?.name ?? id;
+
+  const fmtDate = (dateStr: string) =>
+    new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
+      day: '2-digit', month: 'short', year: 'numeric',
+    });
+
+  // ─────────────────────────────────────────────
+  return (
+    <div className="space-y-4">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Acervo de Backups</h3>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            {displayItems.length === 0
+              ? 'Nenhum backup vinculado a este cliente'
+              : `${displayItems.length} backup${displayItems.length !== 1 ? 's' : ''} registrado${displayItems.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
+        {onNavigateToArquivos && (
+          <button
+            onClick={onNavigateToArquivos}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500 text-white text-xs font-bold hover:bg-violet-600 transition-colors shadow-sm shadow-violet-500/30"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Novo Backup
+          </button>
+        )}
+      </div>
+
+      {/* ── Backup cards ── */}
+      {displayItems.map(rec => {
+        const hddNames = rec.hddIds.length > 0
+          ? rec.hddIds.map(id => getHddName(id))
+          : ['Sem HD cadastrado'];
+
+        return (
+          <div
+            key={rec.id}
+            className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-4"
+          >
+            {/* Title + date row */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Folder className="w-4 h-4 text-violet-500 flex-shrink-0" />
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug truncate">
+                    {rec.title}
+                  </h4>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span>{fmtDate(rec.recordedAt)}</span>
+                </div>
+              </div>
+              {rec.hasPendingTakes && (
+                <span className="flex-shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50">
+                  ⚠️ Pendente
+                </span>
+              )}
+            </div>
+
+            {/* Summary */}
+            {rec.summary && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                {rec.summary}
+              </p>
+            )}
+
+            {/* HD storage */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Armazenado em</p>
+              <div className="flex flex-wrap gap-1.5">
+                {hddNames.map((name, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 dark:bg-zinc-950 text-zinc-100 text-[11px] font-bold border border-zinc-700 dark:border-zinc-700/60"
+                  >
+                    <HardDrive className="w-3 h-3 text-violet-400" />
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Cameras + devices */}
+            {(rec.mediaDevices?.length || rec.cameraModels) ? (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Equipamentos</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {rec.mediaDevices?.map(d => (
+                    <span
+                      key={d}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                    >
+                      <Camera className="w-2.5 h-2.5" />
+                      {ACERVO_DEVICE_LABELS[d] ?? d}
+                    </span>
+                  ))}
+                  {rec.cameraModels && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                      {rec.cameraModels}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Technical notes */}
+            {rec.technicalNotes && (
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 italic border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                📝 {rec.technicalNotes}
+              </p>
+            )}
+          </div>
+        );
+      })}
+
+      {/* ── Empty state ── */}
+      {displayItems.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
+          <HardDrive className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+          <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+            Nenhum backup registrado para este cliente ainda.
+          </p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 max-w-xs mx-auto mb-5">
+            Faça um ingest no Hub de Arquivos e vincule este cliente no campo &quot;Cliente Relacionado&quot;.
+          </p>
+          {onNavigateToArquivos && (
+            <button
+              onClick={onNavigateToArquivos}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold hover:bg-violet-600 transition-colors shadow-sm shadow-violet-500/30"
+            >
+              <Plus className="w-4 h-4" />
+              Fazer Novo Backup
+            </button>
+          )}
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Entregas Tab — types & constants
+// ─────────────────────────────────────────────
+type DeliverableStatus = 'aguardando' | 'aprovado' | 'alteracao';
+type DeliverableType   = 'video' | 'roteiro';
+type DeliverableExpiry = 7 | 15 | 30;
+
+interface Deliverable {
+  id: string;
+  title: string;
+  type: DeliverableType;
+  status: DeliverableStatus;
+  shareLink: string;
+  expiresInDays: DeliverableExpiry;
+  sentAt: number;
+  rating?: number;
+  feedback?: string;
+}
+
+const DELIVERABLE_STATUS_CONFIG: Record<DeliverableStatus, { label: string; emoji: string; badge: string }> = {
+  'aguardando': {
+    label: 'Aguardando Aprovação',
+    emoji: '⏳',
+    badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50',
+  },
+  'aprovado': {
+    label: 'Aprovado',
+    emoji: '✅',
+    badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+  },
+  'alteracao': {
+    label: 'Pedido de Alteração',
+    emoji: '🔄',
+    badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50',
+  },
+};
+
+// ─────────────────────────────────────────────
+// Sala de Roteiros — types & constants
+// ─────────────────────────────────────────────
+type ScriptStatus = 'Rascunho' | 'Aprovado' | 'Gravado';
+
+interface ScriptScene {
+  id: string;
+  visual: string;
+  audio: string;
+  isChecked: boolean;
+}
+
+interface ScriptDocument {
+  id: string;
+  title: string;
+  status: ScriptStatus;
+  referenceLink: string;
+  gancho: string;
+  scenes: ScriptScene[];
+  createdAt: number;
+}
+
+interface ScriptPackage {
+  id: string;
+  title: string;
+  scripts: ScriptDocument[];
+  createdAt: number;
+}
+
+const SCRIPT_STATUS_CYCLE: ScriptStatus[] = ['Rascunho', 'Aprovado', 'Gravado'];
+
+const SCRIPT_STATUS_STYLES: Record<ScriptStatus, string> = {
+  'Rascunho': 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
+  'Aprovado': 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/50',
+  'Gravado':  'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+};
+
+const buildDefaultScriptPackages = (): ScriptPackage[] => [
+  {
+    id: crypto.randomUUID(),
+    title: 'Mês Atual',
+    scripts: [],
+    createdAt: Date.now(),
+  },
+];
+
+// ─────────────────────────────────────────────
+// ClientRoteirosTab sub-component
+// ─────────────────────────────────────────────
+const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
+  const [packages, setPackages] = useState<ScriptPackage[]>(() => {
+    try {
+      const stored = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
+      return stored ? JSON.parse(stored) : buildDefaultScriptPackages();
+    } catch {
+      return buildDefaultScriptPackages();
+    }
+  });
+  const [selectedPkgId, setSelectedPkgId] = useState<string>(packages[0]?.id ?? '');
+  const [viewMode, setViewMode]           = useState<'edicao' | 'shotlist'>('edicao');
+  const [expandedId, setExpandedId]       = useState<string | null>(null);
+  const [newPkgTitle, setNewPkgTitle]     = useState('');
+  const [isAddingPkg, setIsAddingPkg]     = useState(false);
+
+  // Persist
+  useEffect(() => {
+    localStorage.setItem(`creator_flow_roteiros_${client.id}`, JSON.stringify(packages));
+  }, [packages, client.id]);
+
+  const selectedPkg = packages.find(p => p.id === selectedPkgId) ?? null;
+
+  // ── Package CRUD ──────────────────────────────────────────────
+  const addPackage = () => {
+    if (!newPkgTitle.trim()) return;
+    const pkg: ScriptPackage = {
+      id: crypto.randomUUID(), title: newPkgTitle.trim(), scripts: [], createdAt: Date.now(),
+    };
+    setPackages(prev => [pkg, ...prev]);
+    setSelectedPkgId(pkg.id);
+    setNewPkgTitle('');
+    setIsAddingPkg(false);
+  };
+
+  const deletePackage = (pkgId: string) => {
+    setPackages(prev => {
+      const remaining = prev.filter(p => p.id !== pkgId);
+      if (selectedPkgId === pkgId) setSelectedPkgId(remaining[0]?.id ?? '');
+      return remaining;
+    });
+  };
+
+  // ── Script CRUD ───────────────────────────────────────────────
+  const addScript = (pkgId: string) => {
+    const s: ScriptDocument = {
+      id: crypto.randomUUID(), title: 'Novo Roteiro', status: 'Rascunho',
+      referenceLink: '', gancho: '',
+      scenes: [{ id: crypto.randomUUID(), visual: '', audio: '', isChecked: false }],
+      createdAt: Date.now(),
+    };
+    setPackages(prev => prev.map(p => p.id === pkgId ? { ...p, scripts: [s, ...p.scripts] } : p));
+    setExpandedId(s.id);
+  };
+
+  const updateScript = (pkgId: string, updated: ScriptDocument) =>
+    setPackages(prev => prev.map(p =>
+      p.id === pkgId ? { ...p, scripts: p.scripts.map(s => s.id === updated.id ? updated : s) } : p,
+    ));
+
+  const deleteScript = (pkgId: string, scriptId: string) => {
+    setPackages(prev => prev.map(p =>
+      p.id === pkgId ? { ...p, scripts: p.scripts.filter(s => s.id !== scriptId) } : p,
+    ));
+    if (expandedId === scriptId) setExpandedId(null);
+  };
+
+  const cycleStatus = (pkgId: string, script: ScriptDocument) => {
+    const next = SCRIPT_STATUS_CYCLE[(SCRIPT_STATUS_CYCLE.indexOf(script.status) + 1) % SCRIPT_STATUS_CYCLE.length];
+    updateScript(pkgId, { ...script, status: next });
+  };
+
+  // ── Scene CRUD ────────────────────────────────────────────────
+  const addScene = (pkgId: string, script: ScriptDocument) =>
+    updateScript(pkgId, {
+      ...script, scenes: [...script.scenes, { id: crypto.randomUUID(), visual: '', audio: '', isChecked: false }],
+    });
+
+  const updateScene = (pkgId: string, script: ScriptDocument, sceneId: string, field: 'visual' | 'audio', value: string) =>
+    updateScript(pkgId, {
+      ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, [field]: value } : sc),
+    });
+
+  const deleteScene = (pkgId: string, script: ScriptDocument, sceneId: string) =>
+    updateScript(pkgId, { ...script, scenes: script.scenes.filter(sc => sc.id !== sceneId) });
+
+  const toggleSceneCheck = (pkgId: string, script: ScriptDocument, sceneId: string) =>
+    updateScript(pkgId, {
+      ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, isChecked: !sc.isChecked } : sc),
+    });
+
+  // ─────────────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col lg:flex-row gap-5">
+
+      {/* ── Sidebar: Packages ── */}
+      <aside className="w-full lg:w-56 xl:w-64 flex-shrink-0">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 lg:sticky lg:top-4">
+          <div className="flex items-center justify-between px-2 py-2 mb-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pacotes</span>
+            <button
+              onClick={() => setIsAddingPkg(true)}
+              className="p-1 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 text-violet-500 transition-colors"
+              title="Novo Pacote"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {isAddingPkg && (
+            <div className="flex gap-1.5 px-1 pb-2">
+              <input
+                autoFocus
+                type="text"
+                value={newPkgTitle}
+                onChange={e => setNewPkgTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addPackage();
+                  if (e.key === 'Escape') { setIsAddingPkg(false); setNewPkgTitle(''); }
+                }}
+                placeholder="Ex: Março 2026"
+                className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
+              />
+              <button onClick={addPackage} className="p-1.5 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors">
+                <Check className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
+          {packages.length === 0 && (
+            <p className="text-xs text-zinc-400 text-center py-4 px-2">Nenhum pacote.<br />Clique em + para criar.</p>
+          )}
+
+          <div className="space-y-0.5">
+            {packages.map(pkg => (
+              <div key={pkg.id} className="group flex items-center gap-1">
+                <button
+                  onClick={() => setSelectedPkgId(pkg.id)}
+                  className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left min-w-0 ${
+                    selectedPkgId === pkg.id
+                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Folder className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate flex-1">{pkg.title}</span>
+                  <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.length}</span>
+                </button>
+                <button
+                  onClick={() => { if (confirm(`Excluir pacote "${pkg.title}"?`)) deletePackage(pkg.id); }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main: Script list ── */}
+      <div className="flex-1 min-w-0 space-y-4">
+        {!selectedPkg ? (
+          <div className="flex items-center justify-center h-40 text-zinc-400 text-sm">
+            Selecione ou crie um pacote para começar.
+          </div>
+        ) : (
+          <>
+            {/* Top bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-black text-lg text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Folder className="w-5 h-5 text-violet-500 flex-shrink-0" />
+                  {selectedPkg.title}
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5 pl-7">
+                  {selectedPkg.scripts.length} roteiro{selectedPkg.scripts.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* Dual-mode toggle */}
+              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1 gap-1 self-start sm:self-auto">
+                <button
+                  onClick={() => setViewMode('edicao')}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                    viewMode === 'edicao'
+                      ? 'bg-white dark:bg-zinc-700 text-violet-700 dark:text-violet-300 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <PenLine className="w-3.5 h-3.5" />
+                  ✍️ Modo Edição
+                </button>
+                <button
+                  onClick={() => setViewMode('shotlist')}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                    viewMode === 'shotlist'
+                      ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-300 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <Film className="w-3.5 h-3.5" />
+                  🎥 Modo Shotlist
+                </button>
+              </div>
+            </div>
+
+            {/* New script button */}
+            <button
+              onClick={() => addScript(selectedPkg.id)}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all hover:scale-[1.005] active:scale-100"
+            >
+              <Plus className="w-4 h-4" /> + Criar Roteiro do Zero
+            </button>
+
+            {/* Empty state */}
+            {selectedPkg.scripts.length === 0 && (
+              <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
+                <FileText className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum roteiro neste pacote.</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Clique em "+ Criar Roteiro" para começar.</p>
+              </div>
+            )}
+
+            {/* Script Accordions */}
+            {selectedPkg.scripts.map((script, idx) => {
+              const isOpen       = expandedId === script.id;
+              const checkedCount = script.scenes.filter(sc => sc.isChecked).length;
+              return (
+                <div
+                  key={script.id}
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-violet-200 dark:hover:border-violet-800/50"
+                >
+                  {/* ── Accordion Header ── */}
+                  <div
+                    className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    onClick={() => setExpandedId(isOpen ? null : script.id)}
+                  >
+                    <ChevronDown className={`w-4 h-4 text-zinc-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+
+                    {/* Script number badge */}
+                    <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center text-[10px] font-black flex-shrink-0">
+                      {idx + 1}
+                    </div>
+
+                    {/* Inline title edit */}
+                    <input
+                      type="text"
+                      value={script.title}
+                      onChange={e => { e.stopPropagation(); updateScript(selectedPkg.id, { ...script, title: e.target.value }); }}
+                      onClick={e => e.stopPropagation()}
+                      className="flex-1 min-w-0 bg-transparent font-bold text-sm text-zinc-900 dark:text-white focus:outline-none placeholder:text-zinc-400 cursor-text"
+                      placeholder="Título do roteiro…"
+                    />
+
+                    {/* Shotlist progress counter */}
+                    {viewMode === 'shotlist' && script.scenes.length > 0 && (
+                      <span className="text-[10px] font-bold text-zinc-400 flex-shrink-0 tabular-nums">
+                        {checkedCount}/{script.scenes.length}
+                      </span>
+                    )}
+
+                    {/* Status badge — cycles on click */}
+                    <button
+                      onClick={e => { e.stopPropagation(); cycleStatus(selectedPkg.id, script); }}
+                      className={`flex-shrink-0 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all hover:opacity-80 ${SCRIPT_STATUS_STYLES[script.status]}`}
+                    >
+                      {script.status}
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      onClick={e => { e.stopPropagation(); if (confirm(`Excluir "${script.title}"?`)) deleteScript(selectedPkg.id, script.id); }}
+                      className="flex-shrink-0 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded-lg"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* ── Accordion Body ── */}
+                  {isOpen && (
+                    <div className="border-t border-zinc-100 dark:border-zinc-800 px-5 py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                      {viewMode === 'edicao' ? (
+                        /* ─── EDIT MODE ─── */
+                        <>
+                          {/* Reference link */}
+                          <div>
+                            <label className={MODAL_LABEL_CLS}>🔗 Link de Referência</label>
+                            <input
+                              type="text"
+                              value={script.referenceLink}
+                              onChange={e => updateScript(selectedPkg.id, { ...script, referenceLink: e.target.value })}
+                              placeholder="https://notion.so/… ou docs.google.com/…"
+                              className={MODAL_INPUT_CLS}
+                            />
+                          </div>
+
+                          {/* Hook */}
+                          <div>
+                            <label className={MODAL_LABEL_CLS}>🎣 Hook / Gancho</label>
+                            <textarea
+                              value={script.gancho}
+                              onChange={e => updateScript(selectedPkg.id, { ...script, gancho: e.target.value })}
+                              placeholder="A frase de abertura que prende a atenção em 3 segundos…"
+                              rows={3}
+                              className={`${MODAL_INPUT_CLS} resize-none`}
+                            />
+                          </div>
+
+                          {/* Scenes */}
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <label className={MODAL_LABEL_CLS}>🎬 Cenas</label>
+                              <button
+                                onClick={() => addScene(selectedPkg.id, script)}
+                                className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                              >
+                                <Plus className="w-3 h-3" /> Cena
+                              </button>
+                            </div>
+
+                            <div className="space-y-3">
+                              {script.scenes.map((scene, sIdx) => (
+                                <div
+                                  key={scene.id}
+                                  className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
+                                    {script.scenes.length > 1 && (
+                                      <button
+                                        onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
+                                        className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-zinc-400 mb-1 block">📷 Visual / Ação</label>
+                                    <textarea
+                                      value={scene.visual}
+                                      onChange={e => updateScene(selectedPkg.id, script, scene.id, 'visual', e.target.value)}
+                                      placeholder="Descreva o que a câmera vê nessa cena…"
+                                      rows={2}
+                                      className={`${MODAL_INPUT_CLS} resize-none text-xs`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-zinc-400 mb-1 block">🎙️ Áudio / Fala</label>
+                                    <textarea
+                                      value={scene.audio}
+                                      onChange={e => updateScene(selectedPkg.id, script, scene.id, 'audio', e.target.value)}
+                                      placeholder="O que o apresentador fala nessa cena…"
+                                      rows={2}
+                                      className={`${MODAL_INPUT_CLS} resize-none text-xs`}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        /* ─── SHOTLIST MODE ─── */
+                        <>
+                          {script.gancho && (
+                            <div className="flex gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl">
+                              <span className="text-sm flex-shrink-0">🎣</span>
+                              <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300 italic leading-relaxed">
+                                &ldquo;{script.gancho}&rdquo;
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            {script.scenes.map((scene, sIdx) => (
+                              <button
+                                key={scene.id}
+                                onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
+                                className={`w-full flex items-start gap-4 px-4 py-4 rounded-xl border-2 text-left transition-all ${
+                                  scene.isChecked
+                                    ? 'border-emerald-300 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/10 opacity-60'
+                                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700'
+                                }`}
+                              >
+                                <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
+                                  scene.isChecked
+                                    ? 'bg-emerald-500 border-emerald-500'
+                                    : 'border-zinc-300 dark:border-zinc-600'
+                                }`}>
+                                  {scene.isChecked && <Check className="w-3 h-3 text-white" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${scene.isChecked ? 'text-emerald-500' : 'text-indigo-400'}`}>
+                                    CENA {sIdx + 1}
+                                  </p>
+                                  <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                                    {scene.visual || '(sem descrição visual)'}
+                                  </p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Progress bar */}
+                          {script.scenes.length > 0 && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-bold text-zinc-400">Progresso no Set</span>
+                                <span className="text-[10px] font-black text-zinc-500 tabular-nums">{checkedCount}/{script.scenes.length} cenas</span>
+                              </div>
+                              <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
+                                  style={{ width: `${(checkedCount / script.scenes.length) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// HowToUseModal
+// ─────────────────────────────────────────────
+const HOW_TO_USE_STEPS = [
+  { title: 'Defina os Temas',     desc: 'Na Etapa 1, insira temas manuais ou peça sugestões à IA baseadas no nicho do cliente.' },
+  { title: 'Escolha os Formatos', desc: 'Na Etapa 2, selecione os formatos (Reels, Carrossel…) e os ângulos editoriais que mais se encaixam na estratégia.' },
+  { title: 'Gere as Ideias',      desc: 'Clique em "Gerar Ideias Infinitas". A IA cruzará o briefing do cliente com suas escolhas para criar conteúdo estratégico.' },
+  { title: 'Crie o Roteiro',      desc: 'Em cada card de ideia, clique em "✨ Criar Roteiro" para gerar um script completo com visual, áudio, legenda e hashtags.' },
+  { title: 'Integre ao Workflow', desc: 'No rodapé do roteiro, use "Enviar para Workflow" ou "Agendar Gravação" para conectar direto ao Kanban e à Agenda do cliente.' },
+];
+
+const HowToUseModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-black text-zinc-900 dark:text-white">Como Usar — Ideias Infinitas</h2>
+            <p className="text-xs text-zinc-400">5 passos para gerar conteúdo de alto impacto</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Steps */}
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        {HOW_TO_USE_STEPS.map((step, i) => (
+          <div key={i} className="flex gap-4">
+            <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-sm font-black flex-shrink-0 mt-0.5">
+              {i + 1}
+            </div>
+            <div>
+              <p className="font-bold text-sm text-zinc-900 dark:text-white">{step.title}</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed">{step.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Expert tip + close */}
+      <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl px-4 py-3">
+          <p className="text-xs font-black text-amber-700 dark:text-amber-400 mb-1">💡 Dica de Especialista</p>
+          <p className="text-xs text-amber-700/80 dark:text-amber-400/80 leading-relaxed">
+            Gere ideias em lotes temáticos — 4 a 6 ideias sobre o mesmo tema criam uma série com alta retenção de audiência.
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 bg-violet-600 text-white rounded-xl font-bold text-sm hover:bg-violet-700 transition-colors"
+        >
+          Entendido, vamos gerar!
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────
+// ScriptModal
+// ─────────────────────────────────────────────
+interface ScriptModalProps {
+  idea: IdeaCard;
+  onClose: () => void;
+  onSendToWorkflow: (title: string) => void;
+  onScheduleRecording: (title: string) => void;
+  onSaveToRoteiros: (idea: IdeaCard) => void;
+}
+
+const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkflow, onScheduleRecording, onSaveToRoteiros }) => {
+  const [currentIdea, setCurrentIdea]               = useState<IdeaCard>(idea);
+  const [copiedAll, setCopiedAll]                   = useState(false);
+  const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
+  const [workflowToast, setWorkflowToast]           = useState(false);
+  const [roteirosSaveToast, setRoteirosSaveToast]   = useState(false);
+
+  const copyAll = () => {
+    const slidesText = currentIdea.script.slides
+      .map((s, i) => `${i + 1}. [Visual: ${s.visual}]\n   Áudio: "${s.audio}"`)
+      .join('\n\n');
+    const full = `📌 ${currentIdea.title}\n\n🎣 Hook:\n"${currentIdea.gancho}"\n\n📋 Roteiro:\n${slidesText}\n\n📣 CTA:\n${currentIdea.cta}\n\n💬 Legenda:\n${currentIdea.script.caption}\n\n#️⃣ Hashtags:\n${currentIdea.script.hashtags}`;
+    navigator.clipboard.writeText(full);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2500);
+  };
+
+  const handleSendToWorkflow = () => {
+    onSendToWorkflow(currentIdea.title);
+    setWorkflowToast(true);
+    setTimeout(() => setWorkflowToast(false), 3000);
+  };
+
+  const handleSaveToRoteiros = () => {
+    onSaveToRoteiros(currentIdea);
+    setRoteirosSaveToast(true);
+    setTimeout(() => setRoteirosSaveToast(false), 3000);
+  };
+
+  const handleGenerateVariation = async () => {
+    if (isGeneratingVariation) return;
+    setIsGeneratingVariation(true);
+    try {
+      const slidesText = currentIdea.script.slides
+        .map((s, i) => `${i + 1}. Visual: ${s.visual} | Áudio: "${s.audio}"`)
+        .join('\n');
+      const prompt = `Reescreva este roteiro de vídeo mantendo o tema "${currentIdea.title}", mas altere o Gancho (Hook) para ser mais agressivo e chamativo, e mude a estrutura das cenas para uma abordagem diferente. Retorne APENAS JSON válido, sem markdown, sem blocos de código, no formato exato: {"gancho":"...","cta":"...","slides":[{"visual":"...","audio":"..."}],"caption":"...","hashtags":"..."}\n\nRoteiro atual:\nGancho: "${currentIdea.gancho}"\nCenas:\n${slidesText}\nCTA: ${currentIdea.cta}`;
+      const result = await sendMessageToAgent(
+        AgentId.SCRIPT_GENERATOR,
+        prompt,
+        null,
+        [],
+        'Você é um roteirista especialista em conteúdo viral para redes sociais. Quando solicitado, retorne APENAS JSON válido, sem markdown, sem blocos de código, sem explicações.',
+      );
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        setCurrentIdea(prev => ({
+          ...prev,
+          gancho: parsed.gancho || prev.gancho,
+          cta:    parsed.cta    || prev.cta,
+          script: {
+            slides:   Array.isArray(parsed.slides) && parsed.slides.length > 0 ? parsed.slides : prev.script.slides,
+            caption:  parsed.caption  || prev.script.caption,
+            hashtags: parsed.hashtags || prev.script.hashtags,
+          },
+        }));
+      }
+    } catch {
+      /* silently ignore — user keeps current script */
+    } finally {
+      setIsGeneratingVariation(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex-1 min-w-0 pr-4">
+            <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">Roteiro Completo</span>
+            <h2 className="text-base font-black text-zinc-900 dark:text-white leading-snug mt-1">{currentIdea.title}</h2>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {currentIdea.tags.map(tag => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+          {/* Loading overlay for variation */}
+          {isGeneratingVariation && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 animate-in fade-in duration-200">
+              <Loader2 className="w-4 h-4 text-violet-500 animate-spin flex-shrink-0" />
+              <p className="text-xs font-bold text-violet-700 dark:text-violet-300">Gerando variação com IA… aguarde um instante.</p>
+            </div>
+          )}
+
+          {/* Workflow toast */}
+          {workflowToast && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 animate-in fade-in duration-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✅ Card criado no Workflow de Produção!</p>
+            </div>
+          )}
+
+          {/* Roteiros save toast */}
+          {roteirosSaveToast && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 animate-in fade-in duration-200">
+              <CheckCircle2 className="w-4 h-4 text-violet-500 flex-shrink-0" />
+              <p className="text-xs font-bold text-violet-700 dark:text-violet-300">✅ Roteiro salvo na Sala de Roteiros!</p>
+            </div>
+          )}
+
+          {/* Hook */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">🎣 Hook (Gancho)</p>
+            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed">&ldquo;{currentIdea.gancho}&rdquo;</p>
+            </div>
+          </div>
+
+          {/* Slides */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">🎬 Desenvolvimento — Cenas</p>
+            <div className="space-y-3">
+              {currentIdea.script.slides.map((slide, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl px-3 py-2.5 space-y-1.5">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-[10px] font-black text-violet-500 mt-0.5 flex-shrink-0">📷 Visual:</span>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{slide.visual}</p>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0">🎙 Áudio:</span>
+                      <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed">&ldquo;{slide.audio}&rdquo;</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">📣 CTA</p>
+            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
+              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{currentIdea.cta}</p>
+            </div>
+          </div>
+
+          {/* Caption + Hashtags */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">💬 Legenda & Hashtags</p>
+            <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 rounded-2xl px-4 py-4 space-y-3">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">{currentIdea.script.caption}</p>
+              <div className="h-px bg-violet-200 dark:bg-violet-800/50" />
+              <p className="text-xs font-bold text-violet-600 dark:text-violet-400 leading-relaxed">{currentIdea.script.hashtags}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+          <div className="flex gap-2">
+            <button
+              onClick={handleGenerateVariation}
+              disabled={isGeneratingVariation}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingVariation
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando…</>
+                : <><Sparkles className="w-3.5 h-3.5" /> 🔄 Gerar Variação</>
+              }
+            </button>
+            <button
+              onClick={copyAll}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 transition-all"
+            >
+              {copiedAll ? (
+                <span className="text-emerald-600 dark:text-emerald-400">✓ Copiado!</span>
+              ) : (
+                <><Copy className="w-3.5 h-3.5" /> 📋 Copiar Tudo</>
+              )}
+            </button>
+          </div>
+
+          <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">⚡ Ações do Creator Flow</p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={handleSendToWorkflow}
+                disabled={workflowToast}
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-500/20 hover:opacity-90 transition-all disabled:opacity-60"
+              >
+                <Plus className="w-3.5 h-3.5" /> Workflow
+              </button>
+              <button
+                onClick={() => onScheduleRecording(currentIdea.title)}
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-sky-600 to-cyan-600 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/20 hover:opacity-90 transition-all"
+              >
+                <Calendar className="w-3.5 h-3.5" /> Agendar
+              </button>
+              <button
+                onClick={handleSaveToRoteiros}
+                disabled={roteirosSaveToast}
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 hover:opacity-90 transition-all disabled:opacity-60"
+              >
+                <FileText className="w-3.5 h-3.5" /> Sala de Roteiros
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// ClientEntregasTab sub-component
+// ─────────────────────────────────────────────
+const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
+  const STORAGE_KEY = `creator_flow_entregas_${client.id}`;
+
+  const [deliverables, setDeliverables] = useState<Deliverable[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [formTitle, setFormTitle]       = useState('');
+  const [formType, setFormType]         = useState<DeliverableType>('video');
+  const [formExpiry, setFormExpiry]     = useState<DeliverableExpiry>(7);
+  const [formLink, setFormLink]         = useState('');
+  const [isDragging, setIsDragging]     = useState(false);
+  const [linkCopiedId, setLinkCopiedId] = useState<string | null>(null);
+  const [genLinkToast, setGenLinkToast] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deliverables));
+  }, [deliverables, STORAGE_KEY]);
+
+  const handleGenerateLink = () => {
+    if (!formTitle.trim()) return;
+    const resolvedLink = formLink.trim() || `https://app.creatorflow.com.br/review/${Math.random().toString(36).substring(2, 8)}`;
+    const newDeliverable: Deliverable = {
+      id: crypto.randomUUID(),
+      title: formTitle.trim(),
+      type: formType,
+      status: 'aguardando',
+      shareLink: resolvedLink,
+      expiresInDays: formExpiry,
+      sentAt: Date.now(),
+    };
+    setDeliverables(prev => [newDeliverable, ...prev]);
+    navigator.clipboard.writeText(resolvedLink).catch(() => {});
+    setFormTitle('');
+    setFormLink('');
+    setGenLinkToast(true);
+    setTimeout(() => setGenLinkToast(false), 3000);
+  };
+
+  const handleCopyLink = (d: Deliverable) => {
+    navigator.clipboard.writeText(d.shareLink).catch(() => {});
+    setLinkCopiedId(d.id);
+    setTimeout(() => setLinkCopiedId(null), 2000);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Remover esta entrega?')) setDeliverables(prev => prev.filter(d => d.id !== id));
+  };
+
+  const sentAgoLabel = (sentAt: number): string => {
+    const mins = Math.floor((Date.now() - sentAt) / 60000);
+    if (mins < 60)  return `há ${mins}min`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)   return `há ${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    return `há ${days} dia${days !== 1 ? 's' : ''}`;
+  };
+
+  return (
+    <div className="space-y-8">
+
+      {/* ══ NOVA ENTREGA ══ */}
+      <section>
+        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Nova Entrega</h2>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+
+          {/* Drag-and-drop area */}
+          <div
+            onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={e => { e.preventDefault(); setIsDragging(false); }}
+            className={`flex flex-col items-center justify-center gap-3 px-6 py-10 border-b border-dashed transition-all ${
+              isDragging
+                ? 'border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/10'
+                : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30'
+            }`}
+          >
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+              isDragging
+                ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-500'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
+            }`}>
+              <UploadCloud className="w-6 h-6" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Arraste o vídeo finalizado</p>
+              <p className="text-xs text-zinc-400 mt-0.5">ou cole o link (Drive / Vimeo) abaixo</p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="p-6 space-y-5">
+            <div>
+              <label className={MODAL_LABEL_CLS}>Título da Entrega *</label>
+              <input
+                type="text"
+                value={formTitle}
+                onChange={e => setFormTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleGenerateLink(); }}
+                placeholder="Ex: Reels 01 — Bastidores da Confeitaria"
+                className={MODAL_INPUT_CLS}
+              />
+            </div>
+
+            <div>
+              <label className={MODAL_LABEL_CLS}>Link do Material (Drive / Vimeo)</label>
+              <div className="relative">
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <input
+                  type="url"
+                  value={formLink}
+                  onChange={e => setFormLink(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  className={`${MODAL_INPUT_CLS} pl-9`}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={MODAL_LABEL_CLS}>Tipo</label>
+                <div className="flex gap-2">
+                  {(['video', 'roteiro'] as DeliverableType[]).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setFormType(t)}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all ${
+                        formType === t
+                          ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/25'
+                          : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300'
+                      }`}
+                    >
+                      {t === 'video' ? '🎥 Vídeo' : '📄 Roteiro'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className={MODAL_LABEL_CLS}>Prazo do Link</label>
+                <div className="flex gap-1.5">
+                  {([7, 15, 30] as DeliverableExpiry[]).map(days => (
+                    <button
+                      key={days}
+                      onClick={() => setFormExpiry(days)}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all ${
+                        formExpiry === days
+                          ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/25'
+                          : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300'
+                      }`}
+                    >
+                      {days}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {genLinkToast && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 animate-in fade-in duration-200">
+                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✅ Link de aprovação gerado e copiado!</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleGenerateLink}
+              disabled={!formTitle.trim()}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-black text-sm shadow-lg shadow-violet-500/25 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <LinkIcon className="w-4 h-4" />
+              Gerar Link Seguro
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ LISTA DE ENTREGAS ══ */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Materiais Enviados</h2>
+          {deliverables.length > 0 && (
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+              {deliverables.length}
+            </span>
+          )}
+        </div>
+
+        {deliverables.length === 0 && (
+          <div className="py-16 text-center rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800">
+            <div className="text-4xl mb-3">📤</div>
+            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum material enviado ainda</p>
+            <p className="text-xs text-zinc-400 mt-1">Gere o primeiro link seguro acima.</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {deliverables.map(d => {
+            const cfg     = DELIVERABLE_STATUS_CONFIG[d.status];
+            const isVideo = d.type === 'video';
+            return (
+              <div
+                key={d.id}
+                className={`group relative flex flex-col gap-4 p-5 bg-white dark:bg-zinc-900 border rounded-2xl transition-all hover:shadow-md ${
+                  d.status === 'alteracao'
+                    ? 'border-orange-300/60 dark:border-orange-600/30'
+                    : d.status === 'aprovado'
+                    ? 'border-emerald-300/60 dark:border-emerald-600/30'
+                    : 'border-zinc-200 dark:border-zinc-800'
+                }`}
+              >
+                {/* Delete btn */}
+                <button
+                  onClick={() => handleDelete(d.id)}
+                  className="absolute top-3 right-3 p-1.5 text-zinc-300 dark:text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  aria-label="Remover entrega"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Header */}
+                <div className="flex items-start gap-4">
+                  <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                    isVideo
+                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400'
+                      : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                  }`}>
+                    {isVideo ? <Film className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-sm text-zinc-900 dark:text-white leading-tight pr-6 line-clamp-2">
+                      {d.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" /> Enviado {sentAgoLabel(d.sentAt)}
+                      </span>
+                      <span className="text-[10px] text-zinc-300 dark:text-zinc-600">·</span>
+                      <span className="text-[10px] text-zinc-400">Expira em {d.expiresInDays} dias</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status badge */}
+                <span className={`self-start inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-lg border ${cfg.badge}`}>
+                  {cfg.emoji} {cfg.label}
+                </span>
+
+                {/* Star rating — aprovado only */}
+                {d.status === 'aprovado' && d.rating && (
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < d.rating!
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'fill-zinc-100 dark:fill-zinc-800 text-zinc-300 dark:text-zinc-600'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs font-black text-zinc-500 dark:text-zinc-400 ml-1.5">{d.rating}/5</span>
+                  </div>
+                )}
+
+                {/* Client feedback — alteracao only */}
+                {d.status === 'alteracao' && d.feedback && (
+                  <div className="px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1.5">Feedback do Cliente</p>
+                    <p className="text-xs text-zinc-700 dark:text-zinc-300 italic leading-relaxed">
+                      &ldquo;{d.feedback}&rdquo;
+                    </p>
+                  </div>
+                )}
+
+                {/* Copy link */}
+                <button
+                  onClick={() => handleCopyLink(d)}
+                  className={`mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                    linkCopiedId === d.id
+                      ? 'border-emerald-400 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10'
+                      : 'border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400'
+                  }`}
+                >
+                  {linkCopiedId === d.id
+                    ? <><CheckCircle className="w-3.5 h-3.5" /> Link Copiado!</>
+                    : <><LinkIcon className="w-3.5 h-3.5" /> 🔗 Copiar Link</>
+                  }
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// ClientVisaoGeralTab sub-component
+// ─────────────────────────────────────────────
+const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
+  const todayStr = getTodayStr();
+
+  const [data] = useState(() => {
+    let pendingTasks    = 0;
+    let approvedScripts = 0;
+    let upcomingEvents  = 0;
+    let totalBackups    = 0;
+    let recentScripts:  { title: string; status: ScriptStatus }[] = [];
+    let agendaItems:    AgendaEvent[]  = [];
+    let urgentCards:    KanbanCard[]   = [];
+
+    // ── Kanban: pendentes ────────────────────────
+    try {
+      const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
+      if (s) {
+        const cols: KanbanColumn[] = JSON.parse(s);
+        const active = cols.filter(c => c.id !== 'finalizado').flatMap(c => c.cards);
+        pendingTasks = active.length;
+        urgentCards  = active.filter(c => c.priority === 'Urgente' || c.priority === 'Alta').slice(0, 2);
+      }
+    } catch {}
+
+    // ── Roteiros: aprovados ──────────────────────
+    try {
+      const s = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
+      if (s) {
+        const pkgs: ScriptPackage[] = JSON.parse(s);
+        const all = pkgs.flatMap(p => p.scripts);
+        approvedScripts = all.filter(sc => sc.status === 'Aprovado').length;
+        recentScripts   = all
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .slice(0, 3)
+          .map(sc => ({ title: sc.title, status: sc.status }));
+      }
+    } catch {}
+
+    // ── Agenda: próximos ────────────────────────
+    try {
+      const s = localStorage.getItem(`creator_flow_agenda_${client.id}`);
+      if (s) {
+        const events: AgendaEvent[] = JSON.parse(s);
+        const future = events.filter(e => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+        upcomingEvents = future.length;
+        agendaItems    = future.slice(0, 2);
+      }
+    } catch {}
+
+    // ── Acervo: backups ─────────────────────────
+    try {
+      const s = localStorage.getItem('creator_flow_recordings');
+      if (s) {
+        const recs: Recording[] = JSON.parse(s);
+        totalBackups = recs.filter(r => r.clientId === client.id).length;
+      }
+    } catch {}
+
+    return { pendingTasks, approvedScripts, upcomingEvents, totalBackups, recentScripts, agendaItems, urgentCards };
+  });
+
+  const statCards = [
+    { label: 'Tarefas Pendentes',  value: data.pendingTasks,    icon: <CheckSquare className="w-5 h-5" />, numCls: 'text-violet-600 dark:text-violet-400',  bgCls: 'bg-violet-500/10  dark:bg-violet-900/20  text-violet-500'  },
+    { label: 'Roteiros Aprovados', value: data.approvedScripts, icon: <PenTool     className="w-5 h-5" />, numCls: 'text-emerald-600 dark:text-emerald-400', bgCls: 'bg-emerald-500/10 dark:bg-emerald-900/20 text-emerald-500' },
+    { label: 'Gravações Próximas', value: data.upcomingEvents,  icon: <Calendar    className="w-5 h-5" />, numCls: 'text-sky-600     dark:text-sky-400',     bgCls: 'bg-sky-500/10     dark:bg-sky-900/20     text-sky-500'     },
+    { label: 'Total de Backups',   value: data.totalBackups,    icon: <HardDrive   className="w-5 h-5" />, numCls: 'text-amber-600   dark:text-amber-400',   bgCls: 'bg-amber-500/10   dark:bg-amber-900/20   text-amber-500'   },
+  ];
+
+  const nextSteps = [
+    ...data.agendaItems.map(e => ({ type: 'event' as const, payload: e })),
+    ...data.urgentCards.slice(0, Math.max(0, 2 - data.agendaItems.length)).map(c => ({ type: 'card' as const, payload: c })),
+  ];
+
+  return (
+    <div className="space-y-8">
+
+      {/* ══ STAT CARDS ══ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map(s => (
+          <div key={s.label} className="flex flex-col gap-4 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.bgCls}`}>
+              {s.icon}
+            </div>
+            <div>
+              <p className={`text-3xl font-black ${s.numCls}`}>{s.value}</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 leading-tight">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ══ SPLIT SECTION ══ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* ── Últimos Roteiros ── */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+          <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">📝 Últimos Roteiros</p>
+          {data.recentScripts.length === 0 ? (
+            <div className="py-8 text-center">
+              <LayoutDashboard className="w-8 h-8 text-zinc-200 dark:text-zinc-700 mx-auto mb-2" />
+              <p className="text-sm text-zinc-400">Nenhum roteiro criado ainda</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {data.recentScripts.map((s, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 truncate flex-1">
+                    {s.title || '(sem título)'}
+                  </p>
+                  <span className={`flex-shrink-0 text-[11px] font-black px-2 py-0.5 rounded-lg border ${SCRIPT_STATUS_STYLES[s.status]}`}>
+                    {s.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Próximos Passos ── */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+          <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">⚡ Próximos Passos</p>
+          {nextSteps.length === 0 ? (
+            <div className="py-8 text-center">
+              <CheckSquare className="w-8 h-8 text-zinc-200 dark:text-zinc-700 mx-auto mb-2" />
+              <p className="text-sm text-zinc-400">Nenhum evento ou tarefa urgente</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {nextSteps.map((item, i) => {
+                if (item.type === 'event') {
+                  const e = item.payload as AgendaEvent;
+                  const style = getEventTypeStyle(e.type);
+                  return (
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${style.border} ${style.bg}`}>
+                      <span className="text-base leading-none mt-0.5 flex-shrink-0">{style.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-bold truncate ${style.text}`}>{e.title}</p>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">
+                          {formatDate(e.date)}{e.startTime ? ` · ${e.startTime}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                const card = item.payload as KanbanCard;
+                return (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-900/10">
+                    <span className="text-base leading-none mt-0.5 flex-shrink-0">⚠️</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-orange-700 dark:text-orange-400 truncate">{card.title}</p>
+                      <p className="text-[10px] text-zinc-400 mt-0.5">Prioridade {card.priority}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────
+const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNavigateToArquivos }) => {
+  const [activeTab, setActiveTab] = useState<TabId>('visao_geral');
+
+  // ── Motor de Ideias state ─────────────────
+  const [themeInput, setThemeInput]                 = useState('');
+  const [themes, setThemes]                         = useState<string[]>([]);
+  const [isSuggestingThemes, setIsSuggestingThemes] = useState(false);
+  const [suggestedThemes, setSuggestedThemes]       = useState<string[]>([]);
+  const [suggestedThemeGroups, setSuggestedThemeGroups] = useState<SuggestedThemeGroup[]>([]);
+  const [selectedFormats, setSelectedFormats]       = useState<string[]>([]);
+  const [selectedAngles, setSelectedAngles]         = useState<string[]>([]);
+  const [ideas, setIdeas]                           = useState<IdeaCard[]>([]);
+  const [isGenerating, setIsGenerating]             = useState(false);
+  const [copiedId, setCopiedId]                     = useState<string | null>(null);
+  const [quantidadeIdeias, setQuantidadeIdeias]     = useState(5);
+
+  const addTheme = (value: string) => {
+    const t = value.trim();
+    if (t && !themes.includes(t)) setThemes(prev => [...prev, t]);
+  };
+
+  const handleThemeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTheme(themeInput);
+      setThemeInput('');
+    }
+  };
+
+  const removeTheme = (theme: string) =>
+    setThemes(prev => prev.filter(t => t !== theme));
+
+  const handleSuggestThemes = async () => {
+    if (isSuggestingThemes) return;
+    setIsSuggestingThemes(true);
+    try {
+      const prompt = `Atue como estrategista de conteúdo digital. O cliente é do nicho "${client.niche || 'geral'}", subnicho "${client.subniche || 'geral'}", público-alvo: "${client.idealClient || 'geral'}". Sugira 12 temas de vídeos MUITO ESPECÍFICOS e práticos para este nicho. Divida em 3 categorias. Retorne APENAS JSON válido, sem markdown, sem explicações, no formato exato: {"groups":[{"label":"Alta Demanda","emoji":"🔥","themes":["tema1","tema2","tema3","tema4"]},{"label":"Educacional","emoji":"📚","themes":["tema5","tema6","tema7","tema8"]},{"label":"Autoridade","emoji":"🏆","themes":["tema9","tema10","tema11","tema12"]}]}`;
+      const result = await sendMessageToAgent(
+        AgentId.SCRIPT_GENERATOR,
+        prompt,
+        null,
+        [],
+        'Você é um estrategista de conteúdo digital. Quando solicitado, retorne APENAS JSON válido, sem markdown, sem blocos de código, sem explicações.',
+      );
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.groups && Array.isArray(parsed.groups)) {
+          setSuggestedThemeGroups(parsed.groups as SuggestedThemeGroup[]);
+          setSuggestedThemes((parsed.groups as SuggestedThemeGroup[]).flatMap(g => g.themes));
+          return;
+        }
+      }
+      throw new Error('Resposta da IA não era JSON válido');
+    } catch {
+      // Fallback to static themes on error
+      setSuggestedThemeGroups(SUGGESTED_THEME_GROUPS);
+      setSuggestedThemes(SUGGESTED_THEME_GROUPS.flatMap(g => g.themes));
+    } finally {
+      setIsSuggestingThemes(false);
+    }
+  };
+
+  const toggleSuggestedTheme = (theme: string) => {
+    if (themes.includes(theme)) removeTheme(theme);
+    else addTheme(theme);
+  };
+
+  const toggleFormat = (f: string) =>
+    setSelectedFormats(prev =>
+      prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f],
+    );
+
+  const toggleAngle = (a: string) =>
+    setSelectedAngles(prev =>
+      prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a],
+    );
+
+  const handleGenerate = async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const themesText  = themes.length > 0 ? themes.join(', ') : 'temas gerais do nicho';
+      const formatsText = selectedFormats.length > 0 ? selectedFormats.join(', ') : 'qualquer formato';
+      const anglesText  = selectedAngles.length > 0 ? selectedAngles.join(', ') : 'qualquer ângulo';
+
+      const prompt = `Gere EXATAMENTE ${quantidadeIdeias} ideias de vídeo para o seguinte cliente:
+- Marca: ${client.brandName}
+- Nicho: ${client.niche || 'geral'} / Subnicho: ${client.subniche || 'geral'}
+- Público-alvo: ${client.idealClient || 'geral'}
+- Tom de voz: ${client.voiceTone}
+- Dores do público: ${client.mainPains || 'não especificado'}
+- Desejos do público: ${client.mainDesires || 'não especificado'}
+- CTA padrão: ${client.defaultCta || 'sem CTA definido'}
+- Temas: ${themesText}
+- Formatos: ${formatsText}
+- Ângulos editoriais: ${anglesText}
+
+REGRA OBRIGATÓRIA: Gere EXATAMENTE ${quantidadeIdeias} ideias. O array "ideas" deve conter exatamente ${quantidadeIdeias} objetos. Não gere a menos, nem a mais.
+
+Retorne APENAS JSON válido, sem markdown, no formato exato:
+{"ideas":[{"title":"...","tags":["formato","ângulo"],"gancho":"...","estrutura":["ponto1","ponto2","ponto3","ponto4","ponto5"],"cta":"...","script":{"slides":[{"visual":"...","audio":"..."},{"visual":"...","audio":"..."},{"visual":"...","audio":"..."},{"visual":"...","audio":"..."},{"visual":"...","audio":"..."},{"visual":"...","audio":"..."}],"caption":"...","hashtags":"..."}}]}`;
+
+      const result = await sendMessageToAgent(
+        AgentId.SCRIPT_GENERATOR,
+        prompt,
+        null,
+        [],
+        `Você é um estrategista de conteúdo digital e roteirista especializado em vídeos virais para redes sociais. Quando solicitado, retorne APENAS JSON válido, sem markdown, sem blocos de código, sem explicações. REGRA ABSOLUTA: o array "ideas" deve ter EXATAMENTE o número de itens solicitado pelo usuário — nem mais, nem menos.`,
+      );
+
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.ideas && Array.isArray(parsed.ideas) && parsed.ideas.length > 0) {
+          const processedIdeas: IdeaCard[] = parsed.ideas.map((idea: Partial<IdeaCard>, i: number) => ({
+            id: crypto.randomUUID(),
+            title:     idea.title     || `Ideia ${i + 1}`,
+            tags:      Array.isArray(idea.tags) ? idea.tags : [],
+            gancho:    idea.gancho    || '',
+            estrutura: Array.isArray(idea.estrutura) ? idea.estrutura : [],
+            cta:       idea.cta       || client.defaultCta || '',
+            script: {
+              slides:   Array.isArray(idea.script?.slides) && idea.script.slides.length > 0
+                          ? idea.script.slides
+                          : [{ visual: '', audio: '' }],
+              caption:  idea.script?.caption  || '',
+              hashtags: idea.script?.hashtags || '',
+            },
+          }));
+          setIdeas(processedIdeas);
+          return;
+        }
+      }
+      throw new Error('Resposta inválida da IA');
+    } catch {
+      // Fallback to mock on error
+      setIdeas(buildMockIdeas(client));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyStructure = (idea: IdeaCard) => {
+    const text = `📌 ${idea.title}\n\n🎣 Gancho:\n${idea.gancho}\n\n📋 Estrutura:\n${idea.estrutura.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n📣 CTA:\n${idea.cta}`;
+    navigator.clipboard.writeText(text);
+    setCopiedId(idea.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const canGenerate = selectedFormats.length > 0 || selectedAngles.length > 0 || themes.length > 0;
+
+  const [isHowToUseOpen, setIsHowToUseOpen]     = useState(false);
+  const [scriptIdea, setScriptIdea]             = useState<IdeaCard | null>(null);
+  const [pendingAgendaTitle, setPendingAgendaTitle] = useState<string | null>(null);
+
+  // ── Workflow: write card directly to localStorage (ClientWorkflowTab
+  //    re-hydrates on next mount when user switches to the tab) ──────────
+  const addCardToWorkflow = (title: string) => {
+    try {
+      const key     = `creator_flow_kanban_${client.id}`;
+      const stored  = localStorage.getItem(key);
+      const cols: KanbanColumn[] = stored ? JSON.parse(stored) : KANBAN_INITIAL_COLUMNS;
+      const newCard: KanbanCard  = { id: crypto.randomUUID(), title, priority: 'Normal', startDate: '', dueDate: '', notes: '' };
+      const updated = cols.map(c => c.id === 'preproducao' ? { ...c, cards: [newCard, ...c.cards] } : c);
+      localStorage.setItem(key, JSON.stringify(updated));
+    } catch { /* ignore */ }
+  };
+
+  // ── Roteiros: convert IdeaCard → ScriptDocument and persist to localStorage.
+  //    ClientRoteirosTab re-hydrates on next mount when user switches to the tab.
+  const saveToRoteiros = (idea: IdeaCard) => {
+    try {
+      const key = `creator_flow_roteiros_${client.id}`;
+      const stored = localStorage.getItem(key);
+      let pkgs: ScriptPackage[] = stored ? JSON.parse(stored) : [];
+
+      // Ensure there is at least one package to receive the script
+      if (pkgs.length === 0) {
+        pkgs = [{ id: crypto.randomUUID(), title: 'Roteiros Gerados', scripts: [], createdAt: Date.now() }];
+      }
+
+      // Parse IdeaCard slides into ScriptScenes
+      const scenes: ScriptScene[] = idea.script.slides.map(slide => ({
+        id: crypto.randomUUID(),
+        visual: slide.visual || '',
+        audio:  slide.audio  || '',
+        isChecked: false,
+      }));
+
+      const newScript: ScriptDocument = {
+        id: crypto.randomUUID(),
+        title: idea.title,
+        status: 'Rascunho',
+        referenceLink: '',
+        gancho: idea.gancho,
+        scenes,
+        createdAt: Date.now(),
+      };
+
+      // Insert into the first (active) package
+      pkgs[0] = { ...pkgs[0], scripts: [newScript, ...pkgs[0].scripts] };
+      localStorage.setItem(key, JSON.stringify(pkgs));
+    } catch { /* ignore */ }
+  };
+
+  const handleScheduleRecording = (title: string) => {
+    setScriptIdea(null);
+    setPendingAgendaTitle(`Gravação: ${title}`);
+    setActiveTab('agenda');
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+
+      {/* ══ Header ══ */}
+      <header className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
+
+        <div className="px-4 sm:px-6 py-3">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                onClick={onBack}
+                className="p-2 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 flex-shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white leading-tight truncate">
+                  {client.brandName}
+                </h1>
+                {(client.niche || client.subniche) && (
+                  <p className="text-xs text-zinc-400 truncate">
+                    {[client.niche, client.subniche].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </div>
+            </div>
+            <span className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800/50">
+              🎙️ {client.voiceTone}
+            </span>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <nav className="flex overflow-x-auto scrollbar-none" aria-label="Abas do workspace">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all ${
+                  activeTab === tab.id
+                    ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+                    : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
+                }`}
+              >
+                <span>{tab.emoji}</span>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </header>
+
+      {/* ══ Main ══ */}
+      <main className="flex-1 overflow-y-auto">
+        <div className={`max-w-4xl mx-auto px-4 sm:px-6 ${activeTab === 'kanban' || activeTab === 'agenda' || activeTab === 'roteiros' ? 'py-4' : 'py-8'}`}>
+
+
+          {/* ══ TAB: Visão Geral ══ */}
+          {activeTab === 'visao_geral' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientVisaoGeralTab client={client} />
+            </div>
+          )}
+
+          {/* ══ TAB: Ideias Infinitas ══ */}
+          {activeTab === 'ideias' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+
+              {/* Como Usar */}
+              <div className="flex justify-end -mb-2">
+                <button
+                  onClick={() => setIsHowToUseOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 px-3 py-1.5 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                >
+                  <BookOpen className="w-3.5 h-3.5" /> Como Usar
+                </button>
+              </div>
+
+              <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 p-6 text-white shadow-xl shadow-violet-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Rocket className="w-5 h-5" />
+                  <span className="text-sm font-black uppercase tracking-widest opacity-80">Motor de Ideias Infinitas</span>
+                </div>
+                <p className="text-lg sm:text-xl font-bold leading-snug">
+                  Transforme o briefing de <span className="opacity-90">{client.brandName}</span> em conteúdo estratégico de alta conversão.
+                </p>
+                <p className="text-sm opacity-70 mt-1">
+                  Defina os temas, escolha os formatos e deixe a IA trabalhar.
+                </p>
+              </div>
+
+              {/* Etapa 1 */}
+              <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xs font-black flex-shrink-0">1</div>
+                  <div>
+                    <h2 className="font-bold text-sm text-zinc-900 dark:text-white">A Matéria-Prima</h2>
+                    <p className="text-xs text-zinc-400">Defina os temas que o conteúdo vai abordar</p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-5 space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {client.niche && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+                        <Target className="w-3 h-3" /> {client.niche}
+                      </span>
+                    )}
+                    {client.idealClient && (
+                      <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 max-w-[260px] truncate">
+                        👤 {client.idealClient}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Temas Manuais</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={themeInput}
+                        onChange={e => setThemeInput(e.target.value)}
+                        onKeyDown={handleThemeKeyDown}
+                        placeholder="Ex: Dicas de confeitaria, Bastidores… (Enter para adicionar)"
+                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400"
+                      />
+                      <button
+                        onClick={() => { addTheme(themeInput); setThemeInput(''); }}
+                        disabled={!themeInput.trim()}
+                        className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-600 dark:text-zinc-400 transition-colors disabled:opacity-40"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {themes.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {themes.map(t => (
+                        <span key={t} className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                          {t}
+                          <button onClick={() => removeTheme(t)} className="text-violet-400 hover:text-violet-700 dark:hover:text-violet-200 transition-colors">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSuggestThemes}
+                    disabled={isSuggestingThemes}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-sm font-bold disabled:opacity-60"
+                  >
+                    {isSuggestingThemes ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Sugerindo temas…</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" /> Sugerir Temas com IA</>
+                    )}
+                  </button>
+
+                  {suggestedThemes.length > 0 && (
+                    <div className="space-y-4 animate-in fade-in duration-300">
+                      <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">Sugestões da IA — clique para adicionar</p>
+                      {suggestedThemeGroups.map(group => (
+                        <div key={group.label} className="space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                            {group.emoji} {group.label}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {group.themes.map(t => {
+                              const selected = themes.includes(t);
+                              return (
+                                <button
+                                  key={t}
+                                  onClick={() => toggleSuggestedTheme(t)}
+                                  className={`text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-all ${
+                                    selected
+                                      ? 'border-violet-500 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300'
+                                      : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700 hover:text-violet-600 dark:hover:text-violet-400'
+                                  }`}
+                                >
+                                  {selected ? '✓ ' : '+ '}{t}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Etapa 2 */}
+              <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xs font-black flex-shrink-0">2</div>
+                  <div>
+                    <h2 className="font-bold text-sm text-zinc-900 dark:text-white">A Multiplicação</h2>
+                    <p className="text-xs text-zinc-400">Escolha os formatos e ângulos editoriais</p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-5 space-y-6">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3 block">📦 Embalagens (Formatos)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {FORMATS.map(f => {
+                        const sel = selectedFormats.includes(f);
+                        return (
+                          <button key={f} onClick={() => toggleFormat(f)}
+                            className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all ${sel ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'}`}
+                          >
+                            {f}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3 block">🎯 Ângulos Editoriais</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {ANGLES.map(a => {
+                        const sel = selectedAngles.includes(a);
+                        return (
+                          <button key={a} onClick={() => toggleAngle(a)}
+                            className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all text-left ${sel ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'}`}
+                          >
+                            {a}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+                  {/* Quantidade de Ideias */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3 block">
+                      📊 Quantidade de Ideias
+                    </label>
+                    <div className="flex gap-2">
+                      {[3, 5, 10, 15].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setQuantidadeIdeias(n)}
+                          className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-black transition-all ${
+                            quantidadeIdeias === n
+                              ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                              : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!canGenerate || isGenerating}
+                    className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-black text-base shadow-xl shadow-violet-500/30 hover:opacity-90 transition-all hover:scale-[1.01] active:scale-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {isGenerating ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Gerando {quantidadeIdeias} Ideias…</>
+                    ) : (
+                      <><Rocket className="w-5 h-5" /> Gerar {quantidadeIdeias} Ideias</>
+                    )}
+                  </button>
+                  {isGenerating && (
+                    <p className="text-xs text-zinc-400 text-center animate-pulse -mt-2">
+                      Cruzando o briefing com os ângulos selecionados…
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              {/* Etapa 3 */}
+              {ideas.length > 0 && (
+                <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-black flex-shrink-0">3</div>
+                    <div>
+                      <h2 className="font-bold text-sm text-zinc-900 dark:text-white">O Ouro</h2>
+                      <p className="text-xs text-zinc-400">{ideas.length} ideias geradas para {client.brandName}</p>
+                    </div>
+                  </div>
+
+                  {ideas.map((idea, idx) => (
+                    <div
+                      key={idea.id}
+                      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 transition-all hover:shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      <div className="px-5 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                        <h3 className="font-black text-base text-zinc-900 dark:text-white leading-snug mb-3">{idea.title}</h3>
+                        <div className="flex flex-wrap gap-1.5">
+                          {idea.tags.map(tag => (
+                            <span key={tag} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="px-5 py-4 space-y-4">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">🎣 Gancho</p>
+                          <p className="text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed">&ldquo;{idea.gancho}&rdquo;</p>
+                        </div>
+                        <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">📋 Estrutura</p>
+                          <ul className="space-y-1.5">
+                            {idea.estrutura.map((item, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                <ChevronRight className="w-3.5 h-3.5 text-violet-500 flex-shrink-0 mt-0.5" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">📣 CTA</p>
+                          <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{idea.cta}</p>
+                        </div>
+                      </div>
+
+                      <div className="px-5 pb-5 flex gap-2">
+                        <button
+                          onClick={() => copyStructure(idea)}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-xl font-bold text-xs text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 transition-all"
+                        >
+                          {copiedId === idea.id ? (
+                            <span className="text-emerald-600 dark:text-emerald-400">✓ Copiado!</span>
+                          ) : (
+                            <><Copy className="w-3.5 h-3.5" /> 📋 Copiar Estrutura</>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setScriptIdea(idea)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-xs shadow-md shadow-violet-500/20 hover:opacity-90 transition-all"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> ✨ Criar Roteiro
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 rounded-2xl font-bold text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4" /> Gerar Mais Ideias
+                  </button>
+                </section>
+              )}
+
+              {/* ── Modals ── */}
+              {isHowToUseOpen && <HowToUseModal onClose={() => setIsHowToUseOpen(false)} />}
+              {scriptIdea && (
+                <ScriptModal
+                  idea={scriptIdea}
+                  onClose={() => setScriptIdea(null)}
+                  onSendToWorkflow={addCardToWorkflow}
+                  onScheduleRecording={handleScheduleRecording}
+                  onSaveToRoteiros={saveToRoteiros}
+                />
+              )}
+            </div>
+          )}
+
+          {/* ══ TAB: Workflow ══ */}
+          {activeTab === 'kanban' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientWorkflowTab client={client} />
+            </div>
+          )}
+
+          {/* ══ TAB: Agenda ══ */}
+          {activeTab === 'agenda' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientAgendaTab
+                client={client}
+                pendingEventTitle={pendingAgendaTitle}
+                onPendingConsumed={() => setPendingAgendaTitle(null)}
+              />
+            </div>
+          )}
+
+          {/* ══ TAB: Sala de Roteiros ══ */}
+          {activeTab === 'roteiros' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientRoteirosTab client={client} />
+            </div>
+          )}
+
+          {/* ══ TAB: Acervo ══ */}
+          {activeTab === 'acervo' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientAcervoTab client={client} onNavigateToArquivos={onNavigateToArquivos} />
+            </div>
+          )}
+
+          {/* ══ TAB: Entregas & Aprovações ══ */}
+          {activeTab === 'entregas' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientEntregasTab client={client} />
+            </div>
+          )}
+
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default ClientDashboard;
