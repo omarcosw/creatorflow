@@ -1,7 +1,28 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Search, Play, Download, Music, Zap } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { ArrowLeft, Search, Play, Download, Music, Zap, Sparkles, X, Send, ImageIcon, Loader2 } from 'lucide-react';
+import { AgentId, Message } from '@/types';
+import { sendMessageToAgent } from '@/lib/api';
+import MarkdownRenderer from './MarkdownRenderer';
+
+// ─────────────────────────────────────────────
+// SFX Assistant config (inlined)
+// ─────────────────────────────────────────────
+const SFX_ASSISTANT_SYSTEM = `Você é um Sound Designer Profissional.
+    Sua função é ler a descrição ou analisar a imagem de uma cena enviada pelo usuário e sugerir uma lista de efeitos sonoros (SFX) camada por camada.
+
+    ESTRUTURA DE CAMADAS (LAYERS):
+    1. **Ambience**: O som de fundo constante (ex: Chuva, Vento, Trânsito distante).
+    2. **Foley**: Sons gerados pela ação humana (ex: Passos na água, Roupa roçando, Respiração).
+    3. **SFX de Impacto/Hard FX**: Sons altos e pontuais (ex: Trovão, Batida de carro, Tiro).
+    4. **Emoção/Score**: Sugestão de trilha sonora ou drone sonoro para dar o tom da cena.`;
+
+const INITIAL_ASSISTANT_MSG: Message = {
+  role: 'model',
+  text: `Olá! Sou seu Sound Designer. 🎧\n\nPara criar a atmosfera sonora perfeita:\n\n1. 📸 **Envie um print** da sua cena (frame do vídeo).\n2. 📝 **Descreva brevemente** o que acontece (ex: "Luta de espadas futurista").\n\nIsso me ajuda a identificar materiais, ambiência e impactos. Pode mandar!`,
+  timestamp: 0,
+};
 
 // ─────────────────────────────────────────────
 // Types
@@ -197,6 +218,175 @@ const FilterPill: React.FC<{ label: string; active: boolean; onToggle: () => voi
 );
 
 // ─────────────────────────────────────────────
+// AI Assistant Drawer (slide-over)
+// ─────────────────────────────────────────────
+interface AssistantDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  messages: Message[];
+  input: string;
+  onInputChange: (v: string) => void;
+  onSend: () => void;
+  isLoading: boolean;
+  image: string | null;
+  onImageChange: (img: string | null) => void;
+}
+
+const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
+  isOpen, onClose, messages, input, onInputChange, onSend, isLoading, image, onImageChange,
+}) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef   = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => onImageChange(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Drawer panel */}
+      <div
+        className={`fixed right-0 top-0 bottom-0 z-50 w-full max-w-[420px] flex flex-col bg-gray-950 border-l border-gray-800 shadow-2xl shadow-black/60 transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Drawer Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-white leading-none">Assistente de Áudio</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Sound Designer com IA</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-700 text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-all"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.role === 'model' && (
+                <div className="w-6 h-6 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center mr-2 mt-1 flex-shrink-0">
+                  <Sparkles className="w-3 h-3 text-violet-400" />
+                </div>
+              )}
+              <div
+                className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-violet-600 text-white rounded-tr-sm'
+                    : 'bg-gray-900 border border-gray-800 text-gray-200 rounded-tl-sm'
+                }`}
+              >
+                {msg.image && (
+                  <img src={msg.image} alt="Cena" className="w-full rounded-xl mb-2 object-cover max-h-40" />
+                )}
+                <MarkdownRenderer content={msg.text} />
+              </div>
+            </div>
+          ))}
+
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="w-6 h-6 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center mr-2 mt-1 flex-shrink-0">
+                <Sparkles className="w-3 h-3 text-violet-400" />
+              </div>
+              <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-gray-900 border border-gray-800">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Image preview strip */}
+        {image && (
+          <div className="flex-shrink-0 px-4 pb-2">
+            <div className="relative w-24 h-16 rounded-xl overflow-hidden border border-gray-700">
+              <img src={image} alt="Preview" className="w-full h-full object-cover" />
+              <button
+                onClick={() => onImageChange(null)}
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-black/90 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Input area */}
+        <div className="flex-shrink-0 px-4 pb-4 pt-2 border-t border-gray-800 space-y-2">
+          <textarea
+            value={input}
+            onChange={e => onInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Descreva sua cena ou envie um print…"
+            rows={2}
+            className="w-full bg-gray-900 border border-gray-800 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-500/20 resize-none transition-all"
+          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-600 rounded-xl transition-all"
+            >
+              <ImageIcon className="w-3.5 h-3.5" /> Print da Cena
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={onSend}
+              disabled={isLoading || (!input.trim() && !image)}
+              className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-black bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-white transition-all"
+            >
+              {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─────────────────────────────────────────────
 // CreatorStockView (root)
 // ─────────────────────────────────────────────
 interface CreatorStockViewProps {
@@ -204,6 +394,7 @@ interface CreatorStockViewProps {
 }
 
 const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
+  // Library state
   const [activeTab,     setActiveTab]     = useState<LibraryTab>('musicas');
   const [playingId,     setPlayingId]     = useState<string | null>(null);
   const [search,        setSearch]        = useState('');
@@ -211,6 +402,13 @@ const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
   const [activeGenres,  setActiveGenres]  = useState<string[]>([]);
   const [activeSfxCats, setActiveSfxCats] = useState<string[]>([]);
   const [toast,         setToast]         = useState(false);
+
+  // AI Assistant state
+  const [isAssistantOpen,    setIsAssistantOpen]    = useState(false);
+  const [assistantMessages,  setAssistantMessages]  = useState<Message[]>([INITIAL_ASSISTANT_MSG]);
+  const [assistantInput,     setAssistantInput]     = useState('');
+  const [isAssistantLoading, setIsAssistantLoading] = useState(false);
+  const [assistantImage,     setAssistantImage]     = useState<string | null>(null);
 
   const showToast = () => {
     setToast(true);
@@ -225,6 +423,41 @@ const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
 
   const toggle = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, val: string) =>
     setArr(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
+
+  const handleAssistantSend = async () => {
+    if ((!assistantInput.trim() && !assistantImage) || isAssistantLoading) return;
+
+    const userMsg: Message = {
+      role: 'user',
+      text: assistantInput.trim(),
+      image: assistantImage ?? undefined,
+      timestamp: Date.now(),
+    };
+
+    // Build history excluding the seeded initial model message (timestamp === 0)
+    const history = assistantMessages.filter(m => m.timestamp > 0);
+
+    setAssistantMessages(prev => [...prev, userMsg]);
+    setAssistantInput('');
+    setAssistantImage(null);
+    setIsAssistantLoading(true);
+
+    const result = await sendMessageToAgent(
+      AgentId.SFX_SCENE_DESCRIBER,
+      userMsg.text,
+      assistantImage ?? null,
+      history,
+      SFX_ASSISTANT_SYSTEM,
+    );
+
+    const modelMsg: Message = {
+      role: 'model',
+      text: result.text,
+      timestamp: Date.now(),
+    };
+    setAssistantMessages(prev => [...prev, modelMsg]);
+    setIsAssistantLoading(false);
+  };
 
   const tracks = activeTab === 'musicas' ? MOCK_MUSICAS : MOCK_SFX;
   const totalActive = activeMoods.length + activeGenres.length + activeSfxCats.length;
@@ -256,10 +489,19 @@ const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Coming soon pill */}
-        <span className="hidden sm:flex items-center gap-2 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full select-none">
-          🎧 Acervo em Masterização — Em Breve
-        </span>
+        {/* Right side: AI button + coming soon pill */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAssistantOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-violet-500/40 bg-violet-600/10 text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/70 transition-all text-[11px] font-black whitespace-nowrap"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            ✨ Descreva sua Cena (IA)
+          </button>
+          <span className="hidden lg:flex items-center gap-2 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full select-none whitespace-nowrap">
+            🎧 Acervo em Masterização — Em Breve
+          </span>
+        </div>
       </header>
 
       {/* ══ Body: Sidebar + Main ══ */}
@@ -388,11 +630,24 @@ const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
 
       {/* Coming Soon Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-gray-900 border border-amber-500/30 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300 whitespace-nowrap">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-5 py-3 bg-gray-900 border border-amber-500/30 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300 whitespace-nowrap">
           <span className="text-base select-none">🎧</span>
           <p className="text-sm font-bold text-amber-300">Acervo em Masterização. As bibliotecas estarão disponíveis em breve!</p>
         </div>
       )}
+
+      {/* AI Assistant Drawer */}
+      <AssistantDrawer
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        messages={assistantMessages}
+        input={assistantInput}
+        onInputChange={setAssistantInput}
+        onSend={handleAssistantSend}
+        isLoading={isAssistantLoading}
+        image={assistantImage}
+        onImageChange={setAssistantImage}
+      />
     </div>
   );
 };

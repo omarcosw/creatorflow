@@ -187,7 +187,6 @@ export default function DashboardPage() {
   const [isLightingHubOpen, setIsLightingHubOpen] = useState(false);
   const [isProductionHubOpen, setIsProductionHubOpen] = useState(false);
   const [isEditingHubOpen, setIsEditingHubOpen] = useState(false);
-  const [isSfxHubOpen, setIsSfxHubOpen] = useState(false);
   const [isArquivosHubOpen, setIsArquivosHubOpen] = useState(false);
   const [isClientesHubOpen, setIsClientesHubOpen] = useState(false);
   const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
@@ -424,7 +423,7 @@ export default function DashboardPage() {
       if (id === AgentId.LIGHTING_ASSISTANT) setIsLightingHubOpen(true);
       else if (id === AgentId.EXECUTIVE_PRODUCER) setIsProductionHubOpen(true);
       else if (id === AgentId.EDITING_WORKFLOW) setIsEditingHubOpen(true);
-      else if (id === AgentId.SFX_ASSISTANT) setIsSfxHubOpen(true);
+      else if (id === AgentId.SFX_ASSISTANT) setActiveAgentId(AgentId.SFX_LIBRARY);
       else setActiveAgentId(id);
   };
 
@@ -446,16 +445,10 @@ export default function DashboardPage() {
              setIsEditingHubOpen(true);
              return;
           }
-          if ([AgentId.SFX_SCENE_DESCRIBER, AgentId.SFX_LIBRARY, AgentId.SFX_PACK_CREATOR].includes(activeAgentId)) {
-              setActiveAgentId(null);
-              setIsSfxHubOpen(true);
-              return;
-          }
           setActiveAgentId(null);
       } else if (isLightingHubOpen) setIsLightingHubOpen(false);
       else if (isProductionHubOpen) setIsProductionHubOpen(false);
       else if (isEditingHubOpen) setIsEditingHubOpen(false);
-      else if (isSfxHubOpen) setIsSfxHubOpen(false);
       else if (isArquivosHubOpen) setIsArquivosHubOpen(false);
       else if (isClientesHubOpen) setIsClientesHubOpen(false);
   };
@@ -465,7 +458,6 @@ export default function DashboardPage() {
     setIsProductionHubOpen(false);
     setIsEditingHubOpen(false);
     setIsLightingHubOpen(false);
-    setIsSfxHubOpen(false);
     setActiveAgentId(id);
   };
 
@@ -528,7 +520,6 @@ export default function DashboardPage() {
           window.open(agent.externalUrl, '_blank');
           return;
       }
-      if (isSfxHubOpen) setIsSfxHubOpen(false);
       if (isProductionHubOpen) setIsProductionHubOpen(false);
       if (isEditingHubOpen) setIsEditingHubOpen(false);
       if (isLightingHubOpen) setIsLightingHubOpen(false);
@@ -635,34 +626,7 @@ export default function DashboardPage() {
                 })}
             </div>
          </main>
-      ) : isSfxHubOpen ? (
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-           <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
-               <ArrowLeft className="w-5 h-5" />
-               <span>Voltar ao Dashboard</span>
-           </button>
-           <div className="mb-12">
-               <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Sound Design & SFX</h1>
-               <p className="text-zinc-600 dark:text-zinc-400">Eleve a qualidade do seu áudio com ferramentas de sound design.</p>
-           </div>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {[AgentId.SFX_SCENE_DESCRIBER, AgentId.SFX_LIBRARY, AgentId.SFX_PACK_CREATOR].map(id => {
-                   const agent = AGENTS[id];
-                   const Icon = agent.icon;
-                   const isLocked = agent.isLocked;
-                   return (
-                       <button key={id} onClick={() => handleSubAgentClick(id)} className={`relative flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01] ${isLocked ? 'opacity-70 cursor-not-allowed hover:border-zinc-300 dark:hover:border-zinc-700' : 'hover:border-rose-500 dark:hover:border-rose-500'}`}>
-                           {isLocked && !agent.externalUrl && <div className="absolute top-4 right-4 p-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full text-zinc-500"><Lock className="w-4 h-4" /></div>}
-                           <div className={`p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 ${agent.color}`}><Icon className="w-8 h-8" /></div>
-                           <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{agent.title}</h2>
-                           <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
-                           <span className={`mt-auto font-medium flex items-center gap-2 text-sm ${isLocked ? 'text-zinc-400' : agent.color.replace('text-', 'text-opacity-80 text-')}`}>{agent.externalUrl ? 'Conhecer Agora' : (isLocked ? 'Conhecer Agora' : 'Acessar')} {isLocked && !agent.externalUrl ? null : <ChevronRight className="w-4 h-4" />}</span>
-                       </button>
-                   )
-               })}
-           </div>
-        </main>
-     ) : isClientesHubOpen ? (
+      ) : isClientesHubOpen ? (
         <ClientsHub
           clients={clients}
           onSaveClient={handleSaveClient}
