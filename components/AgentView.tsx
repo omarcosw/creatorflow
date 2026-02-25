@@ -6,6 +6,7 @@ import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, 
 import { AgentConfig, AgentId, Message, StylePreset, ChatSession, InstagramProfile, ShotList, ShotItem, BrandKit, Client } from '@/types';
 import { sendMessageToAgent, transcribeAudio } from '@/lib/api';
 import MarkdownRenderer from './MarkdownRenderer';
+import CreatorStockView from './CreatorStockView';
 
 // --- DATA STRUCTURE FOR EDITING HUB ---
 const SOFTWARE_DATA = [
@@ -1513,7 +1514,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
 
   // --- NEW: INTERCEPT SFX LIBRARY VIEW ---
   if (agent.id === AgentId.SFX_LIBRARY) {
-      return <SfxLibraryHub onBack={onBack} />;
+      return <CreatorStockView onBack={onBack} />;
   }
 
   if (viewingPreset) return <DetailView preset={viewingPreset} onBack={() => setViewingPreset(null)} agentId={agent.id} />;
