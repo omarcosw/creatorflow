@@ -78,13 +78,8 @@ setInterval(() => {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // --- Health endpoint: skip rate limiting and bot blocking ---
-  if (pathname === '/api/health') {
-    return addSecurityHeaders(NextResponse.next(), request);
-  }
-
-  // --- Stripe webhook: skip everything except security headers ---
-  if (pathname === '/api/stripe/webhook') {
+  // --- Skip rate limiting and bot blocking for these endpoints ---
+  if (pathname === '/api/health' || pathname === '/api/stripe/webhook' || pathname.startsWith('/api/auth/')) {
     return addSecurityHeaders(NextResponse.next(), request);
   }
 
@@ -156,7 +151,7 @@ function addSecurityHeaders(response: NextResponse, request: NextRequest): NextR
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 
   // Prevent clickjacking

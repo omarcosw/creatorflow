@@ -26,37 +26,14 @@ function AnimatedPrice({ value, decimals, inView }: { value: number; decimals: n
   return <>{display}<span className="text-2xl font-bold">,{decimals.toString().padStart(2, '0')}</span></>;
 }
 
-async function handleCheckout(priceId: string) {
-  try {
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        priceId,
-        customerEmail: localStorage.getItem('cf_email') || undefined,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      alert('Erro ao iniciar pagamento. Tente novamente.');
-    }
-  } catch {
-    alert('Erro ao iniciar pagamento. Tente novamente.');
-  }
-}
-
 const plans = [
   {
     name: 'Solo',
+    key: 'solo',
     icon: Zap,
     description: 'Para começar a criar com IA',
     price: 49,
     decimals: 90,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SOLO || 'price_1T4SYRRsImXRbXxfP8Ij52Zj',
     highlighted: false,
     features: [
       '10 mensagens por dia',
@@ -68,11 +45,11 @@ const plans = [
   },
   {
     name: 'Maker',
+    key: 'maker',
     icon: Sparkles,
     description: 'Para criadores independentes',
     price: 67,
     decimals: 90,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_MAKER || 'price_1T4SYRRsImXRbXxf4fnWs84I',
     highlighted: false,
     features: [
       '30 mensagens por dia',
@@ -84,11 +61,11 @@ const plans = [
   },
   {
     name: 'Studio',
+    key: 'studio',
     icon: Rocket,
     description: 'Para criadores em crescimento',
     price: 197,
     decimals: 90,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STUDIO || 'price_1T4SYRRsImXRbXxfNXDrlETP',
     highlighted: true,
     badge: 'Mais Popular',
     features: [
@@ -103,11 +80,11 @@ const plans = [
   },
   {
     name: 'Agency',
+    key: 'agency',
     icon: Building2,
     description: 'Para equipes e agências',
     price: 497,
     decimals: 90,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_AGENCY || 'price_1T4SYRRsImXRbXxfZBMAQtek',
     highlighted: false,
     features: [
       'Mensagens ilimitadas',
@@ -200,12 +177,12 @@ export default function PricingSection() {
                   </ul>
 
                   <GradientButton
-                    onClick={() => handleCheckout(plan.priceId)}
+                    href={plan.key === 'agency' ? 'https://wa.me/5527999210071' : `/signup?plan=${plan.key}`}
                     variant={plan.highlighted ? 'solid' : 'outline'}
                     size="md"
                     className="w-full"
                   >
-                    {plan.highlighted ? 'Começar Agora' : 'Assinar'}
+                    {plan.key === 'agency' ? 'Falar com Vendas' : plan.highlighted ? 'Começar Agora' : 'Assinar'}
                   </GradientButton>
                 </TiltCard>
               </motion.div>

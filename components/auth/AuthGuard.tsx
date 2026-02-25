@@ -3,29 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
-const PUBLIC_ROUTES = ['/', '/login', '/signup'];
-const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-
-function isSessionValid(): boolean {
-  const loggedIn = localStorage.getItem('cf_logged_in') === 'true';
-  if (!loggedIn) return false;
-
-  const sessionStart = localStorage.getItem('cf_session_start');
-  if (!sessionStart) return false;
-
-  const elapsed = Date.now() - parseInt(sessionStart);
-  if (elapsed > SESSION_MAX_AGE) {
-    // Session expired — clear all auth data
-    localStorage.removeItem('cf_logged_in');
-    localStorage.removeItem('cf_email');
-    localStorage.removeItem('cf_name');
-    localStorage.removeItem('cf_pass_hash');
-    localStorage.removeItem('cf_session_start');
-    return false;
-  }
-
-  return true;
-}
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/subscription-inactive'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -33,20 +11,53 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const valid = isSessionValid();
-    const isPublic = PUBLIC_ROUTES.includes(pathname);
+    const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/#');
 
-    if (!valid && !isPublic) {
+    if (isPublic) {
+      setChecked(true);
+      return;
+    }
+
+    const token = localStorage.getItem('cf_token');
+    if (!token) {
       router.replace('/login');
       return;
     }
 
-    if (valid && (pathname === '/login' || pathname === '/signup')) {
-      router.replace('/dashboard');
-      return;
-    }
+    // Verify token + subscription with API
+    fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 401) {
+          // Token invalid/expired — clear and redirect
+          localStorage.removeItem('cf_token');
+          localStorage.removeItem('cf_email');
+          localStorage.removeItem('cf_name');
+          localStorage.removeItem('cf_plan');
+          router.replace('/login');
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!data) return;
 
-    setChecked(true);
+        if (data.user?.subscriptionStatus !== 'active') {
+          router.replace('/subscription-inactive');
+          return;
+        }
+
+        // Update local user data
+        localStorage.setItem('cf_email', data.user.email);
+        localStorage.setItem('cf_name', data.user.name);
+        localStorage.setItem('cf_plan', data.user.plan || '');
+        setChecked(true);
+      })
+      .catch(() => {
+        // Network error — allow access with existing token (offline-first)
+        setChecked(true);
+      });
   }, [pathname, router]);
 
   if (!checked) {

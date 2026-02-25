@@ -197,7 +197,18 @@ export default function DashboardPage() {
 
   // Referral Modal State
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
-  
+
+  // Payment success toast
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+
+  useEffect(() => {
+    if (window.location.search.includes('success=true')) {
+      setShowPaymentSuccess(true);
+      window.history.replaceState({}, '', '/dashboard');
+      setTimeout(() => setShowPaymentSuccess(false), 6000);
+    }
+  }, []);
+
   // Navigation context for cross-agent workflows
   const [navigationContext, setNavigationContext] = useState<{ prompt: string } | null>(null);
   
@@ -534,6 +545,21 @@ export default function DashboardPage() {
         <div className="absolute top-1/3 -left-48 h-[520px] w-[520px] rounded-full bg-sky-400/15 blur-3xl dark:bg-sky-500/10" />
         <div className="absolute bottom-0 right-1/4 h-[420px] w-[420px] rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-400/10" />
       </div>
+      {/* Payment success toast */}
+      {showPaymentSuccess && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 rounded-2xl border border-green-500/30 bg-green-500/10 backdrop-blur-lg px-6 py-4 shadow-2xl">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="font-semibold text-white">Pagamento confirmado!</p>
+              <p className="text-sm text-green-300">Bem-vindo ao CreatorFlow!</p>
+            </div>
+            <button onClick={() => setShowPaymentSuccess(false)} className="ml-4 text-white/40 hover:text-white">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
       <ReferralModal isOpen={isReferralModalOpen} onClose={() => setIsReferralModalOpen(false)} />
       <StudioProfileModal
@@ -699,7 +725,7 @@ export default function DashboardPage() {
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
              </button>
              <button
-                onClick={() => { localStorage.removeItem('cf_logged_in'); localStorage.removeItem('cf_email'); localStorage.removeItem('cf_name'); router.push('/login'); }}
+                onClick={() => { localStorage.removeItem('cf_token'); localStorage.removeItem('cf_email'); localStorage.removeItem('cf_name'); localStorage.removeItem('cf_plan'); router.push('/login'); }}
                 className="p-2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 title="Sair"
              >

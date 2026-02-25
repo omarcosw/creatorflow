@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, Eye, EyeOff, Check, X } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
 import AuthLayout from '@/components/auth/AuthLayout';
-import GoogleButton from '@/components/auth/GoogleButton';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 
+const PLAN_INFO: Record<string, { name: string; price: string }> = {
+  solo: { name: 'Solo', price: 'R$ 49,90/mês' },
+  maker: { name: 'Maker', price: 'R$ 67,90/mês' },
+  studio: { name: 'Studio', price: 'R$ 197,90/mês' },
+  agency: { name: 'Agency', price: 'R$ 497,90/mês' },
+};
+
 export default function SignupPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,16 +23,30 @@ export default function SignupPage() {
   const [accepted, setAccepted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState('');
+  const [canceled, setCanceled] = useState(false);
+
+  useEffect(() => {
+    const search = window.location.search;
+    const planMatch = search.match(/[?&]plan=([^&]+)/);
+    if (planMatch && PLAN_INFO[planMatch[1]]) {
+      setPlan(planMatch[1]);
+    }
+    if (search.includes('canceled=true')) {
+      setCanceled(true);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = 'Nome obrigat\u00f3rio';
-    if (!email) errs.email = 'Email obrigat\u00f3rio';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email inv\u00e1lido';
-    if (!password) errs.password = 'Senha obrigat\u00f3ria';
-    else if (password.length < 8) errs.password = 'M\u00ednimo 8 caracteres';
-    if (confirmPassword !== password) errs.confirmPassword = 'Senhas n\u00e3o coincidem';
+    if (!name.trim()) errs.name = 'Nome obrigatório';
+    if (!email) errs.email = 'Email obrigatório';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email inválido';
+    if (!password) errs.password = 'Senha obrigatória';
+    else if (password.length < 8) errs.password = 'Mínimo 8 caracteres';
+    if (confirmPassword !== password) errs.confirmPassword = 'Senhas não coincidem';
     if (!accepted) errs.accepted = 'Aceite os termos para continuar';
+    if (!plan) errs.general = 'Selecione um plano';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -37,36 +55,96 @@ export default function SignupPage() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    localStorage.setItem('cf_logged_in', 'true');
-    localStorage.setItem('cf_email', email);
-    localStorage.setItem('cf_name', name);
-    router.push('/dashboard');
-  };
+    setErrors({});
 
-  const handleGoogle = () => {
-    localStorage.setItem('cf_logged_in', 'true');
-    localStorage.setItem('cf_email', 'user@gmail.com');
-    localStorage.setItem('cf_name', 'Creator');
-    router.push('/dashboard');
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, plan }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrors({ general: data.error || 'Erro ao criar conta' });
+        setLoading(false);
+        return;
+      }
+
+      // Save JWT token
+      localStorage.setItem('cf_token', data.token);
+
+      // Redirect to Stripe Checkout
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    } catch {
+      setErrors({ general: 'Erro de conexão. Tente novamente.' });
+      setLoading(false);
+    }
   };
 
   const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
   const passwordsMismatch = confirmPassword.length > 0 && confirmPassword !== password;
-
-  const isValid =
-    name.trim() && email && password.length >= 8 && confirmPassword === password && accepted;
+  const isValid = name.trim() && email && password.length >= 8 && confirmPassword === password && accepted && plan;
+  const selectedPlan = plan ? PLAN_INFO[plan] : null;
 
   return (
-    <AuthLayout title="Crie sua conta" subtitle="Comece a criar conte\u00fado profissional com IA">
-      <GoogleButton label="Cadastrar com Google" onClick={handleGoogle} />
+    <AuthLayout
+      title="Crie sua conta"
+      subtitle={selectedPlan ? `Plano ${selectedPlan.name} — ${selectedPlan.price}` : 'Escolha um plano para começar'}
+    >
+      {canceled && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0" />
+          <p className="text-[13px] text-yellow-400">Pagamento cancelado. Tente novamente.</p>
+        </div>
+      )}
 
-      {/* Divider */}
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/[0.08]" />
-        <span className="text-xs font-medium text-[#666666] uppercase tracking-wider">ou</span>
-        <div className="h-px flex-1 bg-white/[0.08]" />
-      </div>
+      {errors.general && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+          <p className="text-[13px] text-red-400">{errors.general}</p>
+        </div>
+      )}
+
+      {selectedPlan && (
+        <div className="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/5 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">Plano {selectedPlan.name}</p>
+              <p className="text-xs text-[#A0A0A0]">{selectedPlan.price}</p>
+            </div>
+            <Link href="/#precos" className="text-xs text-[#8B5CF6] hover:underline">
+              Trocar plano
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {!plan && (
+        <div className="mb-6">
+          <p className="text-sm text-[#A0A0A0] mb-3">Selecione seu plano:</p>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(PLAN_INFO).map(([key, info]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { setPlan(key); setErrors((p) => ({ ...p, general: '' })); }}
+                className={`rounded-lg border p-3 text-left transition-all ${
+                  plan === key
+                    ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                    : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
+                }`}
+              >
+                <p className="text-sm font-semibold text-white">{info.name}</p>
+                <p className="text-xs text-[#A0A0A0]">{info.price}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
@@ -110,7 +188,7 @@ export default function SignupPage() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: '' })); }}
-              placeholder="M\u00ednimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres"
               className="w-full rounded-xl border border-white/[0.1] bg-[#1A1A1A] py-3 pl-11 pr-12 text-sm text-white placeholder:text-[#555] outline-none transition-all focus:border-[#8B5CF6]/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
             />
             <button
@@ -171,7 +249,7 @@ export default function SignupPage() {
             Li e aceito os{' '}
             <a href="#" className="text-[#8B5CF6] hover:underline">Termos de Uso</a>
             {' '}e{' '}
-            <a href="#" className="text-[#8B5CF6] hover:underline">Pol&iacute;tica de Privacidade</a>
+            <a href="#" className="text-[#8B5CF6] hover:underline">Política de Privacidade</a>
           </span>
         </label>
         {errors.accepted && <p className="text-[13px] text-red-400 -mt-2">{errors.accepted}</p>}
@@ -188,14 +266,14 @@ export default function SignupPage() {
               Criando conta...
             </>
           ) : (
-            'Criar Conta'
+            'Criar conta e pagar'
           )}
         </button>
       </form>
 
       {/* Bottom link */}
       <p className="mt-8 text-center text-sm text-[#A0A0A0]">
-        J&aacute; tem uma conta?{' '}
+        Já tem uma conta?{' '}
         <Link href="/login" className="font-semibold text-[#8B5CF6] hover:underline">
           Fazer login
         </Link>
