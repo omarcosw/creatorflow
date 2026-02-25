@@ -39,7 +39,7 @@ const REVIEW_STATUS_CONFIG: Record<ReviewStatus, { label: string; badge: string 
 };
 
 // ─────────────────────────────────────────────
-// Portal script type + mock data
+// Portal script type (used by ScriptReviewModal)
 // ─────────────────────────────────────────────
 interface PortalScript {
   id: string;
@@ -53,74 +53,44 @@ interface PortalScript {
   hashtags: string;
 }
 
-const MOCK_SCRIPTS: PortalScript[] = [
-  {
-    id: 's1',
-    title: '5 Erros que Destroem Seu Resultado (e Como Evitar)',
-    theme: 'Educacional · Reels',
-    sentAt: '22 Fev',
-    status: 'aguardando',
-    feedback: undefined,
-    body: [
-      { scene: 1, visual: 'Close no rosto — expressão surpresa', audio: '"Você está cometendo esses 5 erros SEM perceber…"' },
-      { scene: 2, visual: 'Texto animado na tela com ícone de X vermelho', audio: 'Erro 1: Postar sem estratégia. Quantidade não é qualidade.' },
-      { scene: 3, visual: 'Infográfico rápido com 5 pontos', audio: 'Erro 2: Ignorar a análise de métricas semanalmente.' },
-      { scene: 4, visual: 'Câmera na altura dos olhos, fundo neutro', audio: '"Agora que você sabe o que evitar — clica aqui pra saber o que fazer de verdade."' },
-    ],
-    caption: 'Você comete algum desses erros? 😱 Salva esse vídeo antes de postar o próximo! 👇',
-    hashtags: '#marketingdigital #erroscomuns #crescimentonoinstagram #contentcreator',
-  },
-  {
-    id: 's2',
-    title: 'Bastidores: Como é um Dia na Nossa Produção',
-    theme: 'Bastidores · Carrossel',
-    sentAt: '20 Fev',
-    status: 'aguardando',
-    feedback: undefined,
-    body: [
-      { scene: 1, visual: 'Timelapse da setup de iluminação', audio: '"Você sabe o que acontece antes de ligar a câmera?"' },
-      { scene: 2, visual: 'Câmera na mão — tour pelo estúdio', audio: 'Aqui você vê todo o processo, do início ao fim.' },
-      { scene: 3, visual: 'Equipe reunida, sorrindo', audio: '"Cada detalhe é pensado para você. Esse é o nosso compromisso."' },
-    ],
-    caption: 'Tudo isso pra te entregar o melhor conteúdo 💜 Qual parte te surpreendeu?',
-    hashtags: '#bastidores #producaodeconteudo #vidadeagencia #bastidoresdaproducao',
-  },
-  {
-    id: 's3',
-    title: 'Receita Rápida: Brigadeiro Gourmet em 10 Minutos',
-    theme: 'Tutorial · Reels',
-    sentAt: '18 Fev',
-    status: 'aprovado',
-    feedback: undefined,
-    body: [
-      { scene: 1, visual: 'Mesa farta com ingredientes — câmera de cima (flat lay)', audio: '"Brigadeiro gourmet em 10 minutos? Sim, é possível!"' },
-      { scene: 2, visual: 'Mãos misturando na panela — close', audio: 'Passo 1: misture o leite condensado com o cacau em pó em fogo baixo.' },
-      { scene: 3, visual: 'Enrolando os brigadeiros em câmera lenta', audio: 'O segredo está no ponto: quando desgrudar da panela, está no lugar certo.' },
-    ],
-    caption: 'Qual sabor de brigadeiro você quer aprender a fazer? Comenta aqui! 🍫',
-    hashtags: '#confeitaria #brigadeiro #receitarapida #docesgourmet',
-  },
-];
+// ─────────────────────────────────────────────
+// Portal script source types (from agency localStorage)
+// ─────────────────────────────────────────────
+type PortalScriptInternalStatus = 'aguardando_cliente' | 'aprovado_cliente' | 'refacao';
 
-// ─────────────────────────────────────────────
-// Portal video type + mock data
-// ─────────────────────────────────────────────
-interface PortalVideo {
+interface PortalScriptScene { id: string; visual: string; audio: string; }
+
+interface PortalScriptDoc {
   id: string;
   title: string;
-  type: string;
-  duration: string;
-  sentAt: string;
-  status: ReviewStatus;
+  gancho: string;
+  scenes: PortalScriptScene[];
+  portalStatus: PortalScriptInternalStatus;
+  clientFeedback?: string;
+  sentToPortalAt?: number;
+  _pkgTitle?: string;
+}
+
+interface _PortalPkg {
+  id: string;
+  title: string;
+  scripts: (Omit<PortalScriptDoc, '_pkgTitle'> & { portalStatus?: PortalScriptInternalStatus; [key: string]: unknown })[];
+}
+
+// ─────────────────────────────────────────────
+// Portal deliverable type (mirrors Deliverable from agency)
+// ─────────────────────────────────────────────
+interface PortalDeliverable {
+  id: string;
+  title: string;
+  type: 'video' | 'roteiro';
+  status: 'aguardando' | 'aprovado' | 'alteracao';
+  shareLink: string;
+  expiresInDays: number;
+  sentAt: number;   // unix timestamp
   rating?: number;
   feedback?: string;
 }
-
-const MOCK_VIDEOS: PortalVideo[] = [
-  { id: 'v1', title: '5 Erros que Destroem Seu Resultado', type: 'Reels', duration: '0:58', sentAt: '24 Fev', status: 'aguardando' },
-  { id: 'v2', title: 'Bastidores: Um Dia na Nossa Produção',  type: 'Carrossel', duration: '1:22', sentAt: '22 Fev', status: 'aprovado', rating: 5 },
-  { id: 'v3', title: 'Receita Rápida: Brigadeiro Gourmet',   type: 'Reels',     duration: '0:47', sentAt: '19 Fev', status: 'alteracao', feedback: 'O áudio ficou um pouco baixo no começo. Por favor ajustar a partir dos 3 segundos.' },
-];
 
 // ─────────────────────────────────────────────
 // Production stepper
@@ -425,19 +395,81 @@ const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, 
 // ─────────────────────────────────────────────
 // Roteiros tab
 // ─────────────────────────────────────────────
-const PortalRoteirosTab: React.FC = () => {
-  const [scripts, setScripts]       = useState<PortalScript[]>(MOCK_SCRIPTS);
-  const [openScript, setOpenScript] = useState<PortalScript | null>(null);
+const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const ROTEIROS_KEY = `creator_flow_roteiros_${clientId}`;
 
-  const handleApprove = (id: string) => {
-    setScripts(prev => prev.map(s => s.id === id ? { ...s, status: 'aprovado' } : s));
+  const loadScripts = (): PortalScriptDoc[] => {
+    try {
+      const s = localStorage.getItem(ROTEIROS_KEY);
+      const pkgs: _PortalPkg[] = s ? JSON.parse(s) : [];
+      return pkgs.flatMap(pkg =>
+        pkg.scripts
+          .filter(sc => !!sc.portalStatus)
+          .map(sc => ({ ...(sc as unknown as PortalScriptDoc), _pkgTitle: pkg.title })),
+      );
+    } catch { return []; }
   };
 
-  const handleRequestChange = (id: string, text: string) => {
-    setScripts(prev => prev.map(s => s.id === id ? { ...s, status: 'alteracao', feedback: text } : s));
+  const [scripts, setScripts]       = useState<PortalScriptDoc[]>(loadScripts);
+  const [openScript, setOpenScript] = useState<PortalScriptDoc | null>(null);
+
+  const writeBack = (id: string, updates: Partial<PortalScriptDoc>) => {
+    try {
+      const s = localStorage.getItem(ROTEIROS_KEY);
+      const pkgs: _PortalPkg[] = s ? JSON.parse(s) : [];
+      const updated = pkgs.map(pkg => ({
+        ...pkg,
+        scripts: pkg.scripts.map(sc => sc.id === id ? { ...sc, ...updates } : sc),
+      }));
+      localStorage.setItem(ROTEIROS_KEY, JSON.stringify(updated));
+    } catch {}
+    setScripts(prev => prev.map(sc => sc.id === id ? { ...sc, ...updates } : sc));
   };
 
-  const pendingCount = scripts.filter(s => s.status === 'aguardando').length;
+  const handleApprove = (id: string) => writeBack(id, { portalStatus: 'aprovado_cliente' });
+
+  const handleRequestChange = (id: string, text: string) =>
+    writeBack(id, { portalStatus: 'refacao', clientFeedback: text });
+
+  const toPortalScript = (doc: PortalScriptDoc): PortalScript => {
+    const statusMap: Record<PortalScriptInternalStatus, ReviewStatus> = {
+      aguardando_cliente: 'aguardando',
+      aprovado_cliente:   'aprovado',
+      refacao:            'alteracao',
+    };
+    const sentLabel = doc.sentToPortalAt
+      ? new Date(doc.sentToPortalAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
+      : '—';
+    return {
+      id:       doc.id,
+      title:    doc.title,
+      theme:    doc._pkgTitle ?? 'Roteiro',
+      sentAt:   sentLabel,
+      status:   statusMap[doc.portalStatus],
+      feedback: doc.clientFeedback,
+      body:     doc.scenes.map((sc, i) => ({ scene: i + 1, visual: sc.visual, audio: sc.audio })),
+      caption:  doc.gancho || '',
+      hashtags: '',
+    };
+  };
+
+  const pendingCount = scripts.filter(s => s.portalStatus === 'aguardando_cliente').length;
+
+  if (scripts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
+        <div className="text-4xl mb-4">📝</div>
+        <h2 className="text-base font-black text-gray-400 mb-1">Nenhum roteiro enviado</h2>
+        <p className="text-sm text-gray-600">Os roteiros enviados pela equipe para revisão aparecerão aqui.</p>
+      </div>
+    );
+  }
+
+  const statusMap: Record<PortalScriptInternalStatus, ReviewStatus> = {
+    aguardando_cliente: 'aguardando',
+    aprovado_cliente:   'aprovado',
+    refacao:            'alteracao',
+  };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -458,20 +490,26 @@ const PortalRoteirosTab: React.FC = () => {
 
       {/* Script cards */}
       <div className="space-y-3">
-        {scripts.map(script => {
-          const cfg = REVIEW_STATUS_CONFIG[script.status];
+        {scripts.map(doc => {
+          const reviewStatus = statusMap[doc.portalStatus];
+          const cfg = REVIEW_STATUS_CONFIG[reviewStatus];
           return (
             <button
-              key={script.id}
-              onClick={() => setOpenScript(script)}
+              key={doc.id}
+              onClick={() => setOpenScript(doc)}
               className="w-full text-left bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-violet-700/60 hover:bg-gray-900/80 transition-all group"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-black text-white leading-tight group-hover:text-violet-300 transition-colors line-clamp-2">
-                    {script.title}
+                    {doc.title}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">{script.theme} · Enviado em {script.sentAt}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {doc._pkgTitle ?? 'Roteiro'} · Enviado em{' '}
+                    {doc.sentToPortalAt
+                      ? new Date(doc.sentToPortalAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
+                      : '—'}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${cfg.badge}`}>
@@ -480,10 +518,10 @@ const PortalRoteirosTab: React.FC = () => {
                   <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors" />
                 </div>
               </div>
-              {script.feedback && (
+              {doc.clientFeedback && (
                 <div className="mt-3 flex items-start gap-2 text-xs text-gray-400 bg-orange-500/5 border border-orange-500/15 rounded-xl px-3 py-2">
                   <MessageSquare className="w-3 h-3 text-orange-400 flex-shrink-0 mt-0.5" />
-                  <p className="line-clamp-1">{script.feedback}</p>
+                  <p className="line-clamp-1">{doc.clientFeedback}</p>
                 </div>
               )}
             </button>
@@ -494,7 +532,7 @@ const PortalRoteirosTab: React.FC = () => {
       {/* Modal */}
       {openScript && (
         <ScriptReviewModal
-          script={scripts.find(s => s.id === openScript.id) ?? openScript}
+          script={toPortalScript(scripts.find(s => s.id === openScript.id) ?? openScript)}
           onClose={() => setOpenScript(null)}
           onApprove={handleApprove}
           onRequestChange={handleRequestChange}
@@ -505,40 +543,66 @@ const PortalRoteirosTab: React.FC = () => {
 };
 
 // ─────────────────────────────────────────────
-// Videos tab
+// Videos / Materiais tab
 // ─────────────────────────────────────────────
-const PortalVideosTab: React.FC = () => {
-  const [videos, setVideos]                     = useState<PortalVideo[]>(MOCK_VIDEOS);
-  const [feedbackOpen, setFeedbackOpen]          = useState<string | null>(null);
-  const [feedbackTexts, setFeedbackTexts]        = useState<Record<string, string>>({});
-  const [feedbackSent, setFeedbackSent]          = useState<string | null>(null);
+const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const ENTREGAS_KEY = `creator_flow_entregas_${clientId}`;
 
-  const handleApprove = (id: string) => {
-    setVideos(prev => prev.map(v => v.id === id ? { ...v, status: 'aprovado', rating: v.rating ?? 0 } : v));
+  const [deliverables, setDeliverables] = useState<PortalDeliverable[]>(() => {
+    try {
+      const s = localStorage.getItem(ENTREGAS_KEY);
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+  const [feedbackOpen, setFeedbackOpen]   = useState<string | null>(null);
+  const [feedbackTexts, setFeedbackTexts] = useState<Record<string, string>>({});
+  const [feedbackSent, setFeedbackSent]   = useState<string | null>(null);
+
+  const updateDeliverable = (id: string, updates: Partial<PortalDeliverable>) => {
+    const updated = deliverables.map(d => d.id === id ? { ...d, ...updates } : d);
+    setDeliverables(updated);
+    try { localStorage.setItem(ENTREGAS_KEY, JSON.stringify(updated)); } catch {}
   };
 
-  const handleRate = (id: string, rating: number) => {
-    setVideos(prev => prev.map(v => v.id === id ? { ...v, rating } : v));
-  };
+  const handleApprove = (id: string) =>
+    updateDeliverable(id, { status: 'aprovado', rating: deliverables.find(d => d.id === id)?.rating ?? 0 });
+
+  const handleRate = (id: string, rating: number) => updateDeliverable(id, { rating });
 
   const handleSendFeedback = (id: string) => {
     const text = feedbackTexts[id]?.trim();
     if (!text) return;
-    setVideos(prev => prev.map(v => v.id === id ? { ...v, status: 'alteracao', feedback: text } : v));
+    updateDeliverable(id, { status: 'alteracao', feedback: text });
     setFeedbackSent(id);
     setTimeout(() => { setFeedbackSent(null); setFeedbackOpen(null); }, 1800);
   };
 
-  const pendingCount = videos.filter(v => v.status === 'aguardando').length;
+  const formatSentAt = (ts: number): string => {
+    const d = new Date(ts);
+    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return `${d.getDate()} ${months[d.getMonth()]}`;
+  };
+
+  const pendingCount = deliverables.filter(d => d.status === 'aguardando').length;
+
+  if (deliverables.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
+        <div className="text-4xl mb-4">📦</div>
+        <h2 className="text-base font-black text-gray-400 mb-1">Nenhum material enviado</h2>
+        <p className="text-sm text-gray-600">Os materiais enviados pela equipe aparecerão aqui para revisão.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-black text-white">Vídeos para Revisão</h2>
+          <h2 className="text-base font-black text-white">Materiais para Revisão</h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            {pendingCount > 0 ? `${pendingCount} aguardando sua aprovação` : 'Todos os vídeos foram revisados'}
+            {pendingCount > 0 ? `${pendingCount} aguardando sua aprovação` : 'Todos os materiais foram revisados'}
           </p>
         </div>
         {pendingCount > 0 && (
@@ -548,32 +612,41 @@ const PortalVideosTab: React.FC = () => {
         )}
       </div>
 
-      {/* Video cards */}
+      {/* Deliverable cards */}
       <div className="space-y-4">
-        {videos.map(video => {
-          const cfg = REVIEW_STATUS_CONFIG[video.status];
-          const isFeedbackOpen = feedbackOpen === video.id;
+        {deliverables.map(item => {
+          const cfg = REVIEW_STATUS_CONFIG[item.status];
+          const isFeedbackOpen = feedbackOpen === item.id;
+          const isVideo = item.type === 'video';
 
           return (
-            <div
-              key={video.id}
-              className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden transition-all"
-            >
-              {/* ── Player placeholder ── */}
-              <div className="relative bg-gray-950 aspect-video flex items-center justify-center border-b border-gray-800 group cursor-pointer">
-                {/* Fake thumbnail gradient */}
+            <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden transition-all">
+
+              {/* ── Material preview area ── */}
+              <div className="relative bg-gray-950 aspect-video flex items-center justify-center border-b border-gray-800">
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 to-gray-950" />
-                {/* Play button */}
-                <div className="relative z-10 w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/20 transition-all shadow-2xl">
-                  <Play className="w-6 h-6 text-white ml-1" style={{ fill: 'white' }} />
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-2xl">
+                    {isVideo
+                      ? <Play className="w-6 h-6 text-white ml-1" style={{ fill: 'white' }} />
+                      : <FileText className="w-6 h-6 text-white" />}
+                  </div>
+                  {item.shareLink && (
+                    <a
+                      href={item.shareLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-black text-violet-300 hover:text-violet-200 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-colors"
+                    >
+                      {isVideo ? '▶ Assistir Vídeo' : '📄 Ver Material'}
+                    </a>
+                  )}
                 </div>
-                {/* Duration badge */}
-                <span className="absolute bottom-3 right-3 text-[10px] font-black px-2 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-sm">
-                  {video.duration}
-                </span>
-                {/* Type badge */}
                 <span className="absolute top-3 left-3 text-[10px] font-black px-2 py-0.5 rounded-md bg-violet-600/80 text-white backdrop-blur-sm">
-                  {video.type}
+                  {isVideo ? 'Vídeo' : 'Roteiro'}
+                </span>
+                <span className="absolute bottom-3 right-3 text-[10px] font-black px-2 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-sm">
+                  {item.expiresInDays}d de acesso
                 </span>
               </div>
 
@@ -581,24 +654,24 @@ const PortalVideosTab: React.FC = () => {
               <div className="p-5 space-y-4">
                 {/* Title + status */}
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-black text-white leading-tight">{video.title}</h3>
+                  <h3 className="text-sm font-black text-white leading-tight">{item.title}</h3>
                   <span className={`flex-shrink-0 text-[10px] font-black px-2 py-0.5 rounded-md border ${cfg.badge}`}>
                     {cfg.label}
                   </span>
                 </div>
 
-                <p className="text-xs text-gray-500">Enviado em {video.sentAt}</p>
+                <p className="text-xs text-gray-500">Enviado em {formatSentAt(item.sentAt)}</p>
 
                 {/* Feedback block (alteracao) */}
-                {video.status === 'alteracao' && video.feedback && (
+                {item.status === 'alteracao' && item.feedback && (
                   <div className="flex items-start gap-2 text-xs text-gray-300 bg-orange-500/10 border border-orange-500/20 rounded-xl px-3 py-3">
                     <MessageSquare className="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" />
-                    <p>{video.feedback}</p>
+                    <p>{item.feedback}</p>
                   </div>
                 )}
 
                 {/* Approved: star rating */}
-                {video.status === 'aprovado' && (
+                {item.status === 'aprovado' && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                       <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -607,28 +680,28 @@ const PortalVideosTab: React.FC = () => {
                     <div className="flex items-center gap-3 px-1">
                       <p className="text-xs text-gray-500 font-bold">Avaliação:</p>
                       <StarRating
-                        value={video.rating ?? 0}
-                        onChange={rating => handleRate(video.id, rating)}
-                        readonly={!!video.rating && video.rating > 0}
+                        value={item.rating ?? 0}
+                        onChange={rating => handleRate(item.id, rating)}
+                        readonly={!!item.rating && item.rating > 0}
                       />
-                      {video.rating && video.rating > 0 && (
-                        <span className="text-xs font-black text-amber-400">{video.rating}/5</span>
+                      {item.rating && item.rating > 0 && (
+                        <span className="text-xs font-black text-amber-400">{item.rating}/5</span>
                       )}
                     </div>
                   </div>
                 )}
 
                 {/* Pending: action buttons */}
-                {video.status === 'aguardando' && !isFeedbackOpen && (
+                {item.status === 'aguardando' && !isFeedbackOpen && (
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setFeedbackOpen(video.id)}
+                      onClick={() => setFeedbackOpen(item.id)}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/40 text-orange-300 text-xs font-black hover:bg-orange-500/10 transition-all"
                     >
                       <MessageSquare className="w-3.5 h-3.5" /> Solicitar Alteração
                     </button>
                     <button
-                      onClick={() => handleApprove(video.id)}
+                      onClick={() => handleApprove(item.id)}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-500/20 transition-all"
                     >
                       <ThumbsUp className="w-3.5 h-3.5" /> Aprovar
@@ -641,25 +714,25 @@ const PortalVideosTab: React.FC = () => {
                   <div className="space-y-3 animate-in fade-in duration-200">
                     <textarea
                       autoFocus
-                      value={feedbackTexts[video.id] ?? ''}
-                      onChange={e => setFeedbackTexts(prev => ({ ...prev, [video.id]: e.target.value }))}
+                      value={feedbackTexts[item.id] ?? ''}
+                      onChange={e => setFeedbackTexts(prev => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder="Descreva o que deve ser alterado…"
                       rows={3}
                       className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 resize-none transition-all"
                     />
                     <div className="flex gap-3">
                       <button
-                        onClick={() => { setFeedbackOpen(null); setFeedbackTexts(prev => ({ ...prev, [video.id]: '' })); }}
+                        onClick={() => { setFeedbackOpen(null); setFeedbackTexts(prev => ({ ...prev, [item.id]: '' })); }}
                         className="px-4 py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-black hover:bg-gray-800 transition-all"
                       >
                         Cancelar
                       </button>
                       <button
-                        onClick={() => handleSendFeedback(video.id)}
-                        disabled={!feedbackTexts[video.id]?.trim() || feedbackSent === video.id}
+                        onClick={() => handleSendFeedback(item.id)}
+                        disabled={!feedbackTexts[item.id]?.trim() || feedbackSent === item.id}
                         className="flex-1 flex items-center justify-center gap-2 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black transition-all disabled:opacity-50"
                       >
-                        {feedbackSent === video.id
+                        {feedbackSent === item.id
                           ? <><Check className="w-3.5 h-3.5" /> Enviado!</>
                           : <><Send className="w-3.5 h-3.5" /> Enviar Feedback</>}
                       </button>
@@ -936,9 +1009,9 @@ const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) =
             </div>
           )}
 
-          {activeTab === 'roteiros' && <PortalRoteirosTab />}
+          {activeTab === 'roteiros' && <PortalRoteirosTab clientId={client.id} />}
 
-          {activeTab === 'videos' && <PortalVideosTab />}
+          {activeTab === 'videos' && <PortalVideosTab clientId={client.id} />}
 
           {activeTab === 'reunioes' && <PortalReunioeTab clientId={client.id} />}
 

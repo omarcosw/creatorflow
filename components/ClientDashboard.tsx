@@ -1979,6 +1979,10 @@ interface ScriptDocument {
   gancho: string;
   scenes: ScriptScene[];
   createdAt: number;
+  // Portal integration
+  portalStatus?: 'aguardando_cliente' | 'aprovado_cliente' | 'refacao';
+  clientFeedback?: string;
+  sentToPortalAt?: number;
 }
 
 interface ScriptPackage {
@@ -1994,6 +1998,14 @@ const SCRIPT_STATUS_STYLES: Record<ScriptStatus, string> = {
   'Rascunho': 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
   'Aprovado': 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/50',
   'Gravado':  'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+};
+
+type PortalScriptStatus = NonNullable<ScriptDocument['portalStatus']>;
+
+const PORTAL_SCRIPT_STATUS_CONFIG: Record<PortalScriptStatus, { label: string; badge: string }> = {
+  aguardando_cliente: { label: 'Aguardando Cliente', badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
+  aprovado_cliente:   { label: 'Aprovado ✅',          badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
+  refacao:            { label: '⚠️ Refação',            badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' },
 };
 
 const buildDefaultScriptPackages = (): ScriptPackage[] => [
@@ -2077,6 +2089,10 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   const cycleStatus = (pkgId: string, script: ScriptDocument) => {
     const next = SCRIPT_STATUS_CYCLE[(SCRIPT_STATUS_CYCLE.indexOf(script.status) + 1) % SCRIPT_STATUS_CYCLE.length];
     updateScript(pkgId, { ...script, status: next });
+  };
+
+  const sendToPortal = (pkgId: string, script: ScriptDocument) => {
+    updateScript(pkgId, { ...script, portalStatus: 'aguardando_cliente', sentToPortalAt: Date.now() });
   };
 
   // ── Scene CRUD ────────────────────────────────────────────────
@@ -2277,6 +2293,24 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       {script.status}
                     </button>
 
+                    {/* Portal status badge */}
+                    {script.portalStatus && (
+                      <span className={`flex-shrink-0 text-[10px] font-black px-2.5 py-1 rounded-lg border ${PORTAL_SCRIPT_STATUS_CONFIG[script.portalStatus].badge}`}>
+                        {PORTAL_SCRIPT_STATUS_CONFIG[script.portalStatus].label}
+                      </span>
+                    )}
+
+                    {/* Send to portal button */}
+                    {!script.portalStatus && (
+                      <button
+                        onClick={e => { e.stopPropagation(); sendToPortal(selectedPkg.id, script); }}
+                        className="flex-shrink-0 text-[10px] font-black px-2.5 py-1 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                        title="Enviar para aprovação do cliente"
+                      >
+                        📤 Enviar
+                      </button>
+                    )}
+
                     {/* Delete */}
                     <button
                       onClick={e => { e.stopPropagation(); if (confirm(`Excluir "${script.title}"?`)) deleteScript(selectedPkg.id, script.id); }}
@@ -2428,6 +2462,18 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                             </div>
                           )}
                         </>
+                      )}
+
+                      {/* ── Client feedback from portal ── */}
+                      {script.portalStatus === 'refacao' && script.clientFeedback && (
+                        <div className="px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1.5 flex items-center gap-1.5">
+                            <AlertTriangle className="w-3 h-3" /> Feedback do Cliente (Portal)
+                          </p>
+                          <p className="text-xs text-zinc-700 dark:text-zinc-300 italic leading-relaxed">
+                            &ldquo;{script.clientFeedback}&rdquo;
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
