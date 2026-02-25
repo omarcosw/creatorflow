@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import React from 'react';
-import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, Check, CheckCircle2, History, Plus, MessageSquare, Keyboard, Sparkles, PlayCircle, ThumbsUp, ThumbsDown, UserPlus, UserCircle, ChevronRight, Mic, Loader2, Maximize2, Minimize2, Clock, Copy, ExternalLink, Wand2, Monitor, Zap, ListChecks, Palette, Printer, Upload, Play, Layers, Film, Pause, Music } from 'lucide-react';
-import { AgentConfig, AgentId, Message, StylePreset, ChatSession, InstagramProfile, ShotList, ShotItem, BrandKit } from '@/types';
+import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, Check, CheckCircle2, History, Plus, MessageSquare, Keyboard, Sparkles, PlayCircle, ThumbsUp, ThumbsDown, UserPlus, UserCircle, ChevronRight, Mic, Loader2, Maximize2, Minimize2, Clock, Copy, ExternalLink, Wand2, Monitor, Zap, ListChecks, Palette, Printer, Upload, Play, Layers, Film, Pause, Music, FolderInput } from 'lucide-react';
+import { AgentConfig, AgentId, Message, StylePreset, ChatSession, InstagramProfile, ShotList, ShotItem, BrandKit, Client } from '@/types';
 import { sendMessageToAgent, transcribeAudio } from '@/lib/api';
 import MarkdownRenderer from './MarkdownRenderer';
 
@@ -811,6 +811,7 @@ interface AgentViewProps {
   onDeleteBrandKit?: (id: string) => void;
   navigationContext?: { prompt: string } | null;
   onNavigateToAgent?: (id: AgentId, prompt: string) => void;
+  clients?: Client[];
 }
 
 // Brand Kit Form Modal
@@ -1133,7 +1134,7 @@ const DetailView: React.FC<{ preset: StylePreset; onBack: () => void; agentId: A
     );
 };
 
-const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSession, onDeleteSession, instagramProfiles = [], onSaveIGProfile, onDeleteIGProfile, onSaveShotList, brandKits = [], onSaveBrandKit, onDeleteBrandKit, navigationContext, onNavigateToAgent }) => {
+const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSession, onDeleteSession, instagramProfiles = [], onSaveIGProfile, onDeleteIGProfile, onSaveShotList, brandKits = [], onSaveBrandKit, onDeleteBrandKit, navigationContext, onNavigateToAgent, clients = [] }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -1431,6 +1432,70 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
       if (onNavigateToAgent) onNavigateToAgent(AgentId.SHOT_LIST, "");
   };
 
+  // ── Vincular roteiro a cliente ──────────────────────────────────────────
+  const [linkTarget,    setLinkTarget]    = useState<{ idx: number; text: string } | null>(null);
+  const [linkClientId,  setLinkClientId]  = useState('');
+  const [linkToast,     setLinkToast]     = useState<string | null>(null);
+
+  const handleLinkToClient = () => {
+    if (!linkTarget || !linkClientId) return;
+    const text = linkTarget.text;
+
+    // Parse markdown table into scenes
+    const tableLines = text.split('\n').filter(l => l.trim().startsWith('|') && !l.includes('---'));
+    const scenes = tableLines.slice(1).map((line, i) => {
+      const cells = line.split('|').filter(c => c.trim()).map(c => c.trim());
+      return {
+        id: Date.now().toString(36) + i + Math.random().toString(36).slice(2),
+        visual:    cells[1] || '',
+        audio:     cells[2] || cells[1] || '',
+        isChecked: false,
+      };
+    });
+
+    // Try to extract a title from the first non-table, non-empty line
+    const titleLine = text.split('\n').find(l => !l.trim().startsWith('|') && l.trim().length > 5);
+    const title = titleLine?.replace(/^#+\s*/, '').trim()
+      || `Roteiro — ${new Date().toLocaleDateString('pt-BR')}`;
+    const gancho = scenes.length > 0 ? scenes[0].audio : '';
+
+    const newScript = {
+      id:            Date.now().toString(36) + Math.random().toString(36).slice(2),
+      title,
+      status:        'Rascunho',
+      referenceLink: '',
+      gancho,
+      scenes,
+      createdAt:     Date.now(),
+    };
+
+    const storageKey = `creator_flow_roteiros_${linkClientId}`;
+    try {
+      const stored = localStorage.getItem(storageKey);
+      const pkgs: { id: string; title: string; scripts: typeof newScript[]; createdAt: number }[] =
+        stored ? JSON.parse(stored) : [];
+
+      const globalPkgIdx = pkgs.findIndex(p => p.title === 'Gerado Globalmente');
+      if (globalPkgIdx >= 0) {
+        pkgs[globalPkgIdx] = { ...pkgs[globalPkgIdx], scripts: [newScript, ...pkgs[globalPkgIdx].scripts] };
+      } else {
+        pkgs.unshift({
+          id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
+          title:     'Gerado Globalmente',
+          scripts:   [newScript],
+          createdAt: Date.now(),
+        });
+      }
+      localStorage.setItem(storageKey, JSON.stringify(pkgs));
+    } catch {}
+
+    const clientName = clients.find(c => c.id === linkClientId)?.brandName || 'Cliente';
+    setLinkToast(`✅ Roteiro enviado para a Sala de Roteiros de ${clientName}!`);
+    setLinkTarget(null);
+    setLinkClientId('');
+    setTimeout(() => setLinkToast(null), 4000);
+  };
+
   // --- NEW: INTERCEPT EDITING SHORTCUTS VIEW ---
   if (agent.id === AgentId.EDITING_SHORTCUTS) {
       return <EditingKnowledgeHub onBack={onBack} />;
@@ -1694,13 +1759,23 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                           {copiedId === idx ? 'Copiado!' : 'Copiar Roteiro'}
                       </button>
                       {agent.id === AgentId.SCRIPT_GENERATOR && (
-                        <button 
-                          onClick={() => handleTransferToStoryboard(msg.text)}
-                          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all group"
-                        >
-                            <Wand2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" /> 
-                            Transformar em Storyboard
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleTransferToStoryboard(msg.text)}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all group"
+                          >
+                              <Wand2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                              Transformar em Storyboard
+                          </button>
+                          {clients.length > 0 && (
+                            <button
+                              onClick={() => { setLinkTarget({ idx, text: msg.text }); setLinkClientId(''); }}
+                              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-violet-500/20 hover:bg-violet-700 hover:scale-105 active:scale-95 transition-all"
+                            >
+                              <FolderInput className="w-3.5 h-3.5" /> 👤 Vincular a Cliente
+                            </button>
+                          )}
+                        </>
                       )}
                   </div>
               )}
@@ -1914,6 +1989,56 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
             td { border-bottom: 1px solid #ddd !important; }
         }
       `}</style>
+
+      {/* ── Vincular a Cliente modal ── */}
+      {linkTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-sm p-6 space-y-5 animate-in slide-in-from-bottom-4 duration-300 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FolderInput className="w-4 h-4 text-violet-400" />
+                <h3 className="text-sm font-black text-white">Vincular a Cliente</h3>
+              </div>
+              <button onClick={() => setLinkTarget(null)} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Selecione o cliente para enviar este roteiro à Sala de Roteiros dele.
+            </p>
+            <select
+              value={linkClientId}
+              onChange={e => setLinkClientId(e.target.value)}
+              className="w-full text-sm px-3 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all"
+            >
+              <option value="">Selecionar cliente…</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.brandName}</option>
+              ))}
+            </select>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setLinkTarget(null)} className="px-4 py-2 rounded-xl border border-zinc-700 text-zinc-400 text-xs font-black hover:bg-zinc-800 transition-all">
+                Cancelar
+              </button>
+              <button
+                onClick={handleLinkToClient}
+                disabled={!linkClientId}
+                className="flex-1 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-black transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Enviar para Sala de Roteiros
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast de sucesso ── */}
+      {linkToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 bg-zinc-900 border border-emerald-500/30 rounded-2xl shadow-2xl text-sm font-bold text-emerald-300 animate-in slide-in-from-bottom-4 duration-300">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          {linkToast}
+        </div>
+      )}
     </div>
   );
 };

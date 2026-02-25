@@ -575,6 +575,7 @@ export default function DashboardPage() {
           onDeleteBrandKit={handleDeleteBrandKit} // Passed prop
           navigationContext={navigationContext}
           onNavigateToAgent={handleNavigateToAgent}
+          clients={clients}
         />
       ) : isProductionHubOpen ? (
           <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

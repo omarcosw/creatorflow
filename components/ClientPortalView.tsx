@@ -49,6 +49,7 @@ interface PortalScript {
   sentAt: string;
   status: ReviewStatus;
   feedback?: string;
+  rating?: number; // 1–5 stars from portal client
   body: { scene: number; visual: string; audio: string }[];
   caption: string;
   hashtags: string;
@@ -69,6 +70,7 @@ interface PortalScriptDoc {
   portalStatus: PortalScriptInternalStatus;
   clientFeedback?: string;
   sentToPortalAt?: number;
+  rating?: number; // 1–5 stars from portal client
   _pkgTitle?: string;
 }
 
@@ -265,9 +267,10 @@ interface ScriptReviewModalProps {
   onClose: () => void;
   onApprove: (id: string) => void;
   onRequestChange: (id: string, text: string) => void;
+  onRate?: (id: string, rating: number) => void;
 }
 
-const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, onApprove, onRequestChange }) => {
+const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, onApprove, onRequestChange, onRate }) => {
   const [feedbackMode, setFeedbackMode] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [sent, setSent]                 = useState(false);
@@ -309,11 +312,26 @@ const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, 
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8 space-y-8 max-w-3xl mx-auto w-full">
 
-        {/* Approved feedback block */}
+        {/* Approved feedback block + star rating */}
         {script.status === 'aprovado' && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <p className="text-sm font-bold text-emerald-300">Roteiro aprovado. Obrigado pelo feedback!</p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <p className="text-sm font-bold text-emerald-300">Roteiro aprovado. Obrigado pelo feedback!</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-900 border border-gray-800 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Avalie este roteiro</p>
+              <div className="flex items-center gap-3">
+                <StarRating
+                  value={script.rating ?? 0}
+                  onChange={rating => onRate?.(script.id, rating)}
+                  readonly={!!script.rating && script.rating > 0}
+                />
+                {!!script.rating && script.rating > 0 && (
+                  <span className="text-xs font-black text-amber-400">{script.rating}/5 ⭐</span>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -462,6 +480,8 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
   const handleRequestChange = (id: string, text: string) =>
     writeBack(id, { portalStatus: 'refacao', clientFeedback: text });
 
+  const handleRate = (id: string, rating: number) => writeBack(id, { rating });
+
   const toPortalScript = (doc: PortalScriptDoc): PortalScript => {
     const statusMap: Record<PortalScriptInternalStatus, ReviewStatus> = {
       aguardando_cliente: 'aguardando',
@@ -478,6 +498,7 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
       sentAt:   sentLabel,
       status:   statusMap[doc.portalStatus],
       feedback: doc.clientFeedback,
+      rating:   doc.rating,
       body:     doc.scenes.map((sc, i) => ({ scene: i + 1, visual: sc.visual, audio: sc.audio })),
       caption:  doc.gancho || '',
       hashtags: '',
@@ -555,6 +576,14 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
                   <p className="line-clamp-1">{doc.clientFeedback}</p>
                 </div>
               )}
+              {doc.portalStatus === 'aprovado_cliente' && !!doc.rating && doc.rating > 0 && (
+                <div className="mt-2 flex items-center gap-1">
+                  {[1,2,3,4,5].map(n => (
+                    <Star key={n} className="w-3.5 h-3.5" style={{ fill: n <= doc.rating! ? '#f59e0b' : 'transparent', stroke: n <= doc.rating! ? '#f59e0b' : '#4b5563' }} />
+                  ))}
+                  <span className="ml-1 text-[10px] font-bold text-amber-400">{doc.rating}/5</span>
+                </div>
+              )}
             </button>
           );
         })}
@@ -567,6 +596,7 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
           onClose={() => setOpenScript(null)}
           onApprove={handleApprove}
           onRequestChange={handleRequestChange}
+          onRate={handleRate}
         />
       )}
     </div>

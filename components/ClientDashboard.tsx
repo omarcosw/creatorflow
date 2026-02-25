@@ -1985,6 +1985,7 @@ interface ScriptDocument {
   portalStatus?: 'aguardando_cliente' | 'aprovado_cliente' | 'refacao';
   clientFeedback?: string;
   sentToPortalAt?: number;
+  rating?: number; // 1–5 stars from portal client
 }
 
 interface ScriptPackage {
@@ -2302,6 +2303,15 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       </span>
                     )}
 
+                    {/* Portal rating stars (compact) */}
+                    {script.portalStatus === 'aprovado_cliente' && !!script.rating && script.rating > 0 && (
+                      <div className="flex-shrink-0 flex items-center gap-px">
+                        {[1,2,3,4,5].map(n => (
+                          <Star key={n} className="w-3 h-3" style={{ fill: n <= script.rating! ? '#f59e0b' : 'transparent', stroke: n <= script.rating! ? '#f59e0b' : '#71717a' }} />
+                        ))}
+                      </div>
+                    )}
+
                     {/* Send to portal button */}
                     {!script.portalStatus && (
                       <button
@@ -2475,6 +2485,21 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                           <p className="text-xs text-zinc-700 dark:text-zinc-300 italic leading-relaxed">
                             &ldquo;{script.clientFeedback}&rdquo;
                           </p>
+                        </div>
+                      )}
+
+                      {/* ── Portal rating ── */}
+                      {script.portalStatus === 'aprovado_cliente' && !!script.rating && script.rating > 0 && (
+                        <div className="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-1.5">
+                            <Star className="w-3 h-3" style={{ fill: '#f59e0b', stroke: '#f59e0b' }} /> Avaliação do Cliente (Portal)
+                          </p>
+                          <div className="flex items-center gap-1">
+                            {[1,2,3,4,5].map(n => (
+                              <Star key={n} className="w-4 h-4" style={{ fill: n <= script.rating! ? '#f59e0b' : 'transparent', stroke: n <= script.rating! ? '#f59e0b' : '#71717a' }} />
+                            ))}
+                            <span className="ml-1.5 text-xs font-black text-amber-500">{script.rating}/5</span>
+                          </div>
                         </div>
                       )}
                     </div>
