@@ -3313,7 +3313,7 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
   const [metricsSaved, setMetricsSaved] = useState(false);
 
   const saveMetrics = () => {
-    try { localStorage.setItem(METRICS_KEY, JSON.stringify(metricsDraft)); } catch {}
+    try { localStorage.setItem(METRICS_KEY, JSON.stringify(metricsDraft)); } catch { /* ignore */ }
     setMetricsSaved(true);
     setTimeout(() => setMetricsSaved(false), 2000);
   };
@@ -3333,7 +3333,7 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
 
   const persistInvoices = (next: Invoice[]) => {
     setInvoices(next);
-    try { localStorage.setItem(INVOICES_KEY, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(INVOICES_KEY, JSON.stringify(next)); } catch { /* ignore */ }
   };
 
   const addInvoice = () => {
@@ -3660,7 +3660,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
     };
     const updated = [meeting, ...meetings];
     setMeetings(updated);
-    try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch { /* ignore */ }
     setFormOpen(false);
     resetForm();
     setExpandedId(meeting.id);
@@ -3994,7 +3994,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                           const updated = meetings.filter(m => m.id !== meeting.id);
                           setMeetings(updated);
                           setExpandedId(null);
-                          try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch {}
+                          try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch { /* ignore */ }
                         }}
                         className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-xl transition-all"
                       >
@@ -4177,7 +4177,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
     const isAlreadySaved = savedIdeas.some(s => s.id === idea.id);
     setSavedIdeas(prev => {
       const updated = isAlreadySaved ? prev.filter(s => s.id !== idea.id) : [idea, ...prev];
-      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch { /* ignore */ }
       return updated;
     });
     if (!isAlreadySaved) {
@@ -4189,7 +4189,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   const removeFromBank = (ideaId: string) => {
     setSavedIdeas(prev => {
       const updated = prev.filter(s => s.id !== ideaId);
-      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch { /* ignore */ }
       return updated;
     });
   };

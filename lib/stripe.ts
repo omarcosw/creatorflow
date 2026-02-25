@@ -8,27 +8,40 @@ export const stripe = process.env.STRIPE_SECRET_KEY
   : null;
 
 export const PLANS = {
-  starter: {
-    name: 'Starter',
-    priceId: process.env.STRIPE_PRICE_STARTER || '',
-    price: 7900, // R$ 79,00 in centavos
+  solo: {
+    name: 'Solo',
+    priceId: process.env.STRIPE_PRICE_SOLO || '',
+    price: 4990, // R$ 49,90 in centavos
     features: {
-      messagesPerDay: 15,
-      agents: 5,
+      messagesPerDay: 10,
+      agents: 3,
       model: 'flash',
-      savedSessions: 3,
+      savedSessions: 1,
       support: 'email',
     },
   },
-  professional: {
-    name: 'Professional',
-    priceId: process.env.STRIPE_PRICE_PROFESSIONAL || '',
-    price: 15900, // R$ 159,00 in centavos
+  maker: {
+    name: 'Maker',
+    priceId: process.env.STRIPE_PRICE_MAKER || '',
+    price: 6790, // R$ 67,90 in centavos
     features: {
-      messagesPerDay: 80,
+      messagesPerDay: 30,
+      agents: 10,
+      model: 'flash',
+      savedSessions: 5,
+      support: 'email',
+    },
+  },
+  studio: {
+    name: 'Studio',
+    priceId: process.env.STRIPE_PRICE_STUDIO || '',
+    price: 19790, // R$ 197,90 in centavos
+    popular: true,
+    features: {
+      messagesPerDay: 100,
       agents: 24,
       model: 'flash+pro',
-      storyboardImages: 10,
+      storyboardImages: 20,
       savedSessions: -1, // unlimited
       shotListManager: true,
       support: 'priority',
@@ -37,7 +50,7 @@ export const PLANS = {
   agency: {
     name: 'Agency',
     priceId: process.env.STRIPE_PRICE_AGENCY || '',
-    price: 31900, // R$ 319,00 in centavos
+    price: 49790, // R$ 497,90 in centavos
     features: {
       messagesPerDay: -1, // unlimited (fair use)
       agents: 24,

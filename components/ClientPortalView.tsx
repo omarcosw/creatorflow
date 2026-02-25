@@ -159,7 +159,7 @@ const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
         const deliverables = JSON.parse(s) as PortalDeliverable[];
         videosProduced = deliverables.filter(d => d.status === 'aprovado').length;
       }
-    } catch {}
+    } catch { /* ignore */ }
 
     try {
       const s = localStorage.getItem(`creator_flow_metrics_${clientId}`);
@@ -171,7 +171,7 @@ const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
         }
         if (m.lastVideoViews) lastVideoViews = m.lastVideoViews;
       }
-    } catch {}
+    } catch { /* ignore */ }
 
     return { videosProduced, instagramGrowth, lastVideoViews };
   });
@@ -471,7 +471,7 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
         scripts: pkg.scripts.map(sc => sc.id === id ? { ...sc, ...updates } : sc),
       }));
       localStorage.setItem(ROTEIROS_KEY, JSON.stringify(updated));
-    } catch {}
+    } catch { /* ignore */ }
     setScripts(prev => prev.map(sc => sc.id === id ? { ...sc, ...updates } : sc));
   };
 
@@ -622,7 +622,7 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
   const updateDeliverable = (id: string, updates: Partial<PortalDeliverable>) => {
     const updated = deliverables.map(d => d.id === id ? { ...d, ...updates } : d);
     setDeliverables(updated);
-    try { localStorage.setItem(ENTREGAS_KEY, JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem(ENTREGAS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
   };
 
   const handleApprove = (id: string) =>
@@ -1113,7 +1113,7 @@ const PortalFinanceiroTab: React.FC<{ clientId: string }> = ({ clientId }) => {
 // ─────────────────────────────────────────────
 // Placeholder for remaining tabs
 // ─────────────────────────────────────────────
-const TabPlaceholder: React.FC = () => (
+const _TabPlaceholder: React.FC = () => (
   <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
     <div className="text-4xl mb-4">🚧</div>
     <h2 className="text-base font-black text-gray-400 mb-1">Em breve</h2>

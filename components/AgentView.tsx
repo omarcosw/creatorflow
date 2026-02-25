@@ -677,6 +677,7 @@ const LightingEducationHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 };
 
 // --- NEW COMPONENT: SFX LIBRARY HUB ---
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SfxLibraryHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [playingId, setPlayingId] = useState<string | null>(null);
     const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -1488,7 +1489,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
         });
       }
       localStorage.setItem(storageKey, JSON.stringify(pkgs));
-    } catch {}
+    } catch { /* ignore */ }
 
     const clientName = clients.find(c => c.id === linkClientId)?.brandName || 'Cliente';
     setLinkToast(`✅ Roteiro enviado para a Sala de Roteiros de ${clientName}!`);
