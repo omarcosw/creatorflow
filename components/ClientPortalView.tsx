@@ -23,8 +23,9 @@ import {
   Play,
   Check,
   Send,
+  Copy,
 } from 'lucide-react';
-import { Client } from '@/types';
+import { Client, Invoice } from '@/types';
 
 // ─────────────────────────────────────────────
 // Shared types
@@ -142,30 +143,60 @@ const ProductionStepper: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────
-// Achievements
+// Achievements (dynamic)
 // ─────────────────────────────────────────────
-const ACHIEVEMENTS = [
-  { icon: <Flame className="w-5 h-5" />,      iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',   hover: 'hover:border-amber-700/50',   value: '30',   label: 'Vídeos Produzidos' },
-  { icon: <TrendingUp className="w-5 h-5" />, iconBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', hover: 'hover:border-emerald-700/50', value: '+15%', label: 'Crescimento no Instagram' },
-  { icon: <Trophy className="w-5 h-5" />,     iconBg: 'bg-violet-500/10 border-violet-500/20 text-violet-400', hover: 'hover:border-violet-700/50',  value: '10k',  label: 'Views no último Reels' },
-] as const;
+const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const [data] = useState(() => {
+    let videosProduced   = 0;
+    let instagramGrowth  = '+0%';
+    let lastVideoViews   = '—';
 
-const AchievementsGrid: React.FC = () => (
-  <section>
-    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Marcos da Nossa Parceria</p>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {ACHIEVEMENTS.map(a => (
-        <div key={a.label} className={`bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3 transition-colors ${a.hover}`}>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${a.iconBg}`}>{a.icon}</div>
-          <div>
-            <p className="text-2xl font-black text-white">{a.value}</p>
-            <p className="text-xs font-bold text-gray-400 mt-0.5">{a.label}</p>
+    try {
+      const s = localStorage.getItem(`creator_flow_entregas_${clientId}`);
+      if (s) {
+        const deliverables = JSON.parse(s) as PortalDeliverable[];
+        videosProduced = deliverables.filter(d => d.status === 'aprovado').length;
+      }
+    } catch {}
+
+    try {
+      const s = localStorage.getItem(`creator_flow_metrics_${clientId}`);
+      if (s) {
+        const m = JSON.parse(s) as { initialFollowers: number; currentFollowers: number; lastVideoViews: string };
+        if (m.initialFollowers > 0) {
+          const pct = ((m.currentFollowers - m.initialFollowers) / m.initialFollowers) * 100;
+          instagramGrowth = `+${pct.toFixed(0)}%`;
+        }
+        if (m.lastVideoViews) lastVideoViews = m.lastVideoViews;
+      }
+    } catch {}
+
+    return { videosProduced, instagramGrowth, lastVideoViews };
+  });
+
+  const achievements = [
+    { icon: <Flame className="w-5 h-5" />,      iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',       hover: 'hover:border-amber-700/50',   value: String(data.videosProduced), label: 'Vídeos Produzidos' },
+    { icon: <TrendingUp className="w-5 h-5" />, iconBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', hover: 'hover:border-emerald-700/50', value: data.instagramGrowth,         label: 'Crescimento no Instagram' },
+    { icon: <Trophy className="w-5 h-5" />,     iconBg: 'bg-violet-500/10 border-violet-500/20 text-violet-400',    hover: 'hover:border-violet-700/50',  value: data.lastVideoViews,          label: 'Views no último Reels' },
+  ];
+
+  return (
+    <section>
+      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Marcos da Nossa Parceria</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {achievements.map(a => (
+          <div key={a.label} className={`bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3 transition-colors ${a.hover}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${a.iconBg}`}>{a.icon}</div>
+            <div>
+              <p className="text-2xl font-black text-white">{a.value}</p>
+              <p className="text-xs font-bold text-gray-400 mt-0.5">{a.label}</p>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
-  </section>
-);
+        ))}
+      </div>
+    </section>
+  );
+};
 
 // ─────────────────────────────────────────────
 // Pending actions
@@ -919,6 +950,137 @@ const PortalReunioeTab: React.FC<{ clientId: string }> = ({ clientId }) => {
 };
 
 // ─────────────────────────────────────────────
+// Financeiro tab
+// ─────────────────────────────────────────────
+const INVOICE_STATUS_PORTAL: Record<Invoice['status'], { label: string; badge: string }> = {
+  pendente: { label: 'Pendente',      badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  pago:     { label: '✅ Pago',       badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  atrasado: { label: '⚠️ Atrasado',  badge: 'bg-red-500/15 text-red-300 border-red-500/30' },
+};
+
+const PortalFinanceiroTab: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const [invoices] = useState<Invoice[]>(() => {
+    try { const s = localStorage.getItem(`creator_flow_invoices_${clientId}`); return s ? JSON.parse(s) : []; }
+    catch { return []; }
+  });
+  const [payModalFor, setPayModalFor] = useState<Invoice | null>(null);
+  const [copied, setCopied]           = useState(false);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  const formatCurrency = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatDueDate  = (d: string): string => {
+    const [y, m, day] = d.split('-');
+    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+  };
+
+  if (invoices.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
+        <div className="text-4xl mb-4">💰</div>
+        <h2 className="text-base font-black text-gray-400 mb-1">Sem faturas em aberto</h2>
+        <p className="text-sm text-gray-600">Suas cobranças aparecerão aqui quando a equipe as enviar.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5 animate-in fade-in duration-200">
+      <div>
+        <h2 className="text-base font-black text-white">Financeiro</h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {invoices.length} fatura{invoices.length > 1 ? 's' : ''} registrada{invoices.length > 1 ? 's' : ''}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {invoices.map(inv => {
+          const cfg    = INVOICE_STATUS_PORTAL[inv.status];
+          const canPay = inv.status !== 'pago';
+          return (
+            <div key={inv.id} className="bg-gray-900 border border-gray-800 rounded-2xl px-5 py-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-black text-white">{inv.title}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Vencimento: {formatDueDate(inv.dueDate)}</p>
+                </div>
+                <span className={`flex-shrink-0 text-[10px] font-black px-2 py-0.5 rounded-md border ${cfg.badge}`}>
+                  {cfg.label}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-2xl font-black text-white">{formatCurrency(inv.amount)}</p>
+                {canPay && (
+                  <button
+                    onClick={() => setPayModalFor(inv)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-black transition-all shadow-lg shadow-violet-500/20"
+                  >
+                    <DollarSign className="w-3.5 h-3.5" /> Pagar Agora
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Pay modal ── */}
+      {payModalFor && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-3xl w-full max-w-md space-y-5 p-6 animate-in slide-in-from-bottom-4 duration-300">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-black text-white">{payModalFor.title}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(payModalFor.amount)}</p>
+              </div>
+              <button onClick={() => { setPayModalFor(null); setCopied(false); }} className="p-2 rounded-xl hover:bg-gray-800 text-gray-500 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* PIX code */}
+            <div className="space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Pix Copia e Cola</p>
+              <div className="bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 flex items-start gap-3">
+                <p className="flex-1 text-xs text-gray-300 font-mono break-all leading-relaxed">{payModalFor.pixCode}</p>
+                <button
+                  onClick={() => handleCopy(payModalFor.pixCode)}
+                  className="flex-shrink-0 flex items-center gap-1.5 text-xs font-black text-violet-400 hover:text-violet-300 transition-colors mt-0.5"
+                >
+                  {copied
+                    ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copiado!</>
+                    : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
+                </button>
+              </div>
+            </div>
+
+            {/* Boleto link */}
+            {payModalFor.boletoLink && (
+              <a
+                href={payModalFor.boletoLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-700 text-gray-300 text-sm font-black hover:bg-gray-800 transition-all"
+              >
+                📄 Abrir Boleto
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
 // Placeholder for remaining tabs
 // ─────────────────────────────────────────────
 const TabPlaceholder: React.FC = () => (
@@ -1004,7 +1166,7 @@ const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) =
           {activeTab === 'dashboard' && (
             <div className="space-y-8 animate-in fade-in duration-200">
               <ProductionStepper />
-              <AchievementsGrid />
+              <AchievementsGrid clientId={client.id} />
               <PendingActions />
             </div>
           )}
@@ -1015,7 +1177,7 @@ const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) =
 
           {activeTab === 'reunioes' && <PortalReunioeTab clientId={client.id} />}
 
-          {activeTab === 'financeiro' && <TabPlaceholder />}
+          {activeTab === 'financeiro' && <PortalFinanceiroTab clientId={client.id} />}
 
         </div>
       </main>

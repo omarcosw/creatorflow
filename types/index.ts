@@ -114,6 +114,16 @@ export interface Meeting {
   createdAt: number;
 }
 
+export interface Invoice {
+  id: string;
+  title: string;       // ex: "Fatura Fev/26"
+  dueDate: string;     // YYYY-MM-DD
+  amount: number;      // em BRL
+  status: 'pendente' | 'pago' | 'atrasado';
+  pixCode: string;     // código PIX copia e cola
+  boletoLink?: string; // URL do boleto (opcional)
+}
+
 export interface HDD {
   id: string;
   name: string;

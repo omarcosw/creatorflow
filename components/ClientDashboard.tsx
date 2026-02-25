@@ -39,10 +39,11 @@ import {
   Bookmark,
   BookmarkCheck,
   Users,
+  DollarSign,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
-import { Client, HDD, Recording, AgentId, Meeting, MeetingNextStep } from '@/types';
+import { Client, HDD, Recording, AgentId, Meeting, MeetingNextStep, Invoice } from '@/types';
 import { sendMessageToAgent } from '@/lib/api';
 
 // ─────────────────────────────────────────────
@@ -57,7 +58,7 @@ interface ClientDashboardProps {
 // ─────────────────────────────────────────────
 // Tab definition
 // ─────────────────────────────────────────────
-type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas' | 'reunioes';
+type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas' | 'reunioes' | 'financeiro';
 
 interface Tab {
   id: TabId;
@@ -74,6 +75,7 @@ const TABS: Tab[] = [
   { id: 'acervo',      label: 'Acervo e HDs',           emoji: '🗄️' },
   { id: 'entregas',    label: 'Entregas & Aprovações',  emoji: '📤' },
   { id: 'reunioes',    label: 'Reuniões',               emoji: '🤝' },
+  { id: 'financeiro',  label: 'Financeiro',             emoji: '💰' },
 ];
 
 // ─────────────────────────────────────────────
@@ -3256,6 +3258,258 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
 };
 
 // ─────────────────────────────────────────────
+// Financeiro tab
+// ─────────────────────────────────────────────
+interface ClientMetrics {
+  initialFollowers: number;
+  currentFollowers: number;
+  lastVideoViews: string;
+}
+
+const DEFAULT_METRICS: ClientMetrics = { initialFollowers: 0, currentFollowers: 0, lastVideoViews: '' };
+
+const INVOICE_STATUS_STYLES: Record<Invoice['status'], { label: string; badge: string }> = {
+  pendente: { label: 'Pendente',     badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
+  pago:     { label: 'Pago ✅',      badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
+  atrasado: { label: 'Atrasado ⚠️',  badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50' },
+};
+
+const INPUT_CLS = 'w-full text-sm px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all';
+
+const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
+  const METRICS_KEY  = `creator_flow_metrics_${client.id}`;
+  const INVOICES_KEY = `creator_flow_invoices_${client.id}`;
+
+  // ── Metrics ──
+  const [metricsDraft, setMetricsDraft] = useState<ClientMetrics>(() => {
+    try { const s = localStorage.getItem(METRICS_KEY); return s ? JSON.parse(s) : DEFAULT_METRICS; }
+    catch { return DEFAULT_METRICS; }
+  });
+  const [metricsSaved, setMetricsSaved] = useState(false);
+
+  const saveMetrics = () => {
+    try { localStorage.setItem(METRICS_KEY, JSON.stringify(metricsDraft)); } catch {}
+    setMetricsSaved(true);
+    setTimeout(() => setMetricsSaved(false), 2000);
+  };
+
+  const growthPct =
+    metricsDraft.initialFollowers > 0 && metricsDraft.currentFollowers > 0
+      ? (((metricsDraft.currentFollowers - metricsDraft.initialFollowers) / metricsDraft.initialFollowers) * 100).toFixed(1)
+      : null;
+
+  // ── Invoices ──
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    try { const s = localStorage.getItem(INVOICES_KEY); return s ? JSON.parse(s) : []; }
+    catch { return []; }
+  });
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState({ title: '', dueDate: '', amount: '', status: 'pendente' as Invoice['status'], pixCode: '', boletoLink: '' });
+
+  const persistInvoices = (next: Invoice[]) => {
+    setInvoices(next);
+    try { localStorage.setItem(INVOICES_KEY, JSON.stringify(next)); } catch {}
+  };
+
+  const addInvoice = () => {
+    if (!form.title.trim() || !form.dueDate || !form.amount || !form.pixCode.trim()) return;
+    const newInv: Invoice = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      title: form.title.trim(),
+      dueDate: form.dueDate,
+      amount: parseFloat(form.amount),
+      status: form.status,
+      pixCode: form.pixCode.trim(),
+      boletoLink: form.boletoLink.trim() || undefined,
+    };
+    persistInvoices([newInv, ...invoices]);
+    setForm({ title: '', dueDate: '', amount: '', status: 'pendente', pixCode: '', boletoLink: '' });
+    setFormOpen(false);
+  };
+
+  const deleteInvoice = (id: string) => persistInvoices(invoices.filter(inv => inv.id !== id));
+  const updateStatus  = (id: string, status: Invoice['status']) =>
+    persistInvoices(invoices.map(inv => inv.id === id ? { ...inv, status } : inv));
+
+  const formatCurrency = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatDueDate  = (d: string): string => {
+    const [y, m, day] = d.split('-');
+    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+  };
+
+  return (
+    <div className="space-y-8">
+
+      {/* ══ MÉTRICAS DO CLIENTE ══ */}
+      <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+            <Users className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-zinc-800 dark:text-zinc-100">Métricas do Cliente</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Dados exibidos no Portal do Cliente (gamificação)</p>
+          </div>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Seguidores Iniciais</label>
+              <input
+                type="number" min={0}
+                value={metricsDraft.initialFollowers || ''}
+                onChange={e => setMetricsDraft(p => ({ ...p, initialFollowers: parseInt(e.target.value) || 0 }))}
+                className={INPUT_CLS} placeholder="Ex: 5000"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Seguidores Atuais</label>
+              <input
+                type="number" min={0}
+                value={metricsDraft.currentFollowers || ''}
+                onChange={e => setMetricsDraft(p => ({ ...p, currentFollowers: parseInt(e.target.value) || 0 }))}
+                className={INPUT_CLS} placeholder="Ex: 5750"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Views no último Reels</label>
+              <input
+                type="text"
+                value={metricsDraft.lastVideoViews}
+                onChange={e => setMetricsDraft(p => ({ ...p, lastVideoViews: e.target.value }))}
+                className={INPUT_CLS} placeholder="Ex: 10k"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {growthPct !== null && (
+              <p className="text-xs text-zinc-500 flex-1">
+                Crescimento calculado:{' '}
+                <span className="font-black text-emerald-600 dark:text-emerald-400">+{growthPct}%</span>
+              </p>
+            )}
+            <button
+              onClick={saveMetrics}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-black transition-all shadow-sm"
+            >
+              {metricsSaved ? <><Check className="w-3.5 h-3.5" /> Salvo!</> : 'Salvar Métricas'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ COBRANÇAS ══ */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-black text-zinc-800 dark:text-zinc-100">Cobranças</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Faturas visíveis no portal do cliente</p>
+          </div>
+          <button
+            onClick={() => setFormOpen(p => !p)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-xs font-black hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" /> Nova Cobrança
+          </button>
+        </div>
+
+        {/* New invoice form */}
+        {formOpen && (
+          <div className="mb-4 bg-white dark:bg-zinc-900 rounded-2xl border border-violet-200 dark:border-violet-800/60 p-5 space-y-4 animate-in fade-in duration-200">
+            <p className="text-[10px] font-black uppercase tracking-widest text-violet-600 dark:text-violet-400">Nova Cobrança</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Título</label>
+                <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Fatura Março/26" className={INPUT_CLS} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Vencimento</label>
+                <input type="date" value={form.dueDate} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value }))} className={INPUT_CLS} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Valor (R$)</label>
+                <input type="number" min={0} step="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} placeholder="Ex: 1500.00" className={INPUT_CLS} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Status</label>
+                <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as Invoice['status'] }))} className={INPUT_CLS}>
+                  <option value="pendente">Pendente</option>
+                  <option value="pago">Pago</option>
+                  <option value="atrasado">Atrasado</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Código PIX (Copia e Cola)</label>
+                <textarea value={form.pixCode} onChange={e => setForm(p => ({ ...p, pixCode: e.target.value }))} rows={2} placeholder="Cole o código PIX aqui…" className={`${INPUT_CLS} resize-none`} />
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Link do Boleto (opcional)</label>
+                <input type="url" value={form.boletoLink} onChange={e => setForm(p => ({ ...p, boletoLink: e.target.value }))} placeholder="https://…" className={INPUT_CLS} />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setFormOpen(false)} className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-xs font-black hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                Cancelar
+              </button>
+              <button
+                onClick={addInvoice}
+                disabled={!form.title.trim() || !form.dueDate || !form.amount || !form.pixCode.trim()}
+                className="flex-1 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-black transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Adicionar Cobrança
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Invoice list */}
+        {invoices.length === 0 ? (
+          <div className="text-center py-16 text-zinc-400 dark:text-zinc-600">
+            <DollarSign className="w-8 h-8 mx-auto mb-3 opacity-40" />
+            <p className="text-sm font-bold">Nenhuma cobrança cadastrada</p>
+            <p className="text-xs mt-1 opacity-70">Clique em "Nova Cobrança" para começar.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {invoices.map(inv => {
+              const cfg = INVOICE_STATUS_STYLES[inv.status];
+              return (
+                <div key={inv.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-black text-zinc-800 dark:text-zinc-100 truncate">{inv.title}</p>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${cfg.badge}`}>{cfg.label}</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      Venc. {formatDueDate(inv.dueDate)} · {formatCurrency(inv.amount)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <select
+                      value={inv.status}
+                      onChange={e => updateStatus(inv.id, e.target.value as Invoice['status'])}
+                      className="text-xs px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 focus:outline-none transition-all"
+                    >
+                      <option value="pendente">Pendente</option>
+                      <option value="pago">Pago</option>
+                      <option value="atrasado">Atrasado</option>
+                    </select>
+                    <button onClick={() => deleteInvoice(inv.id)} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
 // Reuniões tab
 // ─────────────────────────────────────────────
 interface MeetingExtract {
@@ -4547,6 +4801,13 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {activeTab === 'reunioes' && (
             <div className="animate-in fade-in duration-200">
               <ClientReuniaoTab client={client} />
+            </div>
+          )}
+
+          {/* ══ TAB: Financeiro ══ */}
+          {activeTab === 'financeiro' && (
+            <div className="animate-in fade-in duration-200">
+              <ClientFinanceiroTab client={client} />
             </div>
           )}
 
