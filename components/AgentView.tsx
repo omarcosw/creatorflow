@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import React from 'react';
 import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, Check, CheckCircle2, History, Plus, MessageSquare, Keyboard, Sparkles, PlayCircle, ThumbsUp, ThumbsDown, UserPlus, UserCircle, ChevronRight, Mic, Loader2, Maximize2, Minimize2, Clock, Copy, ExternalLink, Wand2, Monitor, Zap, ListChecks, Palette, Printer, Upload, Play, Layers, Film, Pause, Music, FolderInput } from 'lucide-react';
 import { AgentConfig, AgentId, Message, StylePreset, ChatSession, InstagramProfile, ShotList, ShotItem, BrandKit, Client } from '@/types';
-import { sendMessageToAgent, transcribeAudio } from '@/lib/api';
+import { sendMessageToAgent, transcribeAudio, LimitReachedData } from '@/lib/api';
 import MarkdownRenderer from './MarkdownRenderer';
 import CreatorStockView from './CreatorStockView';
 
@@ -1139,6 +1139,7 @@ const DetailView: React.FC<{ preset: StylePreset; onBack: () => void; agentId: A
 const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSession, onDeleteSession, instagramProfiles = [], onSaveIGProfile, onDeleteIGProfile, onSaveShotList, brandKits = [], onSaveBrandKit, onDeleteBrandKit, navigationContext, onNavigateToAgent, clients = [] }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [limitReached, setLimitReached] = useState<LimitReachedData | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [isInputExpanded, setIsInputExpanded] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -1365,13 +1366,23 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
           - Primary Color: ${activeBrandKit.color}`;
       }
 
-      const { text: responseText, generatedImage } = await sendMessageToAgent(
+      const { text: responseText, generatedImage, limitReached: limitData } = await sendMessageToAgent(
         agent.id, userMsg.text, userMsg.image || null, newMessages, customInstruction, audio, imageSize
       );
+
+      // Handle plan limit reached
+      if (limitData) {
+          setLimitReached(limitData);
+          // Remove the user message since it wasn't processed
+          setMessages(messages);
+          setLoading(false);
+          return;
+      }
 
       // Tratar erro de Key se retornado pelo serviço
       if (responseText.includes("ERRO_KEY")) {
           alert("Por favor, selecione uma API Key com faturamento ativo para usar este recurso de IA de imagem avançada.");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (window as any).aistudio.openSelectKey();
           setLoading(false);
           return;
@@ -1586,6 +1597,43 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
             onDelete={onDeleteBrandKit}
             existingKits={brandKits}
           />
+      )}
+      {/* Limit Reached Banner */}
+      {limitReached && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+            <div className="text-center mb-6">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                <Zap className="h-7 w-7 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Limite atingido</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{limitReached.message}</p>
+            </div>
+            <div className="mb-6 rounded-xl bg-zinc-100 dark:bg-zinc-800 p-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-zinc-500">Usado</span>
+                <span className="font-bold text-zinc-900 dark:text-white">{limitReached.used.toLocaleString('pt-BR')} / {limitReached.limit.toLocaleString('pt-BR')}</span>
+              </div>
+              <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                <div className="h-full rounded-full bg-red-500" style={{ width: '100%' }} />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLimitReached(null)}
+                className="flex-1 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Fechar
+              </button>
+              <a
+                href={limitReached.upgradeUrl}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-bold text-white text-center hover:opacity-90 transition-opacity"
+              >
+                Fazer Upgrade
+              </a>
+            </div>
+          </div>
+        </div>
       )}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -right-24 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />

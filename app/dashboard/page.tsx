@@ -11,7 +11,7 @@ import HubArquivos from '@/components/HubArquivos';
 import ClientsHub from '@/components/ClientsHub';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, ChevronDown } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -220,7 +220,22 @@ export default function DashboardPage() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [agentQuery, setAgentQuery] = useState('');
-  
+  const [usageData, setUsageData] = useState<{ plan: string; features: Record<string, { used: number; limit: number; remaining: number; percentage: number }> } | null>(null);
+  const [showUsage, setShowUsage] = useState(false);
+  const [userPlan, setUserPlan] = useState('');
+
+  useEffect(() => {
+    const plan = localStorage.getItem('cf_plan') || '';
+    setUserPlan(plan);
+    const token = localStorage.getItem('cf_token');
+    if (token) {
+      fetch('/api/usage', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { if (data) setUsageData(data); })
+        .catch(() => { /* ignore */ });
+    }
+  }, []);
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem(THEME_KEY) as 'light' | 'dark') || 'dark';
@@ -898,6 +913,44 @@ export default function DashboardPage() {
             </section>
           )}
 
+          {/* Usage Panel */}
+          {usageData && (
+            <div className="mb-8">
+              <button
+                onClick={() => setShowUsage(!showUsage)}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mb-3"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Uso do Plano ({usageData.plan === 'solo' ? 'Start' : usageData.plan === 'maker' ? 'Maker' : usageData.plan === 'studio' ? 'Studio' : 'Agency'})
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showUsage ? 'rotate-180' : ''}`} />
+              </button>
+              {showUsage && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Object.entries(usageData.features).map(([key, data]) => {
+                    const labels: Record<string, string> = { script_generator: 'Roteiros', proposals: 'Propostas', image_analysis: 'Imagens', storyboard: 'Storyboards' };
+                    const pct = data.percentage;
+                    const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
+                    const textColor = pct >= 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
+                    return (
+                      <div key={key} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{labels[key] || key}</span>
+                          <span className={`text-[10px] font-bold ${textColor}`}>{pct}%</span>
+                        </div>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white font-display mb-2">
+                          {data.used.toLocaleString('pt-BR')} <span className="text-xs font-normal text-zinc-400">/ {data.limit.toLocaleString('pt-BR')}</span>
+                        </p>
+                        <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                          <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center gap-3 mb-10">
             <div className="relative flex-1">
               <input
@@ -957,54 +1010,89 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Hub de Clientes card + Hub de Arquivos card */}
+          {/* Hub de Clientes card + Hub de Arquivos card — CRM gated for Start plan */}
           <div className="mb-10">
             <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Gestão & CRM</h2>
-            <div className="flex flex-col sm:flex-row gap-3 md:max-w-2xl">
-              <button
-                onClick={() => setIsClientesHubOpen(true)}
-                className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
-              >
-                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                  <Users className="w-7 h-7" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
-                    Hub de Clientes
-                  </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Briefings, tom de voz e alvo de cada cliente.
-                  </p>
-                  <p className="text-xs text-zinc-400 mt-1">
-                    🤝 {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
-              </button>
-
-              <button
-                onClick={() => setIsArquivosHubOpen(true)}
-                className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
-              >
-                <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/50 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                  <Archive className="w-7 h-7" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
-                    Hub de Arquivos
-                  </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Gerencie HDs e registre ingests com o Quiz de Backup.
-                  </p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
-                    <span>💾 {hdds.length} HD{hdds.length !== 1 ? 's' : ''}</span>
-                    <span>&middot;</span>
-                    <span>🎬 {recordings.length} ingest{recordings.length !== 1 ? 's' : ''}</span>
+            {userPlan === 'solo' ? (
+              <div className="flex flex-col sm:flex-row gap-3 md:max-w-2xl">
+                <div className="relative flex items-center gap-5 flex-1 p-5 bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/40 rounded-2xl opacity-60 cursor-not-allowed">
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <div className="flex items-center gap-2 rounded-full bg-zinc-900/80 dark:bg-zinc-100/90 px-4 py-2 shadow-lg">
+                      <Lock className="w-3.5 h-3.5 text-white dark:text-zinc-900" />
+                      <span className="text-xs font-bold text-white dark:text-zinc-900">Plano Maker ou superior</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                    <Users className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5">Hub de Clientes</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Briefings, tom de voz e alvo de cada cliente.</p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-violet-500 dark:group-hover:text-violet-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
-              </button>
-            </div>
+                <div className="relative flex items-center gap-5 flex-1 p-5 bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/40 rounded-2xl opacity-60 cursor-not-allowed">
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <div className="flex items-center gap-2 rounded-full bg-zinc-900/80 dark:bg-zinc-100/90 px-4 py-2 shadow-lg">
+                      <Lock className="w-3.5 h-3.5 text-white dark:text-zinc-900" />
+                      <span className="text-xs font-bold text-white dark:text-zinc-900">Plano Maker ou superior</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/50 text-violet-600 dark:text-violet-400 flex-shrink-0">
+                    <Archive className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5">Hub de Arquivos</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Gerencie HDs e registre ingests com o Quiz de Backup.</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-3 md:max-w-2xl">
+                <button
+                  onClick={() => setIsClientesHubOpen(true)}
+                  className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
+                >
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Users className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
+                      Hub de Clientes
+                    </h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      Briefings, tom de voz e alvo de cada cliente.
+                    </p>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                </button>
+
+                <button
+                  onClick={() => setIsArquivosHubOpen(true)}
+                  className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
+                >
+                  <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/50 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Archive className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
+                      Hub de Arquivos
+                    </h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      Gerencie HDs e registre ingests com o Quiz de Backup.
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
+                      <span>{hdds.length} HD{hdds.length !== 1 ? 's' : ''}</span>
+                      <span>&middot;</span>
+                      <span>{recordings.length} ingest{recordings.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-violet-500 dark:group-hover:text-violet-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="mb-16">

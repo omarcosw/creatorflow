@@ -1,6 +1,14 @@
 // Client-side API functions — calls the Next.js API routes instead of Gemini directly
 import { Message } from '@/types';
 
+export interface LimitReachedData {
+  message: string;
+  feature: string;
+  used: number;
+  limit: number;
+  upgradeUrl: string;
+}
+
 export const sendMessageToAgent = async (
   agentId: string,
   message: string,
@@ -9,11 +17,17 @@ export const sendMessageToAgent = async (
   systemInstruction: string,
   audio: string | null = null,
   imageSize: "1K" | "2K" | "4K" = "1K"
-): Promise<{ text: string; generatedImage?: string }> => {
+): Promise<{ text: string; generatedImage?: string; limitReached?: LimitReachedData }> => {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('cf_token') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         agentId,
         message,
@@ -25,6 +39,20 @@ export const sendMessageToAgent = async (
       }),
     });
 
+    if (response.status === 429) {
+      const data = await response.json().catch(() => ({}));
+      return {
+        text: '',
+        limitReached: {
+          message: data.message || 'Limite do plano atingido.',
+          feature: data.feature || '',
+          used: data.used || 0,
+          limit: data.limit || 0,
+          upgradeUrl: data.upgradeUrl || '/#precos',
+        },
+      };
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return {
@@ -33,7 +61,7 @@ export const sendMessageToAgent = async (
     }
 
     return await response.json();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao comunicar com API:', error);
     return {
       text: 'Erro de conexão com o servidor. Verifique sua conexão e tente novamente.'

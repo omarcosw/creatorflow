@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessageToAgent } from '@/lib/gemini';
 import { AgentId } from '@/types';
+import jwt from 'jsonwebtoken';
+import { checkLimit, incrementUsage, TrackableFeature } from '@/lib/usage';
+import { PlanKey } from '@/lib/stripe';
+import { query } from '@/lib/db';
 
 const VALID_AGENT_IDS = new Set(Object.values(AgentId));
 const MAX_HISTORY_LENGTH = 100;
 const MAX_MESSAGE_LENGTH = 50000; // 50k chars
+const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
 
 const ALLOWED_ORIGINS = [
   'https://creatorflowia.com',
@@ -21,6 +26,41 @@ function isValidOrigin(request: NextRequest): boolean {
   if (referer && ALLOWED_ORIGINS.some(o => referer.startsWith(o))) return true;
   return false;
 }
+
+// Map agent IDs to trackable feature categories
+const AGENT_FEATURE_MAP: Record<string, TrackableFeature> = {
+  // Script/text generation agents
+  script_generator: 'script_generator',
+  executive_producer: 'script_generator',
+  prod_executive_agent: 'script_generator',
+  youtube_seo: 'script_generator',
+  instagram_captions: 'script_generator',
+  video_prompts: 'script_generator',
+  editing_workflow: 'script_generator',
+  editing_shortcuts: 'script_generator',
+  editing_idea: 'script_generator',
+  editing_techniques: 'script_generator',
+  sfx_assistant: 'script_generator',
+  sfx_scene_describer: 'script_generator',
+  sfx_library: 'script_generator',
+  sfx_pack_creator: 'script_generator',
+  media_assistant: 'script_generator',
+
+  // Proposal/spreadsheet agents
+  cost_calculator: 'proposals',
+  budget_pricing: 'proposals',
+  budget_sheet: 'proposals',
+
+  // Image analysis agents
+  lighting_assistant: 'image_analysis',
+  lighting_generator: 'image_analysis',
+  lighting_styles: 'image_analysis',
+  image_generator: 'image_analysis',
+
+  // Storyboard agents
+  storyboard_generator: 'storyboard',
+  shot_list: 'storyboard',
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,6 +111,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // --- Plan limit enforcement ---
+    let userId: string | null = null;
+    let userPlan: PlanKey | null = null;
+
+    const authHeader = request.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        userId = decoded.userId;
+
+        // Get fresh plan from DB (JWT plan may be stale)
+        const planResult = await query(
+          `SELECT s.plan FROM subscriptions s
+           WHERE s.user_id = $1 AND s.status = 'active'
+           ORDER BY s.created_at DESC LIMIT 1`,
+          [decoded.userId]
+        );
+        if (planResult.rows.length > 0) {
+          userPlan = planResult.rows[0].plan as PlanKey;
+        }
+      } catch {
+        // Token invalid — don't block, AuthGuard handles redirect
+      }
+    }
+
+    const feature = AGENT_FEATURE_MAP[agentId] || 'script_generator';
+
+    if (userId && userPlan) {
+      const limitCheck = await checkLimit(userId, userPlan, feature);
+
+      if (!limitCheck.allowed) {
+        const featureLabels: Record<TrackableFeature, string> = {
+          script_generator: 'roteiros',
+          proposals: 'propostas e planilhas',
+          image_analysis: 'análises de imagem',
+          storyboard: 'storyboards',
+        };
+        return NextResponse.json({
+          error: 'Limite do plano atingido',
+          message: `Você atingiu o limite de ${limitCheck.limit.toLocaleString('pt-BR')} ${featureLabels[feature]}/mês do seu plano. Faça upgrade para continuar.`,
+          feature,
+          used: limitCheck.used,
+          limit: limitCheck.limit,
+          upgradeUrl: '/#precos',
+        }, { status: 429 });
+      }
+    }
+
     const result = await sendMessageToAgent(
       agentId,
       message || '',
@@ -80,6 +170,13 @@ export async function POST(request: NextRequest) {
       audio || null,
       imageSize || '1K'
     );
+
+    // Increment usage after successful response
+    if (userId) {
+      incrementUsage(userId, feature).catch(err => {
+        console.error('Failed to increment usage:', err);
+      });
+    }
 
     return NextResponse.json(result);
   } catch (error: unknown) {
