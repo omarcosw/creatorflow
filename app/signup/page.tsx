@@ -6,11 +6,27 @@ import { User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle } from 'lucide-rea
 import AuthLayout from '@/components/auth/AuthLayout';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 
-const PLAN_INFO: Record<string, { name: string; price: string }> = {
-  solo: { name: 'Solo', price: 'R$ 49,90/mês' },
-  maker: { name: 'Maker', price: 'R$ 67,90/mês' },
-  studio: { name: 'Studio', price: 'R$ 197,90/mês' },
-  agency: { name: 'Agency', price: 'R$ 497,90/mês' },
+const PLAN_INFO: Record<string, { name: string; price: string; features: string[] }> = {
+  solo: {
+    name: 'Start',
+    price: 'R$ 49,90/mês',
+    features: ['1 membro', '100 roteiros/mês', '10 propostas/mês', '5 storyboards/mês'],
+  },
+  maker: {
+    name: 'Maker',
+    price: 'R$ 67,90/mês',
+    features: ['CRM ilimitado', '10GB armazenamento', '100 roteiros/mês', '10 storyboards/mês'],
+  },
+  studio: {
+    name: 'Studio',
+    price: 'R$ 197,90/mês',
+    features: ['5 membros', '50GB armazenamento', '5.000 roteiros/mês', '40 storyboards/mês'],
+  },
+  agency: {
+    name: 'Agency',
+    price: 'R$ 497,90/mês',
+    features: ['50 membros', '200GB armazenamento', '5.000 roteiros/mês', '120 storyboards/mês'],
+  },
 };
 
 export default function SignupPage() {
@@ -111,7 +127,7 @@ export default function SignupPage() {
 
       {selectedPlan && (
         <div className="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/5 p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-semibold text-white">Plano {selectedPlan.name}</p>
               <p className="text-xs text-[#A0A0A0]">{selectedPlan.price}</p>
@@ -119,6 +135,14 @@ export default function SignupPage() {
             <Link href="/#precos" className="text-xs text-[#8B5CF6] hover:underline">
               Trocar plano
             </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedPlan.features.map((f) => (
+              <span key={f} className="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/10 px-2.5 py-1 text-[11px] text-[#A78BFA]">
+                <Check className="h-3 w-3" />
+                {f}
+              </span>
+            ))}
           </div>
         </div>
       )}

@@ -9,60 +9,70 @@ export const stripe = process.env.STRIPE_SECRET_KEY
 
 export const PLANS = {
   solo: {
-    name: 'Solo',
+    name: 'Start',
     priceId: process.env.STRIPE_PRICE_SOLO || '',
     price: 4990, // R$ 49,90 in centavos
-    features: {
-      messagesPerDay: 10,
-      agents: 3,
-      model: 'flash',
-      savedSessions: 1,
-      support: 'email',
+    limits: {
+      crm: false,                    // CRM/Kanban/Agenda — Não incluso
+      storage: 0,                    // Armazenamento — Não incluso (in GB)
+      teamMembers: 1,                // Membros da equipe
+      scriptGenerator: 100,          // Gerador de roteiros por mês
+      proposals: 10,                 // Propostas e planilhas por mês
+      imageAnalysis: 20,             // Análise de imagens (iluminador e som) por mês
+      storyboard: 5,                 // Storyboard por mês
     },
+    costPerUser: '2 a 4',           // Custo médio por usuário
   },
   maker: {
     name: 'Maker',
+    subtitle: 'Solo',
     priceId: process.env.STRIPE_PRICE_MAKER || '',
     price: 6790, // R$ 67,90 in centavos
-    features: {
-      messagesPerDay: 30,
-      agents: 10,
-      model: 'flash',
-      savedSessions: 5,
-      support: 'email',
+    limits: {
+      crm: true,                     // CRM/Kanban/Agenda — Ilimitado
+      storage: 10,                   // 10GB
+      teamMembers: 1,                // 1 membro
+      scriptGenerator: 100,          // 100 por mês
+      proposals: 20,                 // 20 por mês
+      imageAnalysis: 30,             // 30 por mês
+      storyboard: 10,                // 10 por mês
     },
+    costPerUser: '3 a 5',
   },
   studio: {
     name: 'Studio',
+    subtitle: 'Equipe',
     priceId: process.env.STRIPE_PRICE_STUDIO || '',
     price: 19790, // R$ 197,90 in centavos
     popular: true,
-    features: {
-      messagesPerDay: 100,
-      agents: 24,
-      model: 'flash+pro',
-      storyboardImages: 20,
-      savedSessions: -1, // unlimited
-      shotListManager: true,
-      support: 'priority',
+    limits: {
+      crm: true,                     // Ilimitado
+      storage: 50,                   // 50GB
+      teamMembers: 5,                // 5 membros
+      scriptGenerator: 5000,         // 5.000 por mês
+      proposals: 100,                // 100 por mês
+      imageAnalysis: 150,            // 150 por mês
+      storyboard: 40,                // 40 por mês
     },
+    costPerUser: '8 a 15',
   },
   agency: {
     name: 'Agency',
+    subtitle: 'Ilimitado',
     priceId: process.env.STRIPE_PRICE_AGENCY || '',
     price: 49790, // R$ 497,90 in centavos
-    features: {
-      messagesPerDay: -1, // unlimited (fair use)
-      agents: 24,
-      model: 'flash+pro',
-      storyboardImages: -1, // unlimited
-      savedSessions: -1,
-      shotListManager: true,
-      brandKit: true,
-      apiAccess: false, // coming soon
-      support: 'dedicated',
+    limits: {
+      crm: true,                     // Ilimitado
+      storage: 200,                  // 200GB
+      teamMembers: 50,               // 50 membros
+      scriptGenerator: 5000,         // 5.000 por mês
+      proposals: 5000,               // 5.000 por mês
+      imageAnalysis: 500,            // 500 por mês
+      storyboard: 120,               // 120 por mês
     },
+    costPerUser: '20 a 35',
   },
 } as const;
 
 export type PlanKey = keyof typeof PLANS;
+export type PlanLimits = typeof PLANS[PlanKey]['limits'];

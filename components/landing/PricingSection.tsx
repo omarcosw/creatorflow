@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Zap, Sparkles, Rocket, Building2, Check, ShieldCheck } from 'lucide-react';
+import { Zap, Sparkles, Rocket, Building2, Check, X, ShieldCheck } from 'lucide-react';
 import SectionLabel from './ui/SectionLabel';
 import GradientButton from './ui/GradientButton';
 import TiltCard from './ui/TiltCard';
@@ -26,21 +26,44 @@ function AnimatedPrice({ value, decimals, inView }: { value: number; decimals: n
   return <>{display}<span className="text-2xl font-bold">,{decimals.toString().padStart(2, '0')}</span></>;
 }
 
-const plans = [
+function formatNumber(n: number): string {
+  return n.toLocaleString('pt-BR');
+}
+
+type Feature = {
+  text: string;
+  included: boolean;
+};
+
+const plans: {
+  name: string;
+  key: string;
+  icon: typeof Zap;
+  description: string;
+  price: number;
+  decimals: number;
+  highlighted: boolean;
+  badge?: string;
+  costPerUser: string;
+  features: Feature[];
+}[] = [
   {
-    name: 'Solo',
+    name: 'Start',
     key: 'solo',
     icon: Zap,
     description: 'Para começar a criar com IA',
     price: 49,
     decimals: 90,
     highlighted: false,
+    costPerUser: '2 a 4',
     features: [
-      '10 mensagens por dia',
-      '3 agentes IA',
-      'Modelo Flash',
-      '1 sessão salva',
-      'Suporte por email',
+      { text: '1 membro da equipe', included: true },
+      { text: '100 roteiros/mês', included: true },
+      { text: '10 propostas e planilhas/mês', included: true },
+      { text: '20 análises de imagem/mês', included: true },
+      { text: '5 storyboards/mês', included: true },
+      { text: 'CRM/Kanban/Agenda', included: false },
+      { text: 'Armazenamento', included: false },
     ],
   },
   {
@@ -51,50 +74,54 @@ const plans = [
     price: 67,
     decimals: 90,
     highlighted: false,
+    costPerUser: '3 a 5',
     features: [
-      '30 mensagens por dia',
-      '10 agentes IA',
-      'Modelo Flash',
-      '5 sessões salvas',
-      'Suporte por email',
+      { text: 'CRM/Kanban/Agenda ilimitado', included: true },
+      { text: '10GB de armazenamento', included: true },
+      { text: '1 membro da equipe', included: true },
+      { text: '100 roteiros/mês', included: true },
+      { text: '20 propostas e planilhas/mês', included: true },
+      { text: '30 análises de imagem/mês', included: true },
+      { text: '10 storyboards/mês', included: true },
     ],
   },
   {
     name: 'Studio',
     key: 'studio',
     icon: Rocket,
-    description: 'Para criadores em crescimento',
+    description: 'Para equipes em crescimento',
     price: 197,
     decimals: 90,
     highlighted: true,
     badge: 'Mais Popular',
+    costPerUser: '8 a 15',
     features: [
-      '100 mensagens por dia',
-      'Todos os 24 agentes IA',
-      'Modelos Flash + Pro',
-      '20 imagens storyboard',
-      'Sessões ilimitadas',
-      'Shot List Manager',
-      'Suporte prioritário',
+      { text: 'CRM/Kanban/Agenda ilimitado', included: true },
+      { text: '50GB de armazenamento', included: true },
+      { text: '5 membros da equipe', included: true },
+      { text: formatNumber(5000) + ' roteiros/mês', included: true },
+      { text: '100 propostas e planilhas/mês', included: true },
+      { text: '150 análises de imagem/mês', included: true },
+      { text: '40 storyboards/mês', included: true },
     ],
   },
   {
     name: 'Agency',
     key: 'agency',
     icon: Building2,
-    description: 'Para equipes e agências',
+    description: 'Para agências e grandes equipes',
     price: 497,
     decimals: 90,
     highlighted: false,
+    costPerUser: '20 a 35',
     features: [
-      'Mensagens ilimitadas',
-      'Todos os 24 agentes IA',
-      'Modelos Flash + Pro',
-      'Storyboard ilimitado',
-      'Sessões ilimitadas',
-      'Shot List Manager',
-      'Brand Kit',
-      'Suporte dedicado',
+      { text: 'CRM/Kanban/Agenda ilimitado', included: true },
+      { text: '200GB de armazenamento', included: true },
+      { text: '50 membros da equipe', included: true },
+      { text: formatNumber(5000) + ' roteiros/mês', included: true },
+      { text: formatNumber(5000) + ' propostas e planilhas/mês', included: true },
+      { text: '500 análises de imagem/mês', included: true },
+      { text: '120 storyboards/mês', included: true },
     ],
   },
 ];
@@ -165,13 +192,28 @@ export default function PricingSection() {
                     <span className="text-sm font-medium text-[#666666]">/m&ecirc;s</span>
                   </div>
 
+                  <p className="text-[11px] text-[#666666] mb-5">
+                    Custo m&eacute;dio: R$ {plan.costPerUser} por usu&aacute;rio
+                  </p>
+
                   <div className="h-px w-full bg-white/[0.06] mb-5" />
 
                   <ul className="space-y-2.5 mb-7">
                     {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-white/75">
-                        <Check className="h-4 w-4 shrink-0 mt-0.5 text-[#8B5CF6]" />
-                        {f}
+                      <li
+                        key={f.text}
+                        className={`flex items-start gap-2.5 text-sm ${
+                          f.included ? 'text-white/75' : 'text-[#555]'
+                        }`}
+                      >
+                        {f.included ? (
+                          <Check className="h-4 w-4 shrink-0 mt-0.5 text-emerald-400" />
+                        ) : (
+                          <X className="h-4 w-4 shrink-0 mt-0.5 text-[#444]" />
+                        )}
+                        <span className={f.included ? '' : 'line-through'}>
+                          {f.text}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -182,7 +224,7 @@ export default function PricingSection() {
                     size="md"
                     className="w-full"
                   >
-                    {plan.key === 'agency' ? 'Falar com Vendas' : plan.highlighted ? 'Começar Agora' : 'Assinar'}
+                    {plan.key === 'agency' ? 'Falar com Vendas' : 'Começar Agora'}
                   </GradientButton>
                 </TiltCard>
               </motion.div>
