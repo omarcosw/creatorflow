@@ -54,6 +54,9 @@ import {
   Lightbulb,
   Clapperboard,
   Package,
+  ExternalLink,
+  FolderPlus,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -2106,6 +2109,7 @@ interface ScriptScene {
   visual: string;
   audio: string;
   isChecked: boolean;
+  storyboardUrl?: string;
 }
 
 interface ScriptDocument {
@@ -2116,6 +2120,8 @@ interface ScriptDocument {
   gancho: string;
   scenes: ScriptScene[];
   createdAt: number;
+  writingMode?: 'structured' | 'free';
+  freeText?: string;
   // Portal integration
   portalStatus?: 'aguardando_cliente' | 'aprovado_cliente' | 'refacao';
   clientFeedback?: string;
@@ -2128,6 +2134,7 @@ interface ScriptPackage {
   title: string;
   scripts: ScriptDocument[];
   createdAt: number;
+  subFolders?: ScriptPackage[];
 }
 
 const SCRIPT_STATUS_CYCLE: ScriptStatus[] = ['Rascunho', 'Aprovado', 'Gravado'];
@@ -2142,8 +2149,8 @@ type PortalScriptStatus = NonNullable<ScriptDocument['portalStatus']>;
 
 const PORTAL_SCRIPT_STATUS_CONFIG: Record<PortalScriptStatus, { label: string; badge: string }> = {
   aguardando_cliente: { label: 'Aguardando Cliente', badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
-  aprovado_cliente:   { label: 'Aprovado ✅',          badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
-  refacao:            { label: '⚠️ Refação',            badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' },
+  aprovado_cliente:   { label: 'Aprovado',           badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
+  refacao:            { label: 'Refação',             badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' },
 };
 
 const buildDefaultScriptPackages = (): ScriptPackage[] => [
@@ -2159,6 +2166,7 @@ const buildDefaultScriptPackages = (): ScriptPackage[] => [
 // ClientRoteirosTab sub-component
 // ─────────────────────────────────────────────
 const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
+  // ── State ────────────────────────────────────────────────────
   const [packages, setPackages] = useState<ScriptPackage[]>(() => {
     try {
       const stored = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
@@ -2167,20 +2175,59 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       return buildDefaultScriptPackages();
     }
   });
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(packages[0]?.id ?? '');
-  const [viewMode, setViewMode]           = useState<'edicao' | 'shotlist'>('edicao');
-  const [expandedId, setExpandedId]       = useState<string | null>(null);
-  const [newPkgTitle, setNewPkgTitle]     = useState('');
-  const [isAddingPkg, setIsAddingPkg]     = useState(false);
+  const [selectedPkgId, setSelectedPkgId]         = useState<string>(packages[0]?.id ?? '');
+  const [viewMode, setViewMode]                   = useState<'edicao' | 'shotlist'>('edicao');
+  const [expandedId, setExpandedId]               = useState<string | null>(null);
+  const [newPkgTitle, setNewPkgTitle]             = useState('');
+  const [isAddingPkg, setIsAddingPkg]             = useState(false);
+  const [addingSubFolderFor, setAddingSubFolderFor] = useState<string | null>(null);
+  const [newSubFolderTitle, setNewSubFolderTitle] = useState('');
+  const [expandedFolders, setExpandedFolders]     = useState<Set<string>>(new Set());
+  const [generatingStoryboard, setGeneratingStoryboard] = useState<string | null>(null);
+  const [storyboardUsed, setStoryboardUsed]       = useState<number>(() => {
+    try {
+      const s = localStorage.getItem(`creator_flow_storyboard_${client.id}`);
+      return s ? parseInt(s, 10) : 0;
+    } catch { return 0; }
+  });
+  const STORYBOARD_LIMIT = 15;
 
-  // Persist
+  // ── Persist ──────────────────────────────────────────────────
   useEffect(() => {
     localStorage.setItem(`creator_flow_roteiros_${client.id}`, JSON.stringify(packages));
   }, [packages, client.id]);
 
-  const selectedPkg = packages.find(p => p.id === selectedPkgId) ?? null;
+  useEffect(() => {
+    localStorage.setItem(`creator_flow_storyboard_${client.id}`, String(storyboardUsed));
+  }, [storyboardUsed, client.id]);
 
-  // ── Package CRUD ──────────────────────────────────────────────
+  // ── Deep helpers ─────────────────────────────────────────────
+  const findPkgDeep = (pkgs: ScriptPackage[], id: string): ScriptPackage | null => {
+    for (const p of pkgs) {
+      if (p.id === id) return p;
+      if (p.subFolders?.length) {
+        const found = findPkgDeep(p.subFolders, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const updatePkgDeep = (pkgs: ScriptPackage[], id: string, updater: (p: ScriptPackage) => ScriptPackage): ScriptPackage[] =>
+    pkgs.map(p =>
+      p.id === id ? updater(p)
+      : p.subFolders?.length ? { ...p, subFolders: updatePkgDeep(p.subFolders, id, updater) }
+      : p,
+    );
+
+  const deletePkgDeep = (pkgs: ScriptPackage[], id: string): ScriptPackage[] =>
+    pkgs
+      .filter(p => p.id !== id)
+      .map(p => p.subFolders?.length ? { ...p, subFolders: deletePkgDeep(p.subFolders, id) } : p);
+
+  const selectedPkg = findPkgDeep(packages, selectedPkgId) ?? null;
+
+  // ── Package / Folder CRUD ─────────────────────────────────────
   const addPackage = () => {
     if (!newPkgTitle.trim()) return;
     const pkg: ScriptPackage = {
@@ -2192,11 +2239,33 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
     setIsAddingPkg(false);
   };
 
+  const addSubFolder = (parentId: string) => {
+    if (!newSubFolderTitle.trim()) return;
+    const sub: ScriptPackage = {
+      id: crypto.randomUUID(), title: newSubFolderTitle.trim(), scripts: [], createdAt: Date.now(),
+    };
+    setPackages(prev => updatePkgDeep(prev, parentId, p => ({
+      ...p, subFolders: [sub, ...(p.subFolders ?? [])],
+    })));
+    setSelectedPkgId(sub.id);
+    setExpandedFolders(prev => new Set([...prev, parentId]));
+    setNewSubFolderTitle('');
+    setAddingSubFolderFor(null);
+  };
+
   const deletePackage = (pkgId: string) => {
     setPackages(prev => {
-      const remaining = prev.filter(p => p.id !== pkgId);
+      const remaining = deletePkgDeep(prev, pkgId);
       if (selectedPkgId === pkgId) setSelectedPkgId(remaining[0]?.id ?? '');
       return remaining;
+    });
+  };
+
+  const toggleFolderExpanded = (pkgId: string) => {
+    setExpandedFolders(prev => {
+      const s = new Set(prev);
+      if (s.has(pkgId)) s.delete(pkgId); else s.add(pkgId);
+      return s;
     });
   };
 
@@ -2204,23 +2273,23 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   const addScript = (pkgId: string) => {
     const s: ScriptDocument = {
       id: crypto.randomUUID(), title: 'Novo Roteiro', status: 'Rascunho',
-      referenceLink: '', gancho: '',
+      referenceLink: '', gancho: '', writingMode: 'structured', freeText: '',
       scenes: [{ id: crypto.randomUUID(), visual: '', audio: '', isChecked: false }],
       createdAt: Date.now(),
     };
-    setPackages(prev => prev.map(p => p.id === pkgId ? { ...p, scripts: [s, ...p.scripts] } : p));
+    setPackages(prev => updatePkgDeep(prev, pkgId, p => ({ ...p, scripts: [s, ...p.scripts] })));
     setExpandedId(s.id);
   };
 
   const updateScript = (pkgId: string, updated: ScriptDocument) =>
-    setPackages(prev => prev.map(p =>
-      p.id === pkgId ? { ...p, scripts: p.scripts.map(s => s.id === updated.id ? updated : s) } : p,
-    ));
+    setPackages(prev => updatePkgDeep(prev, pkgId, p => ({
+      ...p, scripts: p.scripts.map(s => s.id === updated.id ? updated : s),
+    })));
 
   const deleteScript = (pkgId: string, scriptId: string) => {
-    setPackages(prev => prev.map(p =>
-      p.id === pkgId ? { ...p, scripts: p.scripts.filter(s => s.id !== scriptId) } : p,
-    ));
+    setPackages(prev => updatePkgDeep(prev, pkgId, p => ({
+      ...p, scripts: p.scripts.filter(s => s.id !== scriptId),
+    })));
     if (expandedId === scriptId) setExpandedId(null);
   };
 
@@ -2252,6 +2321,97 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, isChecked: !sc.isChecked } : sc),
     });
 
+  // ── Storyboard generation ─────────────────────────────────────
+  const generateStoryboard = async (pkgId: string, script: ScriptDocument, scene: ScriptScene) => {
+    if (storyboardUsed >= STORYBOARD_LIMIT || generatingStoryboard) return;
+    setGeneratingStoryboard(scene.id);
+    await new Promise<void>(r => setTimeout(r, 1800));
+    const sceneIdx = script.scenes.findIndex(sc => sc.id === scene.id) + 1;
+    const mockUrl = `https://placehold.co/400x225/1e1b4b/a78bfa?text=Cena+${sceneIdx}`;
+    setStoryboardUsed(prev => prev + 1);
+    updateScript(pkgId, {
+      ...script,
+      scenes: script.scenes.map(sc => sc.id === scene.id ? { ...sc, storyboardUrl: mockUrl } : sc),
+    });
+    setGeneratingStoryboard(null);
+  };
+
+  // ── Sidebar tree renderer ─────────────────────────────────────
+  const renderFolderTree = (pkgs: ScriptPackage[], depth = 0): React.ReactNode =>
+    pkgs.map(pkg => {
+      const hasChildren = !!pkg.subFolders?.length;
+      const isExpanded  = expandedFolders.has(pkg.id);
+      const isSelected  = selectedPkgId === pkg.id;
+      const isAddingSub = addingSubFolderFor === pkg.id;
+      return (
+        <div key={pkg.id} style={{ paddingLeft: depth * 12 }}>
+          <div className="group flex items-center gap-0.5">
+            {hasChildren ? (
+              <button
+                onClick={() => toggleFolderExpanded(pkg.id)}
+                className="p-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0"
+              >
+                <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
+              </button>
+            ) : (
+              <div className="w-4 flex-shrink-0" />
+            )}
+            <button
+              onClick={() => setSelectedPkgId(pkg.id)}
+              className={`flex-1 flex items-center gap-2 px-2 py-2.5 rounded-xl text-sm font-bold transition-all text-left min-w-0 ${
+                isSelected
+                  ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <Folder className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate flex-1">{pkg.title}</span>
+              <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.length}</span>
+            </button>
+            <button
+              onClick={() => { setAddingSubFolderFor(pkg.id); setNewSubFolderTitle(''); }}
+              className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-violet-500 transition-all rounded-lg flex-shrink-0"
+              title="Nova subpasta"
+            >
+              <FolderPlus className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => { if (confirm(`Excluir pasta "${pkg.title}"?`)) deletePackage(pkg.id); }}
+              className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+
+          {isAddingSub && (
+            <div className="flex gap-1.5 pb-2 mt-1" style={{ paddingLeft: (depth + 1) * 12 + 16 }}>
+              <input
+                autoFocus
+                type="text"
+                value={newSubFolderTitle}
+                onChange={e => setNewSubFolderTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addSubFolder(pkg.id);
+                  if (e.key === 'Escape') { setAddingSubFolderFor(null); setNewSubFolderTitle(''); }
+                }}
+                placeholder="Nome da subpasta…"
+                className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
+              />
+              <button onClick={() => addSubFolder(pkg.id)} className="p-1.5 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors">
+                <Check className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
+          {hasChildren && isExpanded && (
+            <div className="mt-0.5">
+              {renderFolderTree(pkg.subFolders!, depth + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
+
   // ─────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:flex-row gap-5">
@@ -2264,7 +2424,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             <button
               onClick={() => setIsAddingPkg(true)}
               className="p-1 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 text-violet-500 transition-colors"
-              title="Novo Pacote"
+              title="Nova Pasta"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -2295,28 +2455,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
           )}
 
           <div className="space-y-0.5">
-            {packages.map(pkg => (
-              <div key={pkg.id} className="group flex items-center gap-1">
-                <button
-                  onClick={() => setSelectedPkgId(pkg.id)}
-                  className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left min-w-0 ${
-                    selectedPkgId === pkg.id
-                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <Folder className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate flex-1">{pkg.title}</span>
-                  <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.length}</span>
-                </button>
-                <button
-                  onClick={() => { if (confirm(`Excluir pacote "${pkg.title}"?`)) deletePackage(pkg.id); }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+            {renderFolderTree(packages)}
           </div>
         </div>
       </aside>
@@ -2352,7 +2491,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   }`}
                 >
                   <PenLine className="w-3.5 h-3.5" />
-                  ✍️ Modo Edição
+                  Modo Edição
                 </button>
                 <button
                   onClick={() => setViewMode('shotlist')}
@@ -2363,7 +2502,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   }`}
                 >
                   <Film className="w-3.5 h-3.5" />
-                  🎥 Modo Shotlist
+                  Modo Shotlist
                 </button>
               </div>
             </div>
@@ -2389,6 +2528,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             {selectedPkg.scripts.map((script, idx) => {
               const isOpen       = expandedId === script.id;
               const checkedCount = script.scenes.filter(sc => sc.isChecked).length;
+              const wMode        = script.writingMode ?? 'structured';
               return (
                 <div
                   key={script.id}
@@ -2400,13 +2540,9 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                     onClick={() => setExpandedId(isOpen ? null : script.id)}
                   >
                     <ChevronDown className={`w-4 h-4 text-zinc-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-
-                    {/* Script number badge */}
                     <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center text-[10px] font-black flex-shrink-0">
                       {idx + 1}
                     </div>
-
-                    {/* Inline title edit */}
                     <input
                       type="text"
                       value={script.title}
@@ -2415,30 +2551,22 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       className="flex-1 min-w-0 bg-transparent font-bold text-sm text-zinc-900 dark:text-white focus:outline-none placeholder:text-zinc-400 cursor-text"
                       placeholder="Título do roteiro…"
                     />
-
-                    {/* Shotlist progress counter */}
                     {viewMode === 'shotlist' && script.scenes.length > 0 && (
                       <span className="text-[10px] font-bold text-zinc-400 flex-shrink-0 tabular-nums">
                         {checkedCount}/{script.scenes.length}
                       </span>
                     )}
-
-                    {/* Status badge — cycles on click */}
                     <button
                       onClick={e => { e.stopPropagation(); cycleStatus(selectedPkg.id, script); }}
                       className={`flex-shrink-0 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all hover:opacity-80 ${SCRIPT_STATUS_STYLES[script.status]}`}
                     >
                       {script.status}
                     </button>
-
-                    {/* Portal status badge */}
                     {script.portalStatus && (
                       <span className={`flex-shrink-0 text-[10px] font-black px-2.5 py-1 rounded-lg border ${PORTAL_SCRIPT_STATUS_CONFIG[script.portalStatus].badge}`}>
                         {PORTAL_SCRIPT_STATUS_CONFIG[script.portalStatus].label}
                       </span>
                     )}
-
-                    {/* Portal rating stars (compact) */}
                     {script.portalStatus === 'aprovado_cliente' && !!script.rating && script.rating > 0 && (
                       <div className="flex-shrink-0 flex items-center gap-px">
                         {[1,2,3,4,5].map(n => (
@@ -2446,19 +2574,15 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                         ))}
                       </div>
                     )}
-
-                    {/* Send to portal button */}
                     {!script.portalStatus && (
                       <button
                         onClick={e => { e.stopPropagation(); sendToPortal(selectedPkg.id, script); }}
-                        className="flex-shrink-0 text-[10px] font-black px-2.5 py-1 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                        className="flex-shrink-0 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
                         title="Enviar para aprovação do cliente"
                       >
-                        📤 Enviar
+                        <UploadCloud className="w-3 h-3" /> Enviar
                       </button>
                     )}
-
-                    {/* Delete */}
                     <button
                       onClick={e => { e.stopPropagation(); if (confirm(`Excluir "${script.title}"?`)) deleteScript(selectedPkg.id, script.id); }}
                       className="flex-shrink-0 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded-lg"
@@ -2473,9 +2597,38 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       {viewMode === 'edicao' ? (
                         /* ─── EDIT MODE ─── */
                         <>
+                          {/* Writing mode toggle */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Formato</span>
+                            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5 gap-0.5">
+                              <button
+                                onClick={() => updateScript(selectedPkg.id, { ...script, writingMode: 'structured' })}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-black transition-all ${
+                                  wMode === 'structured'
+                                    ? 'bg-white dark:bg-zinc-700 text-violet-700 dark:text-violet-300 shadow-sm'
+                                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                                }`}
+                              >
+                                <LayoutDashboard className="w-3 h-3" /> Layout Estruturado
+                              </button>
+                              <button
+                                onClick={() => updateScript(selectedPkg.id, { ...script, writingMode: 'free' })}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-black transition-all ${
+                                  wMode === 'free'
+                                    ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-300 shadow-sm'
+                                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                                }`}
+                              >
+                                <PenLine className="w-3 h-3" /> Escrita Livre
+                              </button>
+                            </div>
+                          </div>
+
                           {/* Reference link */}
                           <div>
-                            <label className={MODAL_LABEL_CLS}>🔗 Link de Referência</label>
+                            <label className={MODAL_LABEL_CLS}>
+                              <span className="flex items-center gap-1.5"><LinkIcon className="w-3 h-3" /> Link de Referência</span>
+                            </label>
                             <input
                               type="text"
                               value={script.referenceLink}
@@ -2485,111 +2638,221 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                             />
                           </div>
 
-                          {/* Hook */}
-                          <div>
-                            <label className={MODAL_LABEL_CLS}>🎣 Hook / Gancho</label>
-                            <textarea
-                              value={script.gancho}
-                              onChange={e => updateScript(selectedPkg.id, { ...script, gancho: e.target.value })}
-                              placeholder="A frase de abertura que prende a atenção em 3 segundos…"
-                              rows={3}
-                              className={`${MODAL_INPUT_CLS} resize-none`}
-                            />
-                          </div>
+                          {wMode === 'structured' ? (
+                            <>
+                              {/* Hook */}
+                              <div>
+                                <label className={MODAL_LABEL_CLS}>
+                                  <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Hook / Gancho</span>
+                                </label>
+                                <textarea
+                                  value={script.gancho}
+                                  onChange={e => updateScript(selectedPkg.id, { ...script, gancho: e.target.value })}
+                                  placeholder="A frase de abertura que prende a atenção em 3 segundos…"
+                                  rows={3}
+                                  className={`${MODAL_INPUT_CLS} resize-none`}
+                                />
+                              </div>
 
-                          {/* Scenes */}
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <label className={MODAL_LABEL_CLS}>🎬 Cenas</label>
-                              <button
-                                onClick={() => addScene(selectedPkg.id, script)}
-                                className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
-                              >
-                                <Plus className="w-3 h-3" /> Cena
-                              </button>
-                            </div>
-
-                            <div className="space-y-3">
-                              {script.scenes.map((scene, sIdx) => (
-                                <div
-                                  key={scene.id}
-                                  className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
-                                    {script.scenes.length > 1 && (
-                                      <button
-                                        onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
-                                        className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-zinc-400 mb-1 block">📷 Visual / Ação</label>
-                                    <textarea
-                                      value={scene.visual}
-                                      onChange={e => updateScene(selectedPkg.id, script, scene.id, 'visual', e.target.value)}
-                                      placeholder="Descreva o que a câmera vê nessa cena…"
-                                      rows={2}
-                                      className={`${MODAL_INPUT_CLS} resize-none text-xs`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-zinc-400 mb-1 block">🎙️ Áudio / Fala</label>
-                                    <textarea
-                                      value={scene.audio}
-                                      onChange={e => updateScene(selectedPkg.id, script, scene.id, 'audio', e.target.value)}
-                                      placeholder="O que o apresentador fala nessa cena…"
-                                      rows={2}
-                                      className={`${MODAL_INPUT_CLS} resize-none text-xs`}
-                                    />
-                                  </div>
+                              {/* Scenes */}
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  <label className={MODAL_LABEL_CLS}>
+                                    <span className="flex items-center gap-1.5"><Film className="w-3 h-3" /> Cenas</span>
+                                  </label>
+                                  <button
+                                    onClick={() => addScene(selectedPkg.id, script)}
+                                    className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" /> Cena
+                                  </button>
                                 </div>
-                              ))}
+                                <div className="space-y-3">
+                                  {script.scenes.map((scene, sIdx) => (
+                                    <div
+                                      key={scene.id}
+                                      className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
+                                        {script.scenes.length > 1 && (
+                                          <button
+                                            onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
+                                            className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-zinc-400 mb-1 flex items-center gap-1">
+                                          <Camera className="w-3 h-3" /> Visual / Ação
+                                        </label>
+                                        <textarea
+                                          value={scene.visual}
+                                          onChange={e => updateScene(selectedPkg.id, script, scene.id, 'visual', e.target.value)}
+                                          placeholder="Descreva o que a câmera vê nessa cena…"
+                                          rows={2}
+                                          className={`${MODAL_INPUT_CLS} resize-none text-xs`}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-zinc-400 mb-1 flex items-center gap-1">
+                                          <Mic className="w-3 h-3" /> Áudio / Fala
+                                        </label>
+                                        <textarea
+                                          value={scene.audio}
+                                          onChange={e => updateScene(selectedPkg.id, script, scene.id, 'audio', e.target.value)}
+                                          placeholder="O que o apresentador fala nessa cena…"
+                                          rows={2}
+                                          className={`${MODAL_INPUT_CLS} resize-none text-xs`}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            /* ── FREE WRITING MODE ── */
+                            <div>
+                              <label className={MODAL_LABEL_CLS}>
+                                <span className="flex items-center gap-1.5"><PenLine className="w-3 h-3" /> Texto Livre</span>
+                              </label>
+                              <textarea
+                                value={script.freeText ?? ''}
+                                onChange={e => updateScript(selectedPkg.id, { ...script, freeText: e.target.value })}
+                                placeholder="Escreva livremente o roteiro aqui. Sem restrições de formato — ideal para teleprompter, narração ou roteiros literários…"
+                                rows={18}
+                                className={`${MODAL_INPUT_CLS} resize-y font-mono text-sm leading-relaxed`}
+                              />
                             </div>
-                          </div>
+                          )}
                         </>
                       ) : (
                         /* ─── SHOTLIST MODE ─── */
                         <>
                           {script.gancho && (
                             <div className="flex gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl">
-                              <span className="text-sm flex-shrink-0">🎣</span>
+                              <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
                               <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300 italic leading-relaxed">
                                 &ldquo;{script.gancho}&rdquo;
                               </p>
                             </div>
                           )}
 
-                          <div className="space-y-2">
+                          {/* Reference link — clickable if URL */}
+                          {script.referenceLink && (
+                            <div className="flex items-center gap-2 px-1">
+                              <LinkIcon className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
+                              {/^https?:\/\//i.test(script.referenceLink) ? (
+                                <a
+                                  href={script.referenceLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2 truncate"
+                                >
+                                  {script.referenceLink}
+                                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                </a>
+                              ) : (
+                                <span className="text-xs text-zinc-500 truncate">{script.referenceLink}</span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Storyboard quota */}
+                          <div className="flex items-center gap-1.5 px-1">
+                            <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
+                            <span className="text-xs text-zinc-500">
+                              Storyboards:{' '}
+                              <span className={`font-black tabular-nums ${storyboardUsed >= STORYBOARD_LIMIT ? 'text-red-400' : 'text-zinc-400'}`}>
+                                {storyboardUsed}/{STORYBOARD_LIMIT}
+                              </span>{' '}
+                              usados do plano
+                            </span>
+                          </div>
+
+                          <div className="space-y-3">
                             {script.scenes.map((scene, sIdx) => (
-                              <button
-                                key={scene.id}
-                                onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
-                                className={`w-full flex items-start gap-4 px-4 py-4 rounded-xl border-2 text-left transition-all ${
-                                  scene.isChecked
-                                    ? 'border-emerald-300 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/10 opacity-60'
-                                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700'
-                                }`}
-                              >
-                                <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
-                                  scene.isChecked
-                                    ? 'bg-emerald-500 border-emerald-500'
-                                    : 'border-zinc-300 dark:border-zinc-600'
-                                }`}>
-                                  {scene.isChecked && <Check className="w-3 h-3 text-white" />}
+                              <div key={scene.id} className="space-y-2">
+                                {/* Scene row */}
+                                <div
+                                  className={`flex items-start gap-4 px-4 py-4 rounded-xl border-2 transition-all cursor-pointer ${
+                                    scene.isChecked
+                                      ? 'border-emerald-300 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/10 opacity-60'
+                                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700'
+                                  }`}
+                                  onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
+                                >
+                                  <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
+                                    scene.isChecked
+                                      ? 'bg-emerald-500 border-emerald-500'
+                                      : 'border-zinc-300 dark:border-zinc-600'
+                                  }`}>
+                                    {scene.isChecked && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${scene.isChecked ? 'text-emerald-500' : 'text-indigo-400'}`}>
+                                      CENA {sIdx + 1}
+                                    </p>
+                                    <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                                      {scene.visual || '(sem descrição visual)'}
+                                    </p>
+                                    {scene.audio && (
+                                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 italic leading-relaxed">
+                                        &ldquo;{scene.audio}&rdquo;
+                                      </p>
+                                    )}
+                                  </div>
+                                  {/* Storyboard button */}
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      generateStoryboard(selectedPkg.id, script, scene);
+                                    }}
+                                    disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard}
+                                    className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black transition-all ${
+                                      storyboardUsed >= STORYBOARD_LIMIT
+                                        ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
+                                        : generatingStoryboard === scene.id
+                                          ? 'border-indigo-300 dark:border-indigo-700 text-indigo-400 animate-pulse cursor-wait'
+                                          : 'border-indigo-200 dark:border-indigo-800 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400'
+                                    }`}
+                                    title="Gerar Storyboard"
+                                  >
+                                    {generatingStoryboard === scene.id
+                                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                                      : <ImageIcon className="w-3 h-3" />
+                                    }
+                                    Storyboard
+                                  </button>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${scene.isChecked ? 'text-emerald-500' : 'text-indigo-400'}`}>
-                                    CENA {sIdx + 1}
-                                  </p>
-                                  <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                                    {scene.visual || '(sem descrição visual)'}
-                                  </p>
-                                </div>
-                              </button>
+
+                                {/* Storyboard image */}
+                                {scene.storyboardUrl && (
+                                  <div className="ml-10 rounded-xl overflow-hidden border border-indigo-200 dark:border-indigo-800/50">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={scene.storyboardUrl}
+                                      alt={`Storyboard cena ${sIdx + 1}`}
+                                      className="w-full h-auto max-h-48 object-cover"
+                                    />
+                                    <div className="px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-between">
+                                      <span className="text-[10px] font-black text-indigo-500 uppercase tracking-wider">Storyboard · Cena {sIdx + 1}</span>
+                                      <button
+                                        onClick={() => updateScript(selectedPkg.id, {
+                                          ...script,
+                                          scenes: script.scenes.map(sc => sc.id === scene.id ? { ...sc, storyboardUrl: undefined } : sc),
+                                        })}
+                                        className="text-[10px] font-bold text-zinc-400 hover:text-red-500 transition-colors"
+                                      >
+                                        Remover
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             ))}
                           </div>
 
