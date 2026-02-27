@@ -40,6 +40,9 @@ import {
   BookmarkCheck,
   Users,
   DollarSign,
+  Activity,
+  TrendingUp,
+  ArrowRight,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -3118,165 +3121,367 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 };
 
 // ─────────────────────────────────────────────
-// ClientVisaoGeralTab sub-component
+// ClientVisaoGeralTab — Central de Comando
 // ─────────────────────────────────────────────
+const PRODUCTION_STAGES = ['Briefing', 'Roteiro', 'Aprovação', 'Gravação', 'Edição', 'Pronto'] as const;
+
+interface VisaoGeralData {
+  awaitingClient:    number;
+  teamBottleneck:    number;
+  readyToRecord:     number;
+  riskScript:        { title: string; recordingDate: string } | null;
+  opportunityScript: { title: string } | null;
+  nextRecordings:    AgendaEvent[];
+  radarFeedbacks:    { title: string; rating: number; feedback?: string; type: 'script' | 'deliverable' }[];
+}
+
 const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
   const todayStr = getTodayStr();
+  const STAGE_KEY = `creator_flow_prod_stage_${client.id}`;
 
-  const [data] = useState(() => {
-    let pendingTasks    = 0;
-    let approvedScripts = 0;
-    let upcomingEvents  = 0;
-    let totalBackups    = 0;
-    let recentScripts:  { title: string; status: ScriptStatus }[] = [];
-    let agendaItems:    AgendaEvent[]  = [];
-    let urgentCards:    KanbanCard[]   = [];
+  const [stageIdx, setStageIdx] = useState<number>(() => {
+    try { const s = localStorage.getItem(STAGE_KEY); return s ? parseInt(s, 10) : 0; }
+    catch { return 0; }
+  });
 
-    // ── Kanban: pendentes ────────────────────────
-    try {
-      const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
-      if (s) {
-        const cols: KanbanColumn[] = JSON.parse(s);
-        const active = cols.filter(c => c.id !== 'finalizado').flatMap(c => c.cards);
-        pendingTasks = active.length;
-        urgentCards  = active.filter(c => c.priority === 'Urgente' || c.priority === 'Alta').slice(0, 2);
-      }
-    } catch { /* ignore parse errors */ }
+  const advanceStage = () => {
+    if (stageIdx >= PRODUCTION_STAGES.length - 1) return;
+    const next = stageIdx + 1;
+    setStageIdx(next);
+    try { localStorage.setItem(STAGE_KEY, String(next)); } catch { /* ignore */ }
+  };
 
-    // ── Roteiros: aprovados ──────────────────────
+  const [data] = useState<VisaoGeralData>(() => {
+    let awaitingClient    = 0;
+    let teamBottleneck    = 0;
+    let readyToRecord     = 0;
+    let riskScript:        VisaoGeralData['riskScript']        = null;
+    let opportunityScript: VisaoGeralData['opportunityScript'] = null;
+    let nextRecordings:    AgendaEvent[]   = [];
+    let radarFeedbacks:    VisaoGeralData['radarFeedbacks']    = [];
+    let allScripts:        ScriptDocument[] = [];
+
+    // ── Roteiros ────────────────────────────────
     try {
       const s = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
       if (s) {
         const pkgs: ScriptPackage[] = JSON.parse(s);
-        const all = pkgs.flatMap(p => p.scripts);
-        approvedScripts = all.filter(sc => sc.status === 'Aprovado').length;
-        recentScripts   = all
-          .sort((a, b) => b.createdAt - a.createdAt)
+        allScripts     = pkgs.flatMap(p => p.scripts);
+        awaitingClient = allScripts.filter(sc => sc.portalStatus === 'aguardando_cliente').length;
+        const topRated = allScripts.find(sc => sc.rating === 5);
+        if (topRated) opportunityScript = { title: topRated.title };
+        const scriptFbs = allScripts
+          .filter(sc => (sc.rating ?? 0) > 0)
+          .sort((a, b) => (b.sentToPortalAt ?? 0) - (a.sentToPortalAt ?? 0))
           .slice(0, 3)
-          .map(sc => ({ title: sc.title, status: sc.status }));
+          .map(sc => ({ title: sc.title, rating: sc.rating!, type: 'script' as const }));
+        radarFeedbacks.push(...scriptFbs);
       }
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
 
-    // ── Agenda: próximos ────────────────────────
+    // ── Kanban ──────────────────────────────────
+    try {
+      const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
+      if (s) {
+        const cols: KanbanColumn[] = JSON.parse(s);
+        const today = new Date();
+        const bottleneckCards = cols
+          .filter(c => c.id === 'preproducao' || c.id === 'gravar')
+          .flatMap(c => c.cards);
+        const overdueCards = cols
+          .filter(c => c.id !== 'finalizado')
+          .flatMap(c => c.cards)
+          .filter(card => card.dueDate && new Date(card.dueDate) < today);
+        const combined = new Set([...bottleneckCards.map(c => c.id), ...overdueCards.map(c => c.id)]);
+        teamBottleneck = combined.size;
+      }
+    } catch { /* ignore */ }
+
+    // ── Agenda ──────────────────────────────────
     try {
       const s = localStorage.getItem(`creator_flow_agenda_${client.id}`);
       if (s) {
         const events: AgendaEvent[] = JSON.parse(s);
-        const future = events.filter(e => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
-        upcomingEvents = future.length;
-        agendaItems    = future.slice(0, 2);
-      }
-    } catch { /* ignore parse errors */ }
+        const futureRecs = events
+          .filter(e => e.type === 'Gravação' && e.date >= todayStr)
+          .sort((a, b) => a.date.localeCompare(b.date));
+        nextRecordings = futureRecs.slice(0, 3);
 
-    // ── Acervo: backups ─────────────────────────
+        const threeDaysLater = new Date();
+        threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+        const threeDaysStr = threeDaysLater.toISOString().split('T')[0];
+        const urgentRec = futureRecs.find(e => e.date <= threeDaysStr);
+        if (urgentRec) {
+          const hasApproved = allScripts.some(sc => sc.portalStatus === 'aprovado_cliente');
+          if (!hasApproved) riskScript = { title: urgentRec.title, recordingDate: urgentRec.date };
+        }
+      }
+    } catch { /* ignore */ }
+
+    const approvedCount = allScripts.filter(sc => sc.portalStatus === 'aprovado_cliente').length;
+    readyToRecord = nextRecordings.length > 0 ? 0 : approvedCount;
+
+    // ── Entregas (radar) ─────────────────────────
     try {
-      const s = localStorage.getItem('creator_flow_recordings');
+      const s = localStorage.getItem(`creator_flow_entregas_${client.id}`);
       if (s) {
-        const recs: Recording[] = JSON.parse(s);
-        totalBackups = recs.filter(r => r.clientId === client.id).length;
+        interface _D { title: string; rating?: number; feedback?: string; sentAt: number; }
+        const deliverables: _D[] = JSON.parse(s);
+        const withRating = deliverables
+          .filter(d => (d.rating ?? 0) > 0)
+          .sort((a, b) => b.sentAt - a.sentAt)
+          .slice(0, 2)
+          .map(d => ({ title: d.title, rating: d.rating!, feedback: d.feedback, type: 'deliverable' as const }));
+        radarFeedbacks.push(...withRating);
       }
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
 
-    return { pendingTasks, approvedScripts, upcomingEvents, totalBackups, recentScripts, agendaItems, urgentCards };
+    radarFeedbacks = radarFeedbacks.slice(0, 3);
+    return { awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks };
   });
 
-  const statCards = [
-    { label: 'Tarefas Pendentes',  value: data.pendingTasks,    icon: <CheckSquare className="w-5 h-5" />, numCls: 'text-violet-600 dark:text-violet-400',  bgCls: 'bg-violet-500/10  dark:bg-violet-900/20  text-violet-500'  },
-    { label: 'Roteiros Aprovados', value: data.approvedScripts, icon: <PenTool     className="w-5 h-5" />, numCls: 'text-emerald-600 dark:text-emerald-400', bgCls: 'bg-emerald-500/10 dark:bg-emerald-900/20 text-emerald-500' },
-    { label: 'Gravações Próximas', value: data.upcomingEvents,  icon: <Calendar    className="w-5 h-5" />, numCls: 'text-sky-600     dark:text-sky-400',     bgCls: 'bg-sky-500/10     dark:bg-sky-900/20     text-sky-500'     },
-    { label: 'Total de Backups',   value: data.totalBackups,    icon: <HardDrive   className="w-5 h-5" />, numCls: 'text-amber-600   dark:text-amber-400',   bgCls: 'bg-amber-500/10   dark:bg-amber-900/20   text-amber-500'   },
-  ];
-
-  const nextSteps = [
-    ...data.agendaItems.map(e => ({ type: 'event' as const, payload: e })),
-    ...data.urgentCards.slice(0, Math.max(0, 2 - data.agendaItems.length)).map(c => ({ type: 'card' as const, payload: c })),
-  ];
+  const progressPct = Math.round((stageIdx / (PRODUCTION_STAGES.length - 1)) * 100);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
-      {/* ══ STAT CARDS ══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(s => (
-          <div key={s.label} className="flex flex-col gap-4 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.bgCls}`}>
-              {s.icon}
+      {/* ══ 1. Cards de Status Crítico ══ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {/* 🔴 Aguardando Cliente */}
+        <div className="flex flex-col gap-3 p-5 bg-gray-900 border border-gray-800 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/20 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-red-400" />
             </div>
-            <div>
-              <p className={`text-3xl font-black ${s.numCls}`}>{s.value}</p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 leading-tight">{s.label}</p>
-            </div>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 uppercase tracking-wider">Urgente</span>
           </div>
-        ))}
+          <div>
+            <p className="text-4xl font-black text-red-400 tabular-nums">{data.awaitingClient}</p>
+            <p className="text-xs text-gray-500 mt-1 leading-tight">🔴 Roteiros aguardando aprovação do cliente</p>
+          </div>
+        </div>
+
+        {/* 🟡 Gargalo da Equipe */}
+        <div className="flex flex-col gap-3 p-5 bg-gray-900 border border-gray-800 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+            </div>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20 uppercase tracking-wider">Atenção</span>
+          </div>
+          <div>
+            <p className="text-4xl font-black text-amber-400 tabular-nums">{data.teamBottleneck}</p>
+            <p className="text-xs text-gray-500 mt-1 leading-tight">🟡 Tarefas em gargalo ou atrasadas no Workflow</p>
+          </div>
+        </div>
+
+        {/* 🟢 Pronta para Gravar */}
+        <div className="flex flex-col gap-3 p-5 bg-gray-900 border border-gray-800 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            </div>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">Liberado</span>
+          </div>
+          <div>
+            <p className="text-4xl font-black text-emerald-400 tabular-nums">{data.readyToRecord}</p>
+            <p className="text-xs text-gray-500 mt-1 leading-tight">🟢 Roteiros aprovados sem gravação agendada</p>
+          </div>
+        </div>
       </div>
 
-      {/* ══ SPLIT SECTION ══ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* ══ 2. Iara Insights ══ */}
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-indigo-950/20 p-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 via-transparent to-indigo-600/5 pointer-events-none" />
+        <div className="relative z-10 space-y-4">
 
-        {/* ── Últimos Roteiros ── */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">📝 Últimos Roteiros</p>
-          {data.recentScripts.length === 0 ? (
-            <div className="py-8 text-center">
-              <LayoutDashboard className="w-8 h-8 text-zinc-200 dark:text-zinc-700 mx-auto mb-2" />
-              <p className="text-sm text-zinc-400">Nenhum roteiro criado ainda</p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-white">✨ Iara Insights</p>
+              <p className="text-[10px] text-indigo-400/60 mt-0.5">Inteligência proativa do seu projeto</p>
+            </div>
+          </div>
+
+          {data.riskScript ? (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/25">
+              <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black text-red-300">⚠️ Risco de Atraso</p>
+                <p className="text-xs text-red-400/80 mt-1 leading-relaxed">
+                  A gravação de <span className="font-bold text-red-300">{formatDate(data.riskScript.recordingDate)}</span> está próxima, mas nenhum roteiro foi aprovado ainda.
+                </p>
+              </div>
+              <button className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-[11px] font-black border border-red-500/30 transition-all whitespace-nowrap">
+                Cobrar Cliente
+              </button>
             </div>
           ) : (
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {data.recentScripts.map((s, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 truncate flex-1">
-                    {s.title || '(sem título)'}
-                  </p>
-                  <span className={`flex-shrink-0 text-[11px] font-black px-2 py-0.5 rounded-lg border ${SCRIPT_STATUS_STYLES[s.status]}`}>
-                    {s.status}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <p className="text-xs font-bold text-emerald-300">Nenhum risco de atraso identificado. Projeto no caminho certo! 🎉</p>
+            </div>
+          )}
+
+          {data.opportunityScript && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+              <TrendingUp className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black text-violet-300">💡 Oportunidade de Growth</p>
+                <p className="text-xs text-violet-400/80 mt-1 leading-relaxed">
+                  O cliente avaliou com 5 estrelas o conteúdo <span className="font-bold text-violet-300">"{data.opportunityScript.title}"</span>. Que tal gerarmos uma nova série parecida?
+                </p>
+              </div>
+              <button className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 text-[11px] font-black border border-violet-500/30 transition-all whitespace-nowrap">
+                Gerar Ideias
+              </button>
+            </div>
+          )}
+
+          {!data.riskScript && !data.opportunityScript && (
+            <p className="text-xs text-gray-600 italic">Continue criando conteúdo para que a Iara identifique oportunidades aqui.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ══ 3. Timeline + Próximas Gravações ══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* ── Timeline de Produção ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-500">🎬 Timeline de Produção</p>
+            <button
+              onClick={advanceStage}
+              disabled={stageIdx >= PRODUCTION_STAGES.length - 1}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 text-violet-300 text-[11px] font-black border border-violet-500/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Avançar Etapa <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="flex items-start">
+            {PRODUCTION_STAGES.map((stage, i) => {
+              const isCompleted = i < stageIdx;
+              const isCurrent   = i === stageIdx;
+              return (
+                <React.Fragment key={stage}>
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      isCompleted ? 'bg-violet-600 border-violet-500'
+                      : isCurrent  ? 'bg-violet-600/20 border-violet-500 ring-2 ring-violet-500/25'
+                      :              'bg-gray-800 border-gray-700'
+                    }`}>
+                      {isCompleted
+                        ? <Check className="w-3 h-3 text-white" />
+                        : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-violet-400' : 'bg-gray-600'}`} />
+                      }
+                    </div>
+                    <p className={`text-[9px] font-black text-center leading-tight ${
+                      isCurrent ? 'text-violet-300' : isCompleted ? 'text-gray-500' : 'text-gray-700'
+                    }`}>{stage}</p>
+                  </div>
+                  {i < PRODUCTION_STAGES.length - 1 && (
+                    <div className={`flex-shrink-0 h-px w-3 mt-3.5 ${i < stageIdx ? 'bg-violet-600' : 'bg-gray-700'}`} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Progresso</span>
+              <span className="text-[11px] font-black text-violet-400">{progressPct}%</span>
+            </div>
+            <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {stageIdx === PRODUCTION_STAGES.length - 1 && (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <p className="text-xs font-black text-emerald-300">Projeto Finalizado! 🎉</p>
             </div>
           )}
         </div>
 
-        {/* ── Próximos Passos ── */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">⚡ Próximos Passos</p>
-          {nextSteps.length === 0 ? (
-            <div className="py-8 text-center">
-              <CheckSquare className="w-8 h-8 text-zinc-200 dark:text-zinc-700 mx-auto mb-2" />
-              <p className="text-sm text-zinc-400">Nenhum evento ou tarefa urgente</p>
+        {/* ── Próximas Gravações ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500">📅 Próximas Gravações</p>
+          {data.nextRecordings.length === 0 ? (
+            <div className="py-8 flex flex-col items-center text-center">
+              <Calendar className="w-8 h-8 text-gray-700 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Nenhuma gravação agendada</p>
+              <p className="text-xs text-gray-700 mt-1">Adicione eventos do tipo "Gravação" na aba Agenda</p>
             </div>
           ) : (
             <div className="space-y-2.5">
-              {nextSteps.map((item, i) => {
-                if (item.type === 'event') {
-                  const e = item.payload as AgendaEvent;
-                  const style = getEventTypeStyle(e.type);
-                  return (
-                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${style.border} ${style.bg}`}>
-                      <span className="text-base leading-none mt-0.5 flex-shrink-0">{style.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold truncate ${style.text}`}>{e.title}</p>
-                        <p className="text-[10px] text-zinc-400 mt-0.5">
-                          {formatDate(e.date)}{e.startTime ? ` · ${e.startTime}` : ''}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                const card = item.payload as KanbanCard;
+              {data.nextRecordings.map((event, i) => {
+                const d = new Date(event.date + 'T12:00:00');
+                const day   = d.toLocaleDateString('pt-BR', { day: '2-digit' });
+                const month = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
                 return (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-900/10">
-                    <span className="text-base leading-none mt-0.5 flex-shrink-0">⚠️</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-orange-700 dark:text-orange-400 truncate">{card.title}</p>
-                      <p className="text-[10px] text-zinc-400 mt-0.5">Prioridade {card.priority}</p>
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-violet-500/20 bg-violet-500/5">
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center w-11 h-11 rounded-xl bg-violet-600/15 border border-violet-500/20">
+                      <p className="text-sm font-black text-violet-300 leading-none">{day}</p>
+                      <p className="text-[10px] text-violet-500 uppercase leading-none mt-0.5">{month}</p>
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{event.title}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        {event.startTime ? `${event.startTime} · ` : ''}{event.location}
+                      </p>
+                    </div>
+                    <span className="flex-shrink-0 text-lg select-none">🎬</span>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+      </div>
+
+      {/* ══ 4. Radar do Cliente ══ */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-2.5">
+          <Activity className="w-4 h-4 text-amber-400" />
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500">Radar do Cliente — Últimos Feedbacks</p>
+        </div>
+        {data.radarFeedbacks.length === 0 ? (
+          <div className="py-6 flex flex-col items-center text-center">
+            <Star className="w-7 h-7 text-gray-700 mx-auto mb-2" />
+            <p className="text-sm text-gray-600">Nenhuma avaliação recebida ainda</p>
+            <p className="text-xs text-gray-700 mt-1">As notas do Portal aparecerão aqui</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {data.radarFeedbacks.map((fb, i) => (
+              <div key={i} className="flex flex-col gap-2 p-3.5 rounded-xl border border-gray-700/50 bg-gray-800/50">
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map(n => (
+                    <Star key={n} className="w-3.5 h-3.5" style={{ fill: n <= fb.rating ? '#f59e0b' : 'transparent', stroke: n <= fb.rating ? '#f59e0b' : '#52525b' }} />
+                  ))}
+                  <span className="ml-1.5 text-[10px] font-black text-amber-400">{fb.rating}/5</span>
+                </div>
+                <p className="text-xs font-bold text-gray-300 truncate">{fb.title || '(sem título)'}</p>
+                {fb.feedback && (
+                  <p className="text-[11px] text-gray-500 italic leading-relaxed line-clamp-2">"{fb.feedback}"</p>
+                )}
+                <span className="text-[9px] font-black text-gray-600 uppercase tracking-wider">
+                  {fb.type === 'script' ? '📝 Roteiro' : '📦 Entrega'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
