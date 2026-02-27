@@ -59,6 +59,7 @@ import {
   Image as ImageIcon,
   Menu,
   Pin,
+  AlignLeft,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -2106,10 +2107,12 @@ type ScriptStatus = 'Rascunho' | 'Aprovado' | 'Gravado';
 
 interface ScriptScene {
   id: string;
+  type?: 'scene' | 'free_text';
   visual: string;
   audio: string;
   isChecked: boolean;
   storyboardUrl?: string;
+  freeContent?: string;
 }
 
 interface ScriptDocument {
@@ -2322,7 +2325,13 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       ...script, scenes: [...script.scenes, { id: crypto.randomUUID(), visual: '', audio: '', isChecked: false }],
     });
 
-  const updateScene = (pkgId: string, script: ScriptDocument, sceneId: string, field: 'visual' | 'audio', value: string) =>
+  const addFreeTextBlock = (pkgId: string, script: ScriptDocument) =>
+    updateScript(pkgId, {
+      ...script,
+      scenes: [...script.scenes, { id: crypto.randomUUID(), type: 'free_text' as const, visual: '', audio: '', isChecked: false, freeContent: '' }],
+    });
+
+  const updateScene = (pkgId: string, script: ScriptDocument, sceneId: string, field: 'visual' | 'audio' | 'freeContent', value: string) =>
     updateScript(pkgId, {
       ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, [field]: value } : sc),
     });
@@ -2336,17 +2345,21 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
     });
 
   // ── Storyboard generation ─────────────────────────────────────
-  const generateStoryboard = async (pkgId: string, script: ScriptDocument, scene: ScriptScene) => {
+  const generateStoryboard = async (pkgId: string, script: ScriptDocument) => {
     if (storyboardUsed >= STORYBOARD_LIMIT || generatingStoryboard) return;
-    setGeneratingStoryboard(scene.id);
+    const structuredScenes = script.scenes.filter(sc => !sc.type || sc.type === 'scene');
+    if (structuredScenes.length === 0) return;
+    setGeneratingStoryboard(script.id);
     await new Promise<void>(r => setTimeout(r, 1800));
-    const sceneIdx = script.scenes.findIndex(sc => sc.id === scene.id) + 1;
-    const mockUrl = `https://placehold.co/400x225/1e1b4b/a78bfa?text=Cena+${sceneIdx}`;
-    setStoryboardUsed(prev => prev + 1);
-    updateScript(pkgId, {
-      ...script,
-      scenes: script.scenes.map(sc => sc.id === scene.id ? { ...sc, storyboardUrl: mockUrl } : sc),
+    let added = 0;
+    const updatedScenes = script.scenes.map(sc => {
+      if (sc.type === 'free_text' || sc.storyboardUrl) return sc;
+      added++;
+      const num = structuredScenes.findIndex(s => s.id === sc.id) + 1;
+      return { ...sc, storyboardUrl: `https://placehold.co/400x225/1e1b4b/a78bfa?text=Cena+${num}` };
     });
+    setStoryboardUsed(prev => Math.min(prev + added, STORYBOARD_LIMIT));
+    updateScript(pkgId, { ...script, scenes: updatedScenes });
     setGeneratingStoryboard(null);
   };
 
@@ -2627,6 +2640,35 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   {/* ── Accordion Body ── */}
                   {isOpen && (
                     <div className="border-t border-zinc-100 dark:border-zinc-800 px-5 py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+
+                      {/* ── Global storyboard action ── */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={e => { e.stopPropagation(); generateStoryboard(selectedPkg.id, script); }}
+                          disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard || script.scenes.filter(sc => !sc.type || sc.type === 'scene').length === 0}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black transition-all ${
+                            storyboardUsed >= STORYBOARD_LIMIT
+                              ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
+                              : generatingStoryboard === script.id
+                                ? 'border-indigo-300 dark:border-indigo-700 text-indigo-400 animate-pulse cursor-wait'
+                                : 'border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400'
+                          }`}
+                        >
+                          {generatingStoryboard === script.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <ImageIcon className="w-3.5 h-3.5" />
+                          }
+                          Gerar Storyboard do Roteiro
+                        </button>
+                        <span className="text-[10px] text-gray-400">
+                          Storyboards:{' '}
+                          <span className={`font-black tabular-nums ${storyboardUsed >= STORYBOARD_LIMIT ? 'text-red-400' : ''}`}>
+                            {storyboardUsed}/{STORYBOARD_LIMIT}
+                          </span>{' '}
+                          usados neste mês
+                        </span>
+                      </div>
+
                       {viewMode === 'edicao' ? (
                         /* ─── EDIT MODE ─── */
                         <>
@@ -2693,15 +2735,48 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                   <label className={MODAL_LABEL_CLS}>
                                     <span className="flex items-center gap-1.5"><Film className="w-3 h-3" /> Cenas</span>
                                   </label>
-                                  <button
-                                    onClick={() => addScene(selectedPkg.id, script)}
-                                    className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
-                                  >
-                                    <Plus className="w-3 h-3" /> Cena
-                                  </button>
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={() => addScene(selectedPkg.id, script)}
+                                      className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                                    >
+                                      <Plus className="w-3 h-3" /> Cena
+                                    </button>
+                                    <button
+                                      onClick={() => addFreeTextBlock(selectedPkg.id, script)}
+                                      className="flex items-center gap-1 text-xs font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                                    >
+                                      <AlignLeft className="w-3 h-3" /> Bloco Livre
+                                    </button>
+                                  </div>
                                 </div>
                                 <div className="space-y-3">
                                   {script.scenes.map((scene, sIdx) => (
+                                    scene.type === 'free_text' ? (
+                                      <div
+                                        key={scene.id}
+                                        className="bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-4 space-y-2"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                                            <AlignLeft className="w-3 h-3" /> Bloco de Texto Livre
+                                          </span>
+                                          <button
+                                            onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
+                                            className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                        <textarea
+                                          value={scene.freeContent ?? ''}
+                                          onChange={e => updateScene(selectedPkg.id, script, scene.id, 'freeContent', e.target.value)}
+                                          placeholder="Escreva livremente aqui — teleprompter, narração, anotações…"
+                                          rows={4}
+                                          className={`${MODAL_INPUT_CLS} resize-y font-mono text-sm leading-relaxed`}
+                                        />
+                                      </div>
+                                    ) : (
                                     <div
                                       key={scene.id}
                                       className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
@@ -2742,6 +2817,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                         />
                                       </div>
                                     </div>
+                                    )
                                   ))}
                                 </div>
                               </div>
@@ -2794,18 +2870,6 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                             </div>
                           )}
 
-                          {/* Storyboard quota */}
-                          <div className="flex items-center gap-1.5 px-1">
-                            <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
-                            <span className="text-xs text-zinc-500">
-                              Storyboards:{' '}
-                              <span className={`font-black tabular-nums ${storyboardUsed >= STORYBOARD_LIMIT ? 'text-red-400' : 'text-zinc-400'}`}>
-                                {storyboardUsed}/{STORYBOARD_LIMIT}
-                              </span>{' '}
-                              usados do plano
-                            </span>
-                          </div>
-
                           <div className="space-y-3">
                             {script.scenes.map((scene, sIdx) => (
                               <div key={scene.id} className="space-y-2">
@@ -2838,53 +2902,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                       </p>
                                     )}
                                   </div>
-                                  {/* Storyboard button */}
-                                  <button
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      generateStoryboard(selectedPkg.id, script, scene);
-                                    }}
-                                    disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard}
-                                    className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-black transition-all ${
-                                      storyboardUsed >= STORYBOARD_LIMIT
-                                        ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
-                                        : generatingStoryboard === scene.id
-                                          ? 'border-indigo-300 dark:border-indigo-700 text-indigo-400 animate-pulse cursor-wait'
-                                          : 'border-indigo-200 dark:border-indigo-800 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400'
-                                    }`}
-                                    title="Gerar Storyboard"
-                                  >
-                                    {generatingStoryboard === scene.id
-                                      ? <Loader2 className="w-3 h-3 animate-spin" />
-                                      : <ImageIcon className="w-3 h-3" />
-                                    }
-                                    Storyboard
-                                  </button>
                                 </div>
-
-                                {/* Storyboard image */}
-                                {scene.storyboardUrl && (
-                                  <div className="ml-10 rounded-xl overflow-hidden border border-indigo-200 dark:border-indigo-800/50">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={scene.storyboardUrl}
-                                      alt={`Storyboard cena ${sIdx + 1}`}
-                                      className="w-full h-auto max-h-48 object-cover"
-                                    />
-                                    <div className="px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-between">
-                                      <span className="text-[10px] font-black text-indigo-500 uppercase tracking-wider">Storyboard · Cena {sIdx + 1}</span>
-                                      <button
-                                        onClick={() => updateScript(selectedPkg.id, {
-                                          ...script,
-                                          scenes: script.scenes.map(sc => sc.id === scene.id ? { ...sc, storyboardUrl: undefined } : sc),
-                                        })}
-                                        className="text-[10px] font-bold text-zinc-400 hover:text-red-500 transition-colors"
-                                      >
-                                        Remover
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             ))}
                           </div>
@@ -2905,6 +2923,46 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                             </div>
                           )}
                         </>
+                      )}
+
+                      {/* ── Storyboard grid (global) ── */}
+                      {script.scenes.some(sc => sc.storyboardUrl) && (
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                              <ImageIcon className="w-3.5 h-3.5" /> Storyboard do Roteiro
+                            </p>
+                            <button
+                              onClick={() => updateScript(selectedPkg.id, {
+                                ...script,
+                                scenes: script.scenes.map(sc => ({ ...sc, storyboardUrl: undefined })),
+                              })}
+                              className="text-[10px] font-bold text-zinc-400 hover:text-red-500 transition-colors"
+                            >
+                              Limpar Board
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {script.scenes
+                              .filter(sc => sc.storyboardUrl)
+                              .map((sc, i) => {
+                                const structuredIdx = script.scenes.filter(s => !s.type || s.type === 'scene').findIndex(s => s.id === sc.id);
+                                return (
+                                  <div key={sc.id} className="rounded-xl overflow-hidden border border-indigo-200 dark:border-indigo-800/50">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={sc.storyboardUrl}
+                                      alt={`Storyboard cena ${i + 1}`}
+                                      className="w-full h-auto object-cover"
+                                    />
+                                    <p className="px-2 py-1.5 text-[10px] font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 uppercase tracking-wider">
+                                      Cena {structuredIdx + 1}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
                       )}
 
                       {/* ── Client feedback from portal ── */}
