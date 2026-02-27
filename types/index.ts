@@ -222,3 +222,34 @@ export interface ChatSession {
   createdAt: number;
   lastUpdated: number;
 }
+
+// ─── Executive Assistant ──────────────────────────────────────────────────────
+
+export type ProjectStatus = 'pre_producao' | 'captacao' | 'pos' | 'finalizado';
+
+export interface BudgetItem {
+  id: string;
+  name: string;
+  quantity: number;
+  days: number;
+  unitPrice: number;
+  budgeted: number;     // quantity * days * unitPrice (auto-calculated)
+  actualSpent: number;  // real spend (manual input)
+}
+
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  items: BudgetItem[];
+}
+
+export interface ExecutiveProject {
+  id: string;
+  name: string;
+  client: string;
+  startDate: string;          // YYYY-MM-DD
+  endDate: string;            // YYYY-MM-DD
+  status: ProjectStatus;
+  createdAt: number;
+  budgetCategories: BudgetCategory[];
+}

@@ -14,24 +14,24 @@ import {
   Menu,
   Briefcase,
 } from 'lucide-react';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ProjectStatus = 'pre_producao' | 'captacao' | 'pos' | 'finalizado';
-
-interface ExecutiveProject {
-  id: string;
-  name: string;
-  client: string;
-  startDate: string;  // YYYY-MM-DD
-  endDate: string;    // YYYY-MM-DD
-  status: ProjectStatus;
-  createdAt: number;
-}
+import type { ProjectStatus, ExecutiveProject, BudgetCategory } from '@/types';
+import ExecutiveBudgetSheet from '@/components/ExecutiveBudgetSheet';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'executive_projects';
+
+const DEFAULT_CATEGORY_NAMES = [
+  'Direção', 'Produção', 'Câmera', 'Luz e Maquinária', 'Arte', 'Pós-Produção',
+];
+
+function createDefaultBudgetCategories(): BudgetCategory[] {
+  return DEFAULT_CATEGORY_NAMES.map((name, i) => ({
+    id: `cat_${i}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    name,
+    items: [],
+  }));
+}
 
 const MODULES = [
   { id: 'monitoramento', label: 'Central de Monitoramento', icon: Activity },
@@ -80,7 +80,13 @@ function loadProjects(): ExecutiveProject[] {
   if (typeof window === 'undefined') return [];
   try {
     const s = localStorage.getItem(STORAGE_KEY);
-    return s ? (JSON.parse(s) as ExecutiveProject[]) : [];
+    if (!s) return [];
+    const raw = JSON.parse(s) as ExecutiveProject[];
+    // Migration: ensure every project has budgetCategories
+    return raw.map(p => ({
+      ...p,
+      budgetCategories: p.budgetCategories ?? createDefaultBudgetCategories(),
+    }));
   } catch {
     return [];
   }
@@ -124,6 +130,7 @@ function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
       endDate,
       status: 'pre_producao',
       createdAt: Date.now(),
+      budgetCategories: createDefaultBudgetCategories(),
     });
   };
 
@@ -254,6 +261,11 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
     setView('lobby');
     setSelectedProject(null);
     setSidebarOpen(false);
+  }, []);
+
+  const handleUpdateProject = useCallback((updatedProject: ExecutiveProject) => {
+    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    setSelectedProject(updatedProject);
   }, []);
 
   // ── LOBBY ────────────────────────────────────────────────────────────────────
@@ -489,18 +501,24 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
           </span>
         </div>
 
-        {/* Content placeholder */}
-        <main className="flex-1 overflow-y-auto bg-gray-900 flex items-center justify-center">
-          <div className="text-center px-6">
-            {(() => {
-              const Icon = activeModuleConfig.icon;
-              return <Icon className="w-12 h-12 text-gray-700 mx-auto mb-4" />;
-            })()}
-            <h2 className="text-lg font-bold text-gray-500 mb-1">
-              {activeModuleConfig.label}
-            </h2>
-            <p className="text-sm text-gray-600">Módulo em construção...</p>
-          </div>
+        {/* Content area */}
+        <main className="flex-1 overflow-hidden bg-gray-900 flex flex-col">
+          {activeModule === 'orcamento' ? (
+            <ExecutiveBudgetSheet project={project} onUpdate={handleUpdateProject} />
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center px-6">
+                {(() => {
+                  const Icon = activeModuleConfig.icon;
+                  return <Icon className="w-12 h-12 text-gray-700 mx-auto mb-4" />;
+                })()}
+                <h2 className="text-lg font-bold text-gray-500 mb-1">
+                  {activeModuleConfig.label}
+                </h2>
+                <p className="text-sm text-gray-600">Módulo em construção...</p>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
