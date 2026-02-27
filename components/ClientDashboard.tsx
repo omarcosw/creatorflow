@@ -92,7 +92,7 @@ const TABS: Tab[] = [
   { id: 'acervo',      label: 'Acervo e HDs',           icon: HardDrive       },
   { id: 'entregas',    label: 'Entregas & Aprovações',  icon: UploadCloud     },
   { id: 'reunioes',    label: 'Reuniões',               icon: Users           },
-  { id: 'financeiro',  label: 'Financeiro',             icon: DollarSign      },
+  { id: 'financeiro',  label: 'Financeiro & Métricas',  icon: TrendingUp      },
 ];
 
 // ─────────────────────────────────────────────
@@ -2066,13 +2066,11 @@ const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => v
 // Entregas Tab — types & constants
 // ─────────────────────────────────────────────
 type DeliverableStatus = 'aguardando' | 'aprovado' | 'alteracao';
-type DeliverableType   = 'video' | 'roteiro';
 type DeliverableExpiry = 7 | 15 | 30;
 
 interface Deliverable {
   id: string;
   title: string;
-  type: DeliverableType;
   status: DeliverableStatus;
   shareLink: string;
   expiresInDays: DeliverableExpiry;
@@ -2081,20 +2079,20 @@ interface Deliverable {
   feedback?: string;
 }
 
-const DELIVERABLE_STATUS_CONFIG: Record<DeliverableStatus, { label: string; emoji: string; badge: string }> = {
+const DELIVERABLE_STATUS_CONFIG: Record<DeliverableStatus, { label: string; Icon: React.FC<{ className?: string }>; badge: string }> = {
   'aguardando': {
     label: 'Aguardando Aprovação',
-    emoji: '⏳',
+    Icon: Clock,
     badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50',
   },
   'aprovado': {
     label: 'Aprovado',
-    emoji: '✅',
+    Icon: CheckCircle,
     badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
   },
   'alteracao': {
     label: 'Pedido de Alteração',
-    emoji: '🔄',
+    Icon: RotateCcw,
     badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50',
   },
 };
@@ -3225,7 +3223,6 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
   });
 
   const [formTitle, setFormTitle]       = useState('');
-  const [formType, setFormType]         = useState<DeliverableType>('video');
   const [formExpiry, setFormExpiry]     = useState<DeliverableExpiry>(7);
   const [formLink, setFormLink]         = useState('');
   const [isDragging, setIsDragging]     = useState(false);
@@ -3242,7 +3239,6 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
     const newDeliverable: Deliverable = {
       id: crypto.randomUUID(),
       title: formTitle.trim(),
-      type: formType,
       status: 'aguardando',
       shareLink: resolvedLink,
       expiresInDays: formExpiry,
@@ -3280,7 +3276,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 
       {/* ══ NOVA ENTREGA ══ */}
       <section>
-        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Nova Entrega</h2>
+        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Nova Entrega de Vídeo</h2>
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
 
           {/* Drag-and-drop area */}
@@ -3335,50 +3331,29 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={MODAL_LABEL_CLS}>Tipo</label>
-                <div className="flex gap-2">
-                  {(['video', 'roteiro'] as DeliverableType[]).map(t => (
-                    <button
-                      key={t}
-                      onClick={() => setFormType(t)}
-                      className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all ${
-                        formType === t
-                          ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/25'
-                          : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300'
-                      }`}
-                    >
-                      {t === 'video' ? '🎥 Vídeo' : '📄 Roteiro'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className={MODAL_LABEL_CLS}>Prazo do Link</label>
-                <div className="flex gap-1.5">
-                  {([7, 15, 30] as DeliverableExpiry[]).map(days => (
-                    <button
-                      key={days}
-                      onClick={() => setFormExpiry(days)}
-                      className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all ${
-                        formExpiry === days
-                          ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/25'
-                          : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300'
-                      }`}
-                    >
-                      {days}d
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <label className={MODAL_LABEL_CLS}>Prazo do Link</label>
+              <div className="flex gap-1.5">
+                {([7, 15, 30] as DeliverableExpiry[]).map(days => (
+                  <button
+                    key={days}
+                    onClick={() => setFormExpiry(days)}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all ${
+                      formExpiry === days
+                        ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/25'
+                        : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300'
+                    }`}
+                  >
+                    {days}d
+                  </button>
+                ))}
               </div>
             </div>
 
             {genLinkToast && (
               <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 animate-in fade-in duration-200">
                 <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✅ Link de aprovação gerado e copiado!</p>
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Link de aprovação gerado e copiado!</p>
               </div>
             )}
 
@@ -3397,7 +3372,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
       {/* ══ LISTA DE ENTREGAS ══ */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Materiais Enviados</h2>
+          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Vídeos Enviados</h2>
           {deliverables.length > 0 && (
             <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
               {deliverables.length}
@@ -3407,16 +3382,15 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 
         {deliverables.length === 0 && (
           <div className="py-16 text-center rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800">
-            <div className="text-4xl mb-3">📤</div>
-            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum material enviado ainda</p>
+            <Film className="w-10 h-10 mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
+            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum vídeo enviado ainda</p>
             <p className="text-xs text-zinc-400 mt-1">Gere o primeiro link seguro acima.</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {deliverables.map(d => {
-            const cfg     = DELIVERABLE_STATUS_CONFIG[d.status];
-            const isVideo = d.type === 'video';
+            const cfg = DELIVERABLE_STATUS_CONFIG[d.status];
             return (
               <div
                 key={d.id}
@@ -3439,12 +3413,8 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 
                 {/* Header */}
                 <div className="flex items-start gap-4">
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
-                    isVideo
-                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400'
-                      : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                  }`}>
-                    {isVideo ? <Film className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                    <Film className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-black text-sm text-zinc-900 dark:text-white leading-tight pr-6 line-clamp-2">
@@ -3462,7 +3432,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 
                 {/* Status badge */}
                 <span className={`self-start inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-lg border ${cfg.badge}`}>
-                  {cfg.emoji} {cfg.label}
+                  <cfg.Icon className="w-3 h-3" /> {cfg.label}
                 </span>
 
                 {/* Star rating — aprovado only */}
@@ -3503,7 +3473,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
                 >
                   {linkCopiedId === d.id
                     ? <><CheckCircle className="w-3.5 h-3.5" /> Link Copiado!</>
-                    : <><LinkIcon className="w-3.5 h-3.5" /> 🔗 Copiar Link</>
+                    : <><LinkIcon className="w-3.5 h-3.5" /> Copiar Link</>
                   }
                 </button>
               </div>
@@ -3942,20 +3912,26 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
 };
 
 // ─────────────────────────────────────────────
-// Financeiro tab
+// Financeiro & Métricas tab
 // ─────────────────────────────────────────────
-interface ClientMetrics {
-  initialFollowers: number;
-  currentFollowers: number;
-  lastVideoViews: string;
+interface FollowerRecord {
+  month: string;   // e.g., "Fev/2026"
+  count: number;
 }
 
-const DEFAULT_METRICS: ClientMetrics = { initialFollowers: 0, currentFollowers: 0, lastVideoViews: '' };
+interface ClientMetrics {
+  followerHistory: FollowerRecord[];
+}
+
+const DEFAULT_METRICS: ClientMetrics = { followerHistory: [] };
+
+const FOLLOWER_MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const FOLLOWER_MONTH_OPTIONS = [2025, 2026].flatMap(y => FOLLOWER_MONTHS_PT.map(m => `${m}/${y}`));
 
 const INVOICE_STATUS_STYLES: Record<Invoice['status'], { label: string; badge: string }> = {
-  pendente: { label: 'Pendente',     badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
-  pago:     { label: 'Pago ✅',      badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
-  atrasado: { label: 'Atrasado ⚠️',  badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50' },
+  pendente: { label: 'Pendente',  badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
+  pago:     { label: 'Pago',      badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
+  atrasado: { label: 'Atrasado',  badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50' },
 };
 
 const INPUT_CLS = 'w-full text-sm px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all';
@@ -3964,25 +3940,54 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
   const METRICS_KEY  = `creator_flow_metrics_${client.id}`;
   const INVOICES_KEY = `creator_flow_invoices_${client.id}`;
 
-  // ── Metrics ──
-  const [metricsDraft, setMetricsDraft] = useState<ClientMetrics>(() => {
-    try { const s = localStorage.getItem(METRICS_KEY); return s ? JSON.parse(s) : DEFAULT_METRICS; }
-    catch { return DEFAULT_METRICS; }
+  // ── Follower history ──────────────────────────
+  const [metrics, setMetrics] = useState<ClientMetrics>(() => {
+    try {
+      const s = localStorage.getItem(METRICS_KEY);
+      if (s) {
+        const parsed = JSON.parse(s);
+        return { followerHistory: parsed.followerHistory ?? [] };
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_METRICS;
   });
-  const [metricsSaved, setMetricsSaved] = useState(false);
+  const [newMonth, setNewMonth] = useState<string>('Fev/2026');
+  const [newCount, setNewCount] = useState<string>('');
+  const [recordSaved, setRecordSaved] = useState(false);
 
-  const saveMetrics = () => {
-    try { localStorage.setItem(METRICS_KEY, JSON.stringify(metricsDraft)); } catch { /* ignore */ }
-    setMetricsSaved(true);
-    setTimeout(() => setMetricsSaved(false), 2000);
+  const addFollowerRecord = () => {
+    const count = parseInt(newCount);
+    if (!newCount || isNaN(count) || count < 0) return;
+    const updated: ClientMetrics = {
+      followerHistory: [
+        ...metrics.followerHistory.filter(r => r.month !== newMonth),
+        { month: newMonth, count },
+      ],
+    };
+    setMetrics(updated);
+    try { localStorage.setItem(METRICS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+    setNewCount('');
+    setRecordSaved(true);
+    setTimeout(() => setRecordSaved(false), 2000);
   };
 
-  const growthPct =
-    metricsDraft.initialFollowers > 0 && metricsDraft.currentFollowers > 0
-      ? (((metricsDraft.currentFollowers - metricsDraft.initialFollowers) / metricsDraft.initialFollowers) * 100).toFixed(1)
-      : null;
+  const removeFollowerRecord = (month: string) => {
+    const updated: ClientMetrics = {
+      followerHistory: metrics.followerHistory.filter(r => r.month !== month),
+    };
+    setMetrics(updated);
+    try { localStorage.setItem(METRICS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+  };
 
-  // ── Invoices ──
+  const sortedHistory = [...metrics.followerHistory].sort(
+    (a, b) => FOLLOWER_MONTH_OPTIONS.indexOf(a.month) - FOLLOWER_MONTH_OPTIONS.indexOf(b.month),
+  );
+  const maxCount  = sortedHistory.length ? Math.max(...sortedHistory.map(r => r.count)) : 0;
+  const growthPct = sortedHistory.length >= 2
+    ? (((sortedHistory[sortedHistory.length - 1].count - sortedHistory[0].count) / sortedHistory[0].count) * 100).toFixed(1)
+    : null;
+
+  // ── Invoices ──────────────────────────────────
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
     try { const s = localStorage.getItem(INVOICES_KEY); return s ? JSON.parse(s) : []; }
     catch { return []; }
@@ -4018,68 +4023,104 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
   const formatCurrency = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatDueDate  = (d: string): string => {
     const [y, m, day] = d.split('-');
-    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+    return `${parseInt(day)} ${FOLLOWER_MONTHS_PT[parseInt(m) - 1]} ${y}`;
   };
 
   return (
     <div className="space-y-8">
 
-      {/* ══ MÉTRICAS DO CLIENTE ══ */}
+      {/* ══ EVOLUÇÃO DE SEGUIDORES ══ */}
       <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-            <Users className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-black text-zinc-800 dark:text-zinc-100">Métricas do Cliente</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Dados exibidos no Portal do Cliente (gamificação)</p>
-          </div>
-        </div>
-        <div className="px-6 py-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Seguidores Iniciais</label>
-              <input
-                type="number" min={0}
-                value={metricsDraft.initialFollowers || ''}
-                onChange={e => setMetricsDraft(p => ({ ...p, initialFollowers: parseInt(e.target.value) || 0 }))}
-                className={INPUT_CLS} placeholder="Ex: 5000"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Seguidores Atuais</label>
-              <input
-                type="number" min={0}
-                value={metricsDraft.currentFollowers || ''}
-                onChange={e => setMetricsDraft(p => ({ ...p, currentFollowers: parseInt(e.target.value) || 0 }))}
-                className={INPUT_CLS} placeholder="Ex: 5750"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Views no último Reels</label>
-              <input
-                type="text"
-                value={metricsDraft.lastVideoViews}
-                onChange={e => setMetricsDraft(p => ({ ...p, lastVideoViews: e.target.value }))}
-                className={INPUT_CLS} placeholder="Ex: 10k"
-              />
-            </div>
-          </div>
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {growthPct !== null && (
-              <p className="text-xs text-zinc-500 flex-1">
-                Crescimento calculado:{' '}
-                <span className="font-black text-emerald-600 dark:text-emerald-400">+{growthPct}%</span>
-              </p>
-            )}
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-zinc-800 dark:text-zinc-100">Evolução de Seguidores</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Histórico mensal exibido no portal do cliente</p>
+            </div>
+          </div>
+          {growthPct !== null && (
+            <span className="flex-shrink-0 text-xs font-black px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+              +{growthPct}% total
+            </span>
+          )}
+        </div>
+
+        {/* Add record form */}
+        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">Registrar mês</p>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] font-bold text-zinc-400">Mês</label>
+              <select
+                value={newMonth}
+                onChange={e => setNewMonth(e.target.value)}
+                className={INPUT_CLS}
+              >
+                {FOLLOWER_MONTH_OPTIONS.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] font-bold text-zinc-400">Seguidores</label>
+              <input
+                type="number" min={0}
+                value={newCount}
+                onChange={e => setNewCount(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') addFollowerRecord(); }}
+                placeholder="Ex: 12500"
+                className={INPUT_CLS}
+              />
+            </div>
             <button
-              onClick={saveMetrics}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-black transition-all shadow-sm"
+              onClick={addFollowerRecord}
+              disabled={!newCount.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black transition-all shadow-sm whitespace-nowrap"
             >
-              {metricsSaved ? <><Check className="w-3.5 h-3.5" /> Salvo!</> : 'Salvar Métricas'}
+              {recordSaved ? <><Check className="w-3.5 h-3.5" /> Salvo!</> : <><Plus className="w-3.5 h-3.5" /> Registrar</>}
             </button>
           </div>
+        </div>
+
+        {/* History list */}
+        <div className="px-6 py-4">
+          {sortedHistory.length === 0 ? (
+            <div className="py-8 text-center text-zinc-400">
+              <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-bold">Nenhum registro ainda</p>
+              <p className="text-xs mt-1 opacity-70">Adicione o primeiro mês acima.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sortedHistory.map((record, i) => {
+                const barPct = maxCount > 0 ? (record.count / maxCount) * 100 : 0;
+                const isLast = i === sortedHistory.length - 1;
+                return (
+                  <div key={record.month} className="group flex items-center gap-3">
+                    <span className="w-20 flex-shrink-0 text-xs font-black text-zinc-500 tabular-nums text-right">{record.month}</span>
+                    <div className="flex-1 h-6 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-lg transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-violet-400 dark:bg-violet-600'}`}
+                        style={{ width: `${barPct}%` }}
+                      />
+                      <span className="absolute inset-0 flex items-center px-2.5 text-[10px] font-black text-zinc-700 dark:text-zinc-200">
+                        {record.count.toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removeFollowerRecord(record.month)}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded flex-shrink-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

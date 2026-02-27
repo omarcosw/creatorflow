@@ -86,7 +86,6 @@ interface _PortalPkg {
 interface PortalDeliverable {
   id: string;
   title: string;
-  type: 'video' | 'roteiro';
   status: 'aguardando' | 'aprovado' | 'alteracao';
   shareLink: string;
   expiresInDays: number;
@@ -145,13 +144,19 @@ const ProductionStepper: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────
+// Follower history helpers (portal-local)
+// ─────────────────────────────────────────────
+const PORTAL_MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const PORTAL_MONTH_OPTIONS = [2025, 2026].flatMap(y => PORTAL_MONTHS_PT.map(m => `${m}/${y}`));
+
+// ─────────────────────────────────────────────
 // Achievements (dynamic)
 // ─────────────────────────────────────────────
 const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [data] = useState(() => {
-    let videosProduced   = 0;
-    let instagramGrowth  = '+0%';
-    let lastVideoViews   = '—';
+    let videosProduced  = 0;
+    let instagramGrowth = '+0%';
+    let latestFollowers = '—';
 
     try {
       const s = localStorage.getItem(`creator_flow_entregas_${clientId}`);
@@ -164,22 +169,33 @@ const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
     try {
       const s = localStorage.getItem(`creator_flow_metrics_${clientId}`);
       if (s) {
-        const m = JSON.parse(s) as { initialFollowers: number; currentFollowers: number; lastVideoViews: string };
-        if (m.initialFollowers > 0) {
+        const m = JSON.parse(s) as { followerHistory?: { month: string; count: number }[]; initialFollowers?: number; currentFollowers?: number };
+        if (m.followerHistory && m.followerHistory.length > 0) {
+          const sorted = [...m.followerHistory].sort(
+            (a, b) => PORTAL_MONTH_OPTIONS.indexOf(a.month) - PORTAL_MONTH_OPTIONS.indexOf(b.month),
+          );
+          const first = sorted[0].count;
+          const last  = sorted[sorted.length - 1].count;
+          latestFollowers = last.toLocaleString('pt-BR');
+          if (sorted.length >= 2 && first > 0) {
+            const pct = ((last - first) / first) * 100;
+            instagramGrowth = `+${pct.toFixed(0)}%`;
+          }
+        } else if (m.initialFollowers && m.currentFollowers && m.initialFollowers > 0) {
           const pct = ((m.currentFollowers - m.initialFollowers) / m.initialFollowers) * 100;
           instagramGrowth = `+${pct.toFixed(0)}%`;
+          latestFollowers = m.currentFollowers.toLocaleString('pt-BR');
         }
-        if (m.lastVideoViews) lastVideoViews = m.lastVideoViews;
       }
     } catch { /* ignore */ }
 
-    return { videosProduced, instagramGrowth, lastVideoViews };
+    return { videosProduced, instagramGrowth, latestFollowers };
   });
 
   const achievements = [
     { icon: <Flame className="w-5 h-5" />,      iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',       hover: 'hover:border-amber-700/50',   value: String(data.videosProduced), label: 'Vídeos Produzidos' },
     { icon: <TrendingUp className="w-5 h-5" />, iconBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', hover: 'hover:border-emerald-700/50', value: data.instagramGrowth,         label: 'Crescimento no Instagram' },
-    { icon: <Trophy className="w-5 h-5" />,     iconBg: 'bg-violet-500/10 border-violet-500/20 text-violet-400',    hover: 'hover:border-violet-700/50',  value: data.lastVideoViews,          label: 'Views no último Reels' },
+    { icon: <Trophy className="w-5 h-5" />,     iconBg: 'bg-violet-500/10 border-violet-500/20 text-violet-400',    hover: 'hover:border-violet-700/50',  value: data.latestFollowers,         label: 'Seguidores Atualmente' },
   ];
 
   return (
@@ -195,6 +211,67 @@ const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
             </div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Follower history bar chart (portal)
+// ─────────────────────────────────────────────
+const FollowerHistoryPortal: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const [history] = useState<{ month: string; count: number }[]>(() => {
+    try {
+      const s = localStorage.getItem(`creator_flow_metrics_${clientId}`);
+      if (s) {
+        const m = JSON.parse(s) as { followerHistory?: { month: string; count: number }[] };
+        return m.followerHistory ?? [];
+      }
+    } catch { /* ignore */ }
+    return [];
+  });
+
+  if (history.length === 0) return null;
+
+  const sorted = [...history].sort(
+    (a, b) => PORTAL_MONTH_OPTIONS.indexOf(a.month) - PORTAL_MONTH_OPTIONS.indexOf(b.month),
+  );
+  const maxCount = Math.max(...sorted.map(r => r.count));
+  const first    = sorted[0].count;
+  const last     = sorted[sorted.length - 1].count;
+  const growthPct = sorted.length >= 2 && first > 0
+    ? (((last - first) / first) * 100).toFixed(1)
+    : null;
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Evolução de Seguidores</p>
+        {growthPct !== null && (
+          <span className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            +{growthPct}% crescimento
+          </span>
+        )}
+      </div>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+        {sorted.map((record, i) => {
+          const barPct = maxCount > 0 ? (record.count / maxCount) * 100 : 0;
+          const isLast = i === sorted.length - 1;
+          return (
+            <div key={record.month} className="flex items-center gap-3">
+              <span className="w-20 flex-shrink-0 text-xs font-black text-gray-500 tabular-nums text-right">{record.month}</span>
+              <div className="flex-1 h-6 bg-gray-800 rounded-lg overflow-hidden relative">
+                <div
+                  className={`h-full rounded-lg transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-violet-500/60'}`}
+                  style={{ width: `${barPct}%` }}
+                />
+                <span className="absolute inset-0 flex items-center px-2.5 text-[10px] font-black text-gray-200">
+                  {record.count.toLocaleString('pt-BR')}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -678,7 +755,6 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
         {deliverables.map(item => {
           const cfg = REVIEW_STATUS_CONFIG[item.status];
           const isFeedbackOpen = feedbackOpen === item.id;
-          const isVideo = item.type === 'video';
 
           return (
             <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden transition-all">
@@ -688,9 +764,7 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 to-gray-950" />
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-2xl">
-                    {isVideo
-                      ? <Play className="w-6 h-6 text-white ml-1" style={{ fill: 'white' }} />
-                      : <FileText className="w-6 h-6 text-white" />}
+                    <Play className="w-6 h-6 text-white ml-1" style={{ fill: 'white' }} />
                   </div>
                   {item.shareLink && (
                     <a
@@ -699,12 +773,12 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
                       rel="noopener noreferrer"
                       className="text-xs font-black text-violet-300 hover:text-violet-200 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-colors"
                     >
-                      {isVideo ? '▶ Assistir Vídeo' : '📄 Ver Material'}
+                      ▶ Assistir Vídeo
                     </a>
                   )}
                 </div>
                 <span className="absolute top-3 left-3 text-[10px] font-black px-2 py-0.5 rounded-md bg-violet-600/80 text-white backdrop-blur-sm">
-                  {isVideo ? 'Vídeo' : 'Roteiro'}
+                  Vídeo
                 </span>
                 <span className="absolute bottom-3 right-3 text-[10px] font-black px-2 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-sm">
                   {item.expiresInDays}d de acesso
@@ -1197,6 +1271,7 @@ const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) =
             <div className="space-y-8 animate-in fade-in duration-200">
               <ProductionStepper />
               <AchievementsGrid clientId={client.id} />
+              <FollowerHistoryPortal clientId={client.id} />
               <PendingActions />
             </div>
           )}
