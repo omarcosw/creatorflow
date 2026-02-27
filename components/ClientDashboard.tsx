@@ -2817,9 +2817,9 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                   }`}
                                 >
                                   {/* Scene row — clickable to toggle check */}
-                                  <button
+                                  <div
                                     onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
-                                    className="w-full flex items-start gap-4 px-4 py-4 text-left"
+                                    className="w-full flex items-start gap-4 px-4 py-4 text-left cursor-pointer"
                                   >
                                     <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
                                       scene.isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
@@ -2847,7 +2847,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                         </a>
                                       )}
                                     </div>
-                                  </button>
+                                  </div>
 
                                   {/* Storyboard image or generate button */}
                                   <div className="px-4 pb-3 flex items-center gap-3">
