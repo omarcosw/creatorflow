@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Clock,
   ChevronLeft,
+  ChevronUp,
   MapPin,
   Briefcase,
   Camera,
@@ -2339,6 +2340,16 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   const deleteScene = (pkgId: string, script: ScriptDocument, sceneId: string) =>
     updateScript(pkgId, { ...script, scenes: script.scenes.filter(sc => sc.id !== sceneId) });
 
+  const moveScene = (pkgId: string, script: ScriptDocument, sceneId: string, dir: 'up' | 'down') => {
+    const idx = script.scenes.findIndex(sc => sc.id === sceneId);
+    if (dir === 'up' && idx === 0) return;
+    if (dir === 'down' && idx === script.scenes.length - 1) return;
+    const scenes = [...script.scenes];
+    const swap = dir === 'up' ? idx - 1 : idx + 1;
+    [scenes[idx], scenes[swap]] = [scenes[swap], scenes[idx]];
+    updateScript(pkgId, { ...script, scenes });
+  };
+
   const toggleSceneCheck = (pkgId: string, script: ScriptDocument, sceneId: string) =>
     updateScript(pkgId, {
       ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, isChecked: !sc.isChecked } : sc),
@@ -2761,12 +2772,28 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                                             <AlignLeft className="w-3 h-3" /> Bloco de Texto Livre
                                           </span>
-                                          <button
-                                            onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
-                                            className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </button>
+                                          <div className="flex items-center gap-0.5">
+                                            <button
+                                              onClick={() => moveScene(selectedPkg.id, script, scene.id, 'up')}
+                                              disabled={sIdx === 0}
+                                              className="p-1 text-zinc-400 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors rounded"
+                                            >
+                                              <ChevronUp className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={() => moveScene(selectedPkg.id, script, scene.id, 'down')}
+                                              disabled={sIdx === script.scenes.length - 1}
+                                              className="p-1 text-zinc-400 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors rounded"
+                                            >
+                                              <ChevronDown className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
+                                              className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </button>
+                                          </div>
                                         </div>
                                         <textarea
                                           value={scene.freeContent ?? ''}
@@ -2783,14 +2810,30 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                     >
                                       <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
-                                        {script.scenes.length > 1 && (
+                                        <div className="flex items-center gap-0.5">
                                           <button
-                                            onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
-                                            className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                            onClick={() => moveScene(selectedPkg.id, script, scene.id, 'up')}
+                                            disabled={sIdx === 0}
+                                            className="p-1 text-zinc-400 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors rounded"
                                           >
-                                            <X className="w-3 h-3" />
+                                            <ChevronUp className="w-3 h-3" />
                                           </button>
-                                        )}
+                                          <button
+                                            onClick={() => moveScene(selectedPkg.id, script, scene.id, 'down')}
+                                            disabled={sIdx === script.scenes.length - 1}
+                                            className="p-1 text-zinc-400 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors rounded"
+                                          >
+                                            <ChevronDown className="w-3 h-3" />
+                                          </button>
+                                          {script.scenes.length > 1 && (
+                                            <button
+                                              onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
+                                              className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </button>
+                                          )}
+                                        </div>
                                       </div>
                                       <div>
                                         <label className="text-[10px] font-bold text-zinc-400 mb-1 flex items-center gap-1">
