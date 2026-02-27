@@ -57,6 +57,7 @@ import {
   ExternalLink,
   FolderPlus,
   Image as ImageIcon,
+  Menu,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -4713,10 +4714,48 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
 };
 
 // ─────────────────────────────────────────────
+// Sidebar health score helper
+// ─────────────────────────────────────────────
+function computeSidebarHealth(clientId: string): number {
+  let score = 100;
+  try {
+    const s = localStorage.getItem(`creator_flow_kanban_${clientId}`);
+    if (s) {
+      const today = new Date().toISOString().split('T')[0];
+      const cols = JSON.parse(s) as { id: string; items: { dueDate?: string }[] }[];
+      let overdue = 0;
+      cols.forEach(col => col.items.forEach(item => {
+        if (item.dueDate && item.dueDate < today && col.id !== 'done') overdue++;
+      }));
+      score -= Math.min(overdue * 20, 60);
+    }
+  } catch { /* ignore */ }
+  try {
+    const s = localStorage.getItem(`creator_flow_invoices_${clientId}`);
+    if (s) {
+      const inv = JSON.parse(s) as { status: string }[];
+      score -= Math.min(inv.filter(i => i.status === 'atrasado').length * 25, 50);
+    }
+  } catch { /* ignore */ }
+  try {
+    const s = localStorage.getItem(`creator_flow_roteiros_${clientId}`);
+    if (s) {
+      const pkgs = JSON.parse(s) as { scripts: { portalStatus?: string }[] }[];
+      let waiting = 0;
+      pkgs.forEach(p => p.scripts.forEach(sc => { if (sc.portalStatus === 'aguardando_cliente') waiting++; }));
+      score -= Math.min(waiting * 10, 30);
+    }
+  } catch { /* ignore */ }
+  return Math.max(0, Math.min(100, score));
+}
+
+// ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNavigateToArquivos }) => {
-  const [activeTab, setActiveTab] = useState<TabId>('visao_geral');
+  const [activeTab,    setActiveTab]    = useState<TabId>('visao_geral');
+  const [sidebarOpen,  setSidebarOpen]  = useState(false);
+  const [sidebarHealth]                 = useState(() => computeSidebarHealth(client.id));
 
   // ── Motor de Ideias state ─────────────────
   const [themeInput, setThemeInput]                 = useState('');
@@ -4957,60 +4996,130 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-950 animate-in fade-in duration-300">
 
-      {/* ══ Header ══ */}
-      <header className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
+      {/* ── Mobile backdrop ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-        <div className="px-4 sm:px-6 py-3">
-          <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                onClick={onBack}
-                className="p-2 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 flex-shrink-0"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="min-w-0">
-                <h1 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white leading-tight truncate">
-                  {client.brandName}
-                </h1>
-                {(client.niche || client.subniche) && (
-                  <p className="text-xs text-zinc-400 truncate">
-                    {[client.niche, client.subniche].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-              </div>
+      {/* ══════════════════════════════════
+          SIDEBAR
+          Desktop: 256px fixed, always visible
+          Mobile: overlay, slides in from left
+         ══════════════════════════════════ */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-gray-950 border-r border-gray-800
+        transition-transform duration-300 ease-in-out
+        lg:relative lg:translate-x-0 lg:flex-shrink-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+
+        {/* ── Sidebar header ── */}
+        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-gray-800">
+
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-gray-400 transition-colors mb-5"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Voltar à lista
+          </button>
+
+          {/* Avatar + brand name */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-sm font-black text-white flex-shrink-0 select-none">
+              {client.brandName.slice(0, 2).toUpperCase()}
             </div>
-            <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800/50">
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold tracking-tight text-white truncate leading-tight">
+                {client.brandName}
+              </h1>
+              {(client.niche || client.subniche) && (
+                <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                  {[client.niche, client.subniche].filter(Boolean).join(' · ')}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Voice tone badge */}
+          {client.voiceTone && (
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-violet-900/20 text-violet-300 border-violet-800/50">
               <Mic className="w-3 h-3" /> {client.voiceTone}
             </span>
+          )}
+
+          {/* Mini health bar */}
+          <div className="mt-3 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-600">Saúde</span>
+              <span className={`text-[10px] font-black ${sidebarHealth < 34 ? 'text-red-400' : sidebarHealth < 67 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {sidebarHealth}%
+              </span>
+            </div>
+            <div className="relative h-1.5 rounded-full overflow-hidden bg-gray-800">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" />
+              <div
+                className="absolute inset-y-0 right-0 bg-gray-950 transition-all duration-700"
+                style={{ width: `${100 - sidebarHealth}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <nav className="flex overflow-x-auto scrollbar-none" aria-label="Abas do workspace">
-            {TABS.map(tab => (
+        {/* ── Nav pills ── */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" aria-label="Abas do workspace">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all ${
-                  activeTab === tab.id
-                    ? 'border-violet-500 text-violet-600 dark:text-violet-400'
-                    : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
+                onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  isActive
+                    ? 'bg-gray-800 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                 }`}
               >
-                <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                {tab.label}
+                <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-indigo-400' : 'text-gray-500'}`} />
+                <span className="truncate">{tab.label}</span>
               </button>
-            ))}
-          </nav>
-        </div>
-      </header>
+            );
+          })}
+        </nav>
+      </aside>
 
-      {/* ══ Main ══ */}
-      <main className="flex-1 overflow-y-auto">
-        <div className={`max-w-4xl mx-auto px-4 sm:px-6 ${activeTab === 'kanban' || activeTab === 'agenda' || activeTab === 'roteiros' ? 'py-4' : 'py-8'}`}>
+      {/* ══════════════════════════════════
+          MAIN AREA
+         ══════════════════════════════════ */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+        {/* ── Mobile top bar (hamburger) ── */}
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-800 bg-gray-950 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-bold text-white truncate">{client.brandName}</h1>
+          </div>
+          <span className="text-[10px] font-black text-gray-500 uppercase tracking-wide truncate">
+            {TABS.find(t => t.id === activeTab)?.label}
+          </span>
+        </div>
+
+        {/* ── Content ── */}
+        <main className="flex-1 overflow-y-auto bg-gray-900">
+          <div className={
+            activeTab === 'kanban' || activeTab === 'agenda' || activeTab === 'roteiros'
+              ? 'w-full p-4'
+              : 'w-full max-w-4xl mx-auto px-4 sm:px-6 py-8'
+          }>
 
 
           {/* ══ TAB: Visão Geral ══ */}
@@ -5536,8 +5645,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
             </div>
           )}
 
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
