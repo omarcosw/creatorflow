@@ -11,7 +11,7 @@ import HubArquivos from '@/components/HubArquivos';
 import ClientsHub from '@/components/ClientsHub';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, ChevronDown } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, ChevronDown, PenTool, Briefcase, Library } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -191,6 +191,8 @@ export default function DashboardPage() {
   const [isClientesHubOpen, setIsClientesHubOpen] = useState(false);
   const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
   const [studioProfile, setStudioProfile] = useState<StudioProfile>(INITIAL_STUDIO);
+  const [isAssistenteExecutivoOpen, setIsAssistenteExecutivoOpen] = useState(false);
+  const [isCreatorStockOpen, setIsCreatorStockOpen] = useState(false);
 
   // Feedback Modal State
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
@@ -460,25 +462,54 @@ export default function DashboardPage() {
   const handleBack = () => {
       setNavigationContext(null);
       if (activeAgentId) {
+          // Lighting sub-agents → Lighting Hub
           if ([AgentId.LIGHTING_GENERATOR, AgentId.LIGHTING_STYLES].includes(activeAgentId)) {
              setActiveAgentId(null);
              setIsLightingHubOpen(true);
              return;
-          } 
-          if ([AgentId.PROD_EXECUTIVE_AGENT, AgentId.SCRIPT_GENERATOR, AgentId.COST_CALCULATOR, AgentId.BUDGET_PRICING, AgentId.BUDGET_SHEET, AgentId.SHOT_LIST].includes(activeAgentId)) {
-             setActiveAgentId(null);
-             setIsProductionHubOpen(true);
-             return;
           }
-           if ([AgentId.EDITING_SHORTCUTS, AgentId.EDITING_IDEA, AgentId.EDITING_TECHNIQUES].includes(activeAgentId)) {
+          // Editing sub-agents → Editing Hub
+          if ([AgentId.EDITING_SHORTCUTS, AgentId.EDITING_IDEA, AgentId.EDITING_TECHNIQUES].includes(activeAgentId)) {
              setActiveAgentId(null);
              setIsEditingHubOpen(true);
              return;
           }
+          // Central de Criação direct agents → Central de Criação
+          if ([AgentId.SCRIPT_GENERATOR, AgentId.SHOT_LIST, AgentId.MEDIA_ASSISTANT, AgentId.STORYBOARD_GENERATOR].includes(activeAgentId)) {
+             setActiveAgentId(null);
+             setIsProductionHubOpen(true);
+             return;
+          }
+          // Gerador de Proposta → back to CRM
+          if (activeAgentId === AgentId.BUDGET_SHEET) {
+             setActiveAgentId(null);
+             setIsClientesHubOpen(true);
+             return;
+          }
+          // Assistente Executivo agents → Assistente Executivo
+          if ([AgentId.PROD_EXECUTIVE_AGENT, AgentId.COST_CALCULATOR, AgentId.BUDGET_PRICING].includes(activeAgentId)) {
+             setActiveAgentId(null);
+             setIsAssistenteExecutivoOpen(true);
+             return;
+          }
+          // Creator Stock / SFX agents → Creator Stock
+          if ([AgentId.SFX_LIBRARY, AgentId.SFX_SCENE_DESCRIBER, AgentId.SFX_PACK_CREATOR].includes(activeAgentId)) {
+             setActiveAgentId(null);
+             setIsCreatorStockOpen(true);
+             return;
+          }
           setActiveAgentId(null);
-      } else if (isLightingHubOpen) setIsLightingHubOpen(false);
-      else if (isProductionHubOpen) setIsProductionHubOpen(false);
-      else if (isEditingHubOpen) setIsEditingHubOpen(false);
+      } else if (isLightingHubOpen) {
+          // Lighting Hub → back to Central de Criação
+          setIsLightingHubOpen(false);
+          setIsProductionHubOpen(true);
+      } else if (isEditingHubOpen) {
+          // Editing Hub → back to Central de Criação
+          setIsEditingHubOpen(false);
+          setIsProductionHubOpen(true);
+      } else if (isProductionHubOpen) setIsProductionHubOpen(false);
+      else if (isAssistenteExecutivoOpen) setIsAssistenteExecutivoOpen(false);
+      else if (isCreatorStockOpen) setIsCreatorStockOpen(false);
       else if (isArquivosHubOpen) setIsArquivosHubOpen(false);
       else if (isClientesHubOpen) setIsClientesHubOpen(false);
   };
@@ -488,20 +519,13 @@ export default function DashboardPage() {
     setIsProductionHubOpen(false);
     setIsEditingHubOpen(false);
     setIsLightingHubOpen(false);
+    setIsAssistenteExecutivoOpen(false);
+    setIsCreatorStockOpen(false);
     setActiveAgentId(id);
   };
 
   const activeAgent = activeAgentId ? AGENTS[activeAgentId] : null;
   const totalSessions = Object.values(sessions).reduce((acc, list) => acc + list.length, 0);
-
-  const mainAgentIds = [
-    AgentId.EXECUTIVE_PRODUCER,
-    AgentId.LIGHTING_ASSISTANT,
-    AgentId.STORYBOARD_GENERATOR,
-    AgentId.EDITING_WORKFLOW,
-    AgentId.SFX_ASSISTANT,
-    AgentId.MEDIA_ASSISTANT
-  ];
 
   const extraAgentIds = [
     AgentId.IMAGE_GENERATOR,
@@ -525,7 +549,6 @@ export default function DashboardPage() {
       agent.description.toLowerCase().includes(normalizedQuery)
     );
   };
-  const visibleMainAgentIds = mainAgentIds.filter(filterByQuery);
   const visibleExtraAgentIds = extraAgentIds.filter(filterByQuery);
   const stats = [
     { label: 'Conversas', value: totalSessions },
@@ -553,6 +576,8 @@ export default function DashboardPage() {
       if (isProductionHubOpen) setIsProductionHubOpen(false);
       if (isEditingHubOpen) setIsEditingHubOpen(false);
       if (isLightingHubOpen) setIsLightingHubOpen(false);
+      if (isAssistenteExecutivoOpen) setIsAssistenteExecutivoOpen(false);
+      if (isCreatorStockOpen) setIsCreatorStockOpen(false);
       setActiveAgentId(id);
   }
 
@@ -620,11 +645,11 @@ export default function DashboardPage() {
                 <span>Voltar ao Dashboard</span>
             </button>
             <div className="mb-12">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Central de Produção</h1>
-                <p className="text-zinc-600 dark:text-zinc-400">Ferramentas para planejar, orçar e organizar suas gravações.</p>
+                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Central de Criação</h1>
+                <p className="text-zinc-600 dark:text-zinc-400">Ferramentas criativas para planejar e executar seus vídeos.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[AgentId.SHOT_LIST, AgentId.SCRIPT_GENERATOR, AgentId.PROD_EXECUTIVE_AGENT, AgentId.COST_CALCULATOR, AgentId.BUDGET_PRICING, AgentId.BUDGET_SHEET].map(id => {
+                {[AgentId.SCRIPT_GENERATOR, AgentId.SHOT_LIST, AgentId.MEDIA_ASSISTANT, AgentId.STORYBOARD_GENERATOR].map(id => {
                     const agent = AGENTS[id];
                     const Icon = agent.icon;
                     return (
@@ -640,13 +665,41 @@ export default function DashboardPage() {
                         </button>
                     )
                 })}
+                {/* Assistente de Iluminação — opens Lighting Hub */}
+                <button
+                    onClick={() => { setIsProductionHubOpen(false); setIsLightingHubOpen(true); }}
+                    className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 dark:hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]"
+                >
+                    <div className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 text-yellow-600 dark:text-yellow-400">
+                        <Zap className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Assistente de Iluminação</h2>
+                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">Diagramas de luz personalizados e estilos cinematográficos clássicos para o seu set.</p>
+                    <span className="mt-auto text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2 text-sm">
+                        Acessar <ChevronRight className="w-4 h-4" />
+                    </span>
+                </button>
+                {/* Workflow de Edição — opens Editing Hub */}
+                <button
+                    onClick={() => { setIsProductionHubOpen(false); setIsEditingHubOpen(true); }}
+                    className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 dark:hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]"
+                >
+                    <div className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 text-blue-600 dark:text-blue-400">
+                        <BookOpen className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Workflow de Edição</h2>
+                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">Atalhos de teclado, técnicas famosas e como recriar efeitos visuais cinematográficos.</p>
+                    <span className="mt-auto text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-sm">
+                        Acessar <ChevronRight className="w-4 h-4" />
+                    </span>
+                </button>
             </div>
           </main>
       ) : isEditingHubOpen ? (
          <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
-                <span>Voltar ao Dashboard</span>
+                <span>Voltar à Central de Criação</span>
             </button>
             <div className="mb-12">
                 <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Workflow de Edição</h1>
@@ -678,6 +731,7 @@ export default function DashboardPage() {
           onDeleteClient={handleDeleteClient}
           onBack={handleBack}
           onNavigateToArquivos={() => { setIsClientesHubOpen(false); setIsArquivosHubOpen(true); }}
+          onOpenBudgetSheet={() => { setIsClientesHubOpen(false); setActiveAgentId(AgentId.BUDGET_SHEET); }}
         />
      ) : isArquivosHubOpen ? (
         <HubArquivos
@@ -690,11 +744,69 @@ export default function DashboardPage() {
           onDeleteRecording={handleDeleteRecording}
           onBack={handleBack}
         />
+     ) : isAssistenteExecutivoOpen ? (
+          <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span>Voltar ao Dashboard</span>
+            </button>
+            <div className="mb-12">
+                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Assistente Executivo</h1>
+                <p className="text-zinc-600 dark:text-zinc-400">Ferramentas de negócio para profissionalizar sua produção.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[AgentId.PROD_EXECUTIVE_AGENT, AgentId.COST_CALCULATOR, AgentId.BUDGET_PRICING].map(id => {
+                    const agent = AGENTS[id];
+                    const Icon = agent.icon;
+                    return (
+                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-indigo-500 dark:hover:border-indigo-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
+                            <div className={`p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 ${agent.color}`}>
+                                <Icon className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{agent.title}</h2>
+                            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
+                            <span className={`mt-auto font-medium flex items-center gap-2 text-sm ${agent.color.replace('text-', 'text-opacity-80 text-')}`}>
+                                Acessar <ChevronRight className="w-4 h-4" />
+                            </span>
+                        </button>
+                    )
+                })}
+            </div>
+          </main>
+     ) : isCreatorStockOpen ? (
+          <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span>Voltar ao Dashboard</span>
+            </button>
+            <div className="mb-12">
+                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Creator Stock</h1>
+                <p className="text-zinc-600 dark:text-zinc-400">Sound design e biblioteca sonora cinematográfica para seu conteúdo.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[AgentId.SFX_SCENE_DESCRIBER, AgentId.SFX_LIBRARY, AgentId.SFX_PACK_CREATOR].map(id => {
+                    const agent = AGENTS[id];
+                    const Icon = agent.icon;
+                    return (
+                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-500 dark:hover:border-violet-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
+                            <div className={`p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 ${agent.color}`}>
+                                <Icon className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{agent.title}</h2>
+                            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
+                            <span className={`mt-auto font-medium flex items-center gap-2 text-sm ${agent.color.replace('text-', 'text-opacity-80 text-')}`}>
+                                Acessar <ChevronRight className="w-4 h-4" />
+                            </span>
+                        </button>
+                    )
+                })}
+            </div>
+          </main>
      ) : isLightingHubOpen ? (
           <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
-                <span>Voltar ao Dashboard</span>
+                <span>Voltar à Central de Criação</span>
             </button>
             <div className="mb-12">
                 <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Assistente de Iluminação</h1>
@@ -774,11 +886,11 @@ export default function DashboardPage() {
                   >
                     Gerar roteiro agora
                   </button>
-                  <button 
-                    onClick={() => handleAgentClick(AgentId.EXECUTIVE_PRODUCER)} 
+                  <button
+                    onClick={() => setIsProductionHubOpen(true)}
                     className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 font-bold text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                   >
-                    Abrir central de produção
+                    Abrir central de criação
                   </button>
                 </div>
               </div>
@@ -981,37 +1093,55 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Fluxos principais</h2>
-            {agentQuery && (
-              <span className="text-xs text-zinc-400">
-                {visibleMainAgentIds.length + visibleExtraAgentIds.length} resultados
-              </span>
-            )}
+          <div className="mb-6">
+            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Módulos Principais</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {visibleMainAgentIds.length === 0 ? (
-              <div className="col-span-full rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center bg-white/60 dark:bg-zinc-900/60">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Nenhum agente encontrado para esta busca.</p>
-                <button onClick={() => setAgentQuery('')} className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-bold uppercase tracking-widest">
-                  Limpar busca
-                </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {/* Central de Criação */}
+            <button
+              onClick={() => setIsProductionHubOpen(true)}
+              className="group relative flex flex-col p-8 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/5 border border-emerald-500/20 dark:border-emerald-500/20 rounded-3xl hover:border-emerald-400/50 dark:hover:border-emerald-400/40 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 text-left hover:scale-[1.02]"
+            >
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
+                <PenTool className="w-10 h-10 text-emerald-500 dark:text-emerald-400" />
               </div>
-            ) : (
-              visibleMainAgentIds.map((id) => {
-                const agent = AGENTS[id];
-                const Icon = agent.icon;
-                return (
-                  <button key={agent.id} onClick={() => handleAgentClick(agent.id)} className="group relative flex flex-col items-start p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-300 dark:hover:border-emerald-500/30 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-2xl hover:scale-[1.02]">
-                    <div className={`p-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 mb-4 group-hover:scale-110 transition-transform duration-300 ${agent.color}`}><Icon className="w-8 h-8" /></div>
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">{agent.title}</h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">{agent.description}</p>
-                    <div className="mt-auto w-full flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/50"><span className="text-xs font-medium text-zinc-500 uppercase tracking-wider group-hover:text-zinc-800 dark:group-hover:text-zinc-300">Iniciar</span><ChevronRight className="w-4 h-4 text-zinc-400 dark:text-zinc-600 group-hover:text-emerald-600 dark:group-hover:text-white group-hover:translate-x-1 transition-all" /></div>
-                  </button>
-                );
-              })
-            )}
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Central de Criação</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 flex-1">Roteiros, iluminação, edição, storyboard, banco de imagens e lista de gravação em um único hub.</p>
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                Acessar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+
+            {/* Assistente Executivo */}
+            <button
+              onClick={() => setIsAssistenteExecutivoOpen(true)}
+              className="group relative flex flex-col p-8 bg-gradient-to-br from-indigo-500/10 to-violet-500/5 dark:from-indigo-500/10 dark:to-violet-500/5 border border-indigo-500/20 dark:border-indigo-500/20 rounded-3xl hover:border-indigo-400/50 dark:hover:border-indigo-400/40 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 text-left hover:scale-[1.02]"
+            >
+              <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Briefcase className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Assistente Executivo</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 flex-1">Logística de produção, calculadora de custos e precificação para profissionalizar seu negócio criativo.</p>
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                Acessar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+
+            {/* Creator Stock */}
+            <button
+              onClick={() => setIsCreatorStockOpen(true)}
+              className="group relative flex flex-col p-8 bg-gradient-to-br from-violet-500/10 to-purple-500/5 dark:from-violet-500/10 dark:to-purple-500/5 border border-violet-500/20 dark:border-violet-500/20 rounded-3xl hover:border-violet-400/50 dark:hover:border-violet-400/40 hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300 text-left hover:scale-[1.02]"
+            >
+              <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Library className="w-10 h-10 text-violet-500 dark:text-violet-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Creator Stock</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 flex-1">Sound design, SFX e biblioteca sonora cinematográfica para elevar a qualidade do seu conteúdo.</p>
+              <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400 font-bold text-sm">
+                Acessar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
           </div>
 
           {/* Hub de Clientes card + Hub de Arquivos card — CRM gated for Start plan */}

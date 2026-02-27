@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import {
   ArrowLeft, Plus, Users, Trash2, ChevronRight, AlertTriangle, Calendar,
   X, UserPlus, MoreVertical, Pencil, CheckCircle, Clock, Video, Globe,
-  BarChart3, TrendingUp, AlertCircle, Activity, DollarSign, Layers, Zap,
+  BarChart3, TrendingUp, AlertCircle, Activity, DollarSign, Layers, Zap, FileText,
 } from 'lucide-react';
 import { Client } from '@/types';
 import ClientOnboardingModal from './ClientOnboardingModal';
@@ -20,6 +20,7 @@ interface ClientsHubProps {
   onDeleteClient: (id: string) => void;
   onBack: () => void;
   onNavigateToArquivos?: () => void;
+  onOpenBudgetSheet?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -863,6 +864,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
   onDeleteClient,
   onBack,
   onNavigateToArquivos,
+  onOpenBudgetSheet,
 }) => {
   const [isModalOpen, setIsModalOpen]   = useState(false);
   const [isTeamOpen, setIsTeamOpen]     = useState(false);
@@ -918,6 +920,15 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenBudgetSheet && (
+              <button
+                onClick={onOpenBudgetSheet}
+                className="hidden sm:flex items-center gap-2 px-3 py-2.5 border border-indigo-200 dark:border-indigo-800/50 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold text-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all"
+              >
+                <FileText className="w-4 h-4" />
+                Gerar Proposta
+              </button>
+            )}
             <button
               onClick={() => setIsTeamOpen(true)}
               className="flex items-center gap-2 px-3 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 rounded-xl font-bold text-sm hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400 transition-all"
