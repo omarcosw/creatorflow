@@ -5,6 +5,31 @@ import { query } from '@/lib/db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
 
+// ─── DEV BYPASS ───────────────────────────────────────────────────────────────
+// Ativo apenas fora de produção. Remove ou ignore em deploy.
+const DEV_USER = {
+  email: 'teste@creatorflow.com',
+  password: '12345678',
+  id: 'dev-user-00000000-0000-0000-0000-000000000001',
+  name: 'Usuário Teste',
+  plan: 'agency',
+};
+
+function devBypass(email: string, password: string) {
+  if (process.env.NODE_ENV === 'production') return null;
+  if (email.toLowerCase() !== DEV_USER.email || password !== DEV_USER.password) return null;
+  const token = jwt.sign(
+    { userId: DEV_USER.id, email: DEV_USER.email, name: DEV_USER.name, plan: DEV_USER.plan, subscriptionStatus: 'active' },
+    JWT_SECRET,
+    { expiresIn: '7d' },
+  );
+  return NextResponse.json({
+    token,
+    user: { id: DEV_USER.id, name: DEV_USER.name, email: DEV_USER.email, plan: DEV_USER.plan, subscriptionStatus: 'active', currentPeriodEnd: null },
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
@@ -12,6 +37,9 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: 'Email e senha são obrigatórios' }, { status: 400 });
     }
+
+    const bypass = devBypass(email, password);
+    if (bypass) return bypass;
 
     const result = await query(
       `SELECT u.id, u.name, u.email, u.password_hash, u.stripe_customer_id,
