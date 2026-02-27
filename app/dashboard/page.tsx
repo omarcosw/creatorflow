@@ -9,6 +9,7 @@ import AgentView from '@/components/AgentView';
 import ShotListManager from '@/components/ShotListManager';
 import HubArquivos from '@/components/HubArquivos';
 import ClientsHub from '@/components/ClientsHub';
+import CreatorStockView from '@/components/CreatorStockView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, ChevronDown, PenTool, Briefcase, Library } from 'lucide-react';
@@ -492,12 +493,6 @@ export default function DashboardPage() {
              setIsAssistenteExecutivoOpen(true);
              return;
           }
-          // Creator Stock / SFX agents → Creator Stock
-          if ([AgentId.SFX_LIBRARY, AgentId.SFX_SCENE_DESCRIBER, AgentId.SFX_PACK_CREATOR].includes(activeAgentId)) {
-             setActiveAgentId(null);
-             setIsCreatorStockOpen(true);
-             return;
-          }
           setActiveAgentId(null);
       } else if (isLightingHubOpen) {
           // Lighting Hub → back to Central de Criação
@@ -774,34 +769,7 @@ export default function DashboardPage() {
             </div>
           </main>
      ) : isCreatorStockOpen ? (
-          <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-                <span>Voltar ao Dashboard</span>
-            </button>
-            <div className="mb-12">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Creator Stock</h1>
-                <p className="text-zinc-600 dark:text-zinc-400">Sound design e biblioteca sonora cinematográfica para seu conteúdo.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[AgentId.SFX_SCENE_DESCRIBER, AgentId.SFX_LIBRARY, AgentId.SFX_PACK_CREATOR].map(id => {
-                    const agent = AGENTS[id];
-                    const Icon = agent.icon;
-                    return (
-                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-500 dark:hover:border-violet-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
-                            <div className={`p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 ${agent.color}`}>
-                                <Icon className="w-8 h-8" />
-                            </div>
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{agent.title}</h2>
-                            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
-                            <span className={`mt-auto font-medium flex items-center gap-2 text-sm ${agent.color.replace('text-', 'text-opacity-80 text-')}`}>
-                                Acessar <ChevronRight className="w-4 h-4" />
-                            </span>
-                        </button>
-                    )
-                })}
-            </div>
-          </main>
+          <CreatorStockView onBack={() => setIsCreatorStockOpen(false)} />
      ) : isLightingHubOpen ? (
           <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
