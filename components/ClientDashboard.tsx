@@ -43,6 +43,17 @@ import {
   Activity,
   TrendingUp,
   ArrowRight,
+  Video,
+  Scissors,
+  Archive,
+  RotateCcw,
+  Mic,
+  ListTodo,
+  Gauge,
+  BarChart3,
+  Lightbulb,
+  Clapperboard,
+  Package,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -66,19 +77,19 @@ type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acer
 interface Tab {
   id: TabId;
   label: string;
-  emoji: string;
+  icon: React.FC<{ className?: string }>;
 }
 
 const TABS: Tab[] = [
-  { id: 'visao_geral', label: 'Visão Geral',           emoji: '📊' },
-  { id: 'ideias',      label: 'Ideias Infinitas',       emoji: '💡' },
-  { id: 'roteiros',    label: 'Sala de Roteiros',       emoji: '📝' },
-  { id: 'kanban',      label: 'Workflow',               emoji: '📋' },
-  { id: 'agenda',      label: 'Agenda',                 emoji: '📅' },
-  { id: 'acervo',      label: 'Acervo e HDs',           emoji: '🗄️' },
-  { id: 'entregas',    label: 'Entregas & Aprovações',  emoji: '📤' },
-  { id: 'reunioes',    label: 'Reuniões',               emoji: '🤝' },
-  { id: 'financeiro',  label: 'Financeiro',             emoji: '💰' },
+  { id: 'visao_geral', label: 'Visão Geral',           icon: BarChart3       },
+  { id: 'ideias',      label: 'Ideias Infinitas',       icon: Lightbulb       },
+  { id: 'roteiros',    label: 'Sala de Roteiros',       icon: FileText        },
+  { id: 'kanban',      label: 'Workflow',               icon: LayoutDashboard },
+  { id: 'agenda',      label: 'Agenda',                 icon: Calendar        },
+  { id: 'acervo',      label: 'Acervo e HDs',           icon: HardDrive       },
+  { id: 'entregas',    label: 'Entregas & Aprovações',  icon: UploadCloud     },
+  { id: 'reunioes',    label: 'Reuniões',               icon: Users           },
+  { id: 'financeiro',  label: 'Financeiro',             icon: DollarSign      },
 ];
 
 // ─────────────────────────────────────────────
@@ -251,12 +262,30 @@ const INITIAL_TODOS: TodoItem[] = [
 ];
 
 const KANBAN_INITIAL_COLUMNS: KanbanColumn[] = [
-  { id: 'preproducao', emoji: '📝', title: 'Pré-produção',  cards: [] },
-  { id: 'gravar',      emoji: '🎥', title: 'Para Gravar',   cards: [] },
-  { id: 'edicao',      emoji: '✂️', title: 'Em Edição',     cards: [] },
-  { id: 'aprovacao',   emoji: '⏱️', title: 'Ag. Aprovação', cards: [] },
-  { id: 'finalizado',  emoji: '✅', title: 'Finalizado',    cards: [] },
+  { id: 'preproducao', emoji: '', title: 'Pré-produção',  cards: [] },
+  { id: 'gravar',      emoji: '', title: 'Para Gravar',   cards: [] },
+  { id: 'edicao',      emoji: '', title: 'Em Edição',     cards: [] },
+  { id: 'aprovacao',   emoji: '', title: 'Ag. Aprovação', cards: [] },
+  { id: 'finalizado',  emoji: '', title: 'Finalizado',    cards: [] },
 ];
+
+// Icon mapping for kanban columns (replaces emoji field)
+const KANBAN_COL_ICON: Record<string, React.FC<{ className?: string }>> = {
+  preproducao: PenLine,
+  gravar:      Video,
+  edicao:      Scissors,
+  aprovacao:   Clock,
+  finalizado:  CheckCircle,
+};
+
+// Column → production stage index mapping (for automatic timeline)
+const COLUMN_STAGE_MAP: Record<string, number> = {
+  preproducao: 1,
+  aprovacao:   2,
+  gravar:      3,
+  edicao:      4,
+  finalizado:  5,
+};
 
 const KANBAN_ASSIGNEES: { id: string; name: string; initials: string; color: string }[] = [
   { id: 'you',   name: 'Você (Admin)',            initials: 'VC', color: 'bg-violet-600' },
@@ -865,8 +894,15 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
       return KANBAN_INITIAL_COLUMNS;
     }
   });
-  const [addingToCol, setAddingToCol] = useState<string | null>(null);
-  const [editingCard, setEditingCard] = useState<{ card: KanbanCard; colId: string } | null>(null);
+  const [addingToCol, setAddingToCol]       = useState<string | null>(null);
+  const [editingCard, setEditingCard]       = useState<{ card: KanbanCard; colId: string } | null>(null);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+
+  const ARCHIVE_KEY = `creator_flow_kanban_archive_${client.id}`;
+  const [archivedCards, setArchivedCards] = useState<KanbanCard[]>(() => {
+    try { const s = localStorage.getItem(`creator_flow_kanban_archive_${client.id}`); return s ? JSON.parse(s) : []; }
+    catch { return []; }
+  });
 
   // ── Date helpers (computed each render) ──────────────────
   const todayStr    = getTodayStr();
@@ -885,6 +921,11 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   useEffect(() => {
     localStorage.setItem(`creator_flow_kanban_${client.id}`, JSON.stringify(columns));
   }, [columns, client.id]);
+
+  // ── Persist archived cards ────────────────────────────────
+  useEffect(() => {
+    try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archivedCards)); } catch { /* ignore */ }
+  }, [archivedCards, ARCHIVE_KEY]);
 
   // ── To-Do handlers ────────────────────────────────────────
   const addTodo = () => {
@@ -925,6 +966,10 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
       const dst = cols.find(c => c.id === destination.droppableId)!;
       const [moved] = src.cards.splice(source.index, 1);
       dst.cards.splice(destination.index, 0, moved);
+      // When dropped into "Finalizado", also add to archive
+      if (destination.droppableId === 'finalizado') {
+        setArchivedCards(prev => [moved, ...prev.filter(c => c.id !== moved.id)]);
+      }
       return cols;
     });
   };
@@ -963,12 +1008,82 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   };
 
   const clearColumn = (colId: string) => {
-    setColumns(prev => prev.map(c => c.id === colId ? { ...c, cards: [] } : c));
+    setColumns(prev => {
+      // Move "Finalizado" cards to archive instead of deleting them
+      if (colId === 'finalizado') {
+        const col = prev.find(c => c.id === colId);
+        if (col && col.cards.length > 0) {
+          setArchivedCards(existing => {
+            const existingIds = new Set(existing.map(c => c.id));
+            const toArchive = col.cards.filter(c => !existingIds.has(c.id));
+            return [...toArchive, ...existing];
+          });
+        }
+      }
+      return prev.map(c => c.id === colId ? { ...c, cards: [] } : c);
+    });
+  };
+
+  const restoreCard = (card: KanbanCard) => {
+    setArchivedCards(prev => prev.filter(c => c.id !== card.id));
+    setColumns(prev =>
+      prev.map(c => c.id === 'preproducao' ? { ...c, cards: [card, ...c.cards] } : c),
+    );
   };
 
   // ─────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-3 lg:h-[calc(100vh-200px)]">
+
+      {/* ── Archive Modal ── */}
+      {showArchiveModal && (
+        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Archive className="w-4 h-4 text-violet-500" />
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">Tarefas Arquivadas</h2>
+                  <p className="text-xs text-zinc-400 mt-0.5">{archivedCards.length} tarefa{archivedCards.length !== 1 ? 's' : ''} concluída{archivedCards.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {archivedCards.length === 0 ? (
+                <div className="py-12 flex flex-col items-center text-center">
+                  <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                  <p className="text-sm text-zinc-500">Nenhuma tarefa arquivada ainda.</p>
+                  <p className="text-xs text-zinc-400 mt-1">Cards movidos para "Finalizado" aparecerão aqui.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {archivedCards.map(card => (
+                    <div key={card.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                      <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-snug">{card.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${KANBAN_PRIORITY_COLORS[card.priority] ?? ''}`}>{card.priority}</span>
+                          {card.dueDate && <span className="text-[10px] text-zinc-400">{formatDate(card.dueDate)}</span>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => restoreCard(card)}
+                        className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                      >
+                        <RotateCcw className="w-3 h-3" /> Restaurar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Alerts Banner ── */}
       {(overdueCount > 0 || dueSoonCount > 0) && (
@@ -1001,7 +1116,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
             {/* Header */}
             <div className="px-4 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
-              <h3 className="font-bold text-sm text-zinc-900 dark:text-white">🗒️ Tarefas & Lembretes</h3>
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5"><ListTodo className="w-3.5 h-3.5 text-violet-500" /> Tarefas & Lembretes</h3>
               <p className="text-xs text-zinc-400 mt-0.5">
                 {todos.length} pendente{todos.length !== 1 ? 's' : ''} · {client.brandName}
               </p>
@@ -1109,7 +1224,23 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
         </aside>
 
         {/* ── Kanban Board ── */}
-        <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+        <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col gap-2">
+          {/* Archive button */}
+          <div className="flex items-center justify-end flex-shrink-0">
+            <button
+              onClick={() => setShowArchiveModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              Ver Tarefas Arquivadas
+              {archivedCards.length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">
+                  {archivedCards.length}
+                </span>
+              )}
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="h-full overflow-x-auto">
               <div className="flex gap-3 h-full" style={{ width: 'max-content', minWidth: '100%' }}>
@@ -1121,7 +1252,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                       {/* Column header */}
                       <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0">
                         <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
-                          <span className="flex-shrink-0">{col.emoji}</span>
+                          {(() => { const ColIcon = KANBAN_COL_ICON[col.id]; return ColIcon ? <ColIcon className="w-3.5 h-3.5 flex-shrink-0 text-zinc-400" /> : null; })()}
                           <span className="truncate">{col.title}</span>
                           <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
                             {col.cards.length}
@@ -1268,6 +1399,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
               </div>
             </div>
           </DragDropContext>
+          </div>{/* end flex-1 min-h-0 */}
         </div>
       </div>
 
@@ -3121,6 +3253,49 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 };
 
 // ─────────────────────────────────────────────
+// HealthThermometer
+// ─────────────────────────────────────────────
+const HealthThermometer: React.FC<{ score: number }> = ({ score }) => {
+  const isRed    = score < 34;
+  const isYellow = score >= 34 && score < 67;
+  const color    = isRed ? 'text-red-400' : isYellow ? 'text-amber-400' : 'text-emerald-400';
+  const label    = isRed ? 'Atenção — Há itens críticos' : isYellow ? 'Moderado — Atenção necessária' : 'Saudável — Tudo fluindo';
+  const iconBg   = isRed ? 'bg-red-500/15 border-red-500/20' : isYellow ? 'bg-amber-500/15 border-amber-500/20' : 'bg-emerald-500/15 border-emerald-500/20';
+  const glow     = isRed ? 'from-red-600/10' : isYellow ? 'from-amber-600/10' : 'from-emerald-600/10';
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <div className={`absolute inset-0 bg-gradient-to-r ${glow} to-transparent pointer-events-none`} />
+      <div className="relative z-10 flex items-center gap-5">
+        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          <Gauge className={`w-5 h-5 ${color}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-0.5">Termômetro de Saúde do Projeto</p>
+          <p className={`text-sm font-black ${color}`}>{label}</p>
+        </div>
+        <div className="flex-shrink-0 w-36">
+          <div className="relative h-3 rounded-full overflow-hidden bg-gray-800">
+            {/* gradient track */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" />
+            {/* mask that hides the right portion */}
+            <div
+              className="absolute inset-y-0 right-0 bg-gray-900 transition-all duration-700"
+              style={{ width: `${100 - score}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="text-[9px] text-red-600 font-bold">Crítico</span>
+            <span className={`text-[9px] font-black tabular-nums ${color}`}>{score}%</span>
+            <span className="text-[9px] text-emerald-600 font-bold">Ótimo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
 // ClientVisaoGeralTab — Central de Comando
 // ─────────────────────────────────────────────
 const PRODUCTION_STAGES = ['Briefing', 'Roteiro', 'Aprovação', 'Gravação', 'Edição', 'Pronto'] as const;
@@ -3133,23 +3308,12 @@ interface VisaoGeralData {
   opportunityScript: { title: string } | null;
   nextRecordings:    AgendaEvent[];
   radarFeedbacks:    { title: string; rating: number; feedback?: string; type: 'script' | 'deliverable' }[];
+  stageIdx:          number;
+  healthScore:       number;
 }
 
 const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
   const todayStr = getTodayStr();
-  const STAGE_KEY = `creator_flow_prod_stage_${client.id}`;
-
-  const [stageIdx, setStageIdx] = useState<number>(() => {
-    try { const s = localStorage.getItem(STAGE_KEY); return s ? parseInt(s, 10) : 0; }
-    catch { return 0; }
-  });
-
-  const advanceStage = () => {
-    if (stageIdx >= PRODUCTION_STAGES.length - 1) return;
-    const next = stageIdx + 1;
-    setStageIdx(next);
-    try { localStorage.setItem(STAGE_KEY, String(next)); } catch { /* ignore */ }
-  };
 
   const [data] = useState<VisaoGeralData>(() => {
     let awaitingClient    = 0;
@@ -3160,6 +3324,8 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
     let nextRecordings:    AgendaEvent[]   = [];
     let radarFeedbacks:    VisaoGeralData['radarFeedbacks']    = [];
     let allScripts:        ScriptDocument[] = [];
+    let stageIdx           = 0;
+    let healthScore        = 100;
 
     // ── Roteiros ────────────────────────────────
     try {
@@ -3179,7 +3345,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
       }
     } catch { /* ignore */ }
 
-    // ── Kanban ──────────────────────────────────
+    // ── Kanban + auto-stage + health ─────────────
     try {
       const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
       if (s) {
@@ -3194,8 +3360,33 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           .filter(card => card.dueDate && new Date(card.dueDate) < today);
         const combined = new Set([...bottleneckCards.map(c => c.id), ...overdueCards.map(c => c.id)]);
         teamBottleneck = combined.size;
+
+        // Auto-calculate production stage from most-advanced column with cards
+        for (const col of cols) {
+          if (col.cards.length > 0) {
+            const s = COLUMN_STAGE_MAP[col.id] ?? 0;
+            if (s > stageIdx) stageIdx = s;
+          }
+        }
+
+        // Health: overdue kanban cards penalise score
+        healthScore -= Math.min(overdueCards.length * 20, 60);
       }
     } catch { /* ignore */ }
+
+    // ── Health: overdue invoices ─────────────────
+    try {
+      const s = localStorage.getItem(`creator_flow_invoices_${client.id}`);
+      if (s) {
+        const inv: Invoice[] = JSON.parse(s);
+        const overdueInv = inv.filter(i => i.status === 'atrasado').length;
+        healthScore -= Math.min(overdueInv * 25, 50);
+      }
+    } catch { /* ignore */ }
+
+    // Health: scripts awaiting approval
+    healthScore -= Math.min(awaitingClient * 10, 30);
+    healthScore = Math.max(0, Math.min(100, healthScore));
 
     // ── Agenda ──────────────────────────────────
     try {
@@ -3237,13 +3428,17 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
     } catch { /* ignore */ }
 
     radarFeedbacks = radarFeedbacks.slice(0, 3);
-    return { awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks };
+    return { awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks, stageIdx, healthScore };
   });
 
+  const stageIdx    = data.stageIdx;
   const progressPct = Math.round((stageIdx / (PRODUCTION_STAGES.length - 1)) * 100);
 
   return (
     <div className="space-y-6">
+
+      {/* ══ 0. Termômetro de Saúde ══ */}
+      <HealthThermometer score={data.healthScore} />
 
       {/* ══ 1. Cards de Status Crítico ══ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3258,7 +3453,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           </div>
           <div>
             <p className="text-4xl font-black text-red-400 tabular-nums">{data.awaitingClient}</p>
-            <p className="text-xs text-gray-500 mt-1 leading-tight">🔴 Roteiros aguardando aprovação do cliente</p>
+            <p className="text-xs text-gray-500 mt-1 leading-tight">Roteiros aguardando aprovação do cliente</p>
           </div>
         </div>
 
@@ -3272,7 +3467,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           </div>
           <div>
             <p className="text-4xl font-black text-amber-400 tabular-nums">{data.teamBottleneck}</p>
-            <p className="text-xs text-gray-500 mt-1 leading-tight">🟡 Tarefas em gargalo ou atrasadas no Workflow</p>
+            <p className="text-xs text-gray-500 mt-1 leading-tight">Tarefas em gargalo ou atrasadas no Workflow</p>
           </div>
         </div>
 
@@ -3286,7 +3481,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           </div>
           <div>
             <p className="text-4xl font-black text-emerald-400 tabular-nums">{data.readyToRecord}</p>
-            <p className="text-xs text-gray-500 mt-1 leading-tight">🟢 Roteiros aprovados sem gravação agendada</p>
+            <p className="text-xs text-gray-500 mt-1 leading-tight">Roteiros aprovados sem gravação agendada</p>
           </div>
         </div>
       </div>
@@ -3301,7 +3496,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
               <Sparkles className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <p className="text-sm font-black text-white">✨ Iara Insights</p>
+              <p className="text-sm font-black text-white">Iara Insights</p>
               <p className="text-[10px] text-indigo-400/60 mt-0.5">Inteligência proativa do seu projeto</p>
             </div>
           </div>
@@ -3310,7 +3505,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
             <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/25">
               <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-red-300">⚠️ Risco de Atraso</p>
+                <p className="text-sm font-black text-red-300">Risco de Atraso</p>
                 <p className="text-xs text-red-400/80 mt-1 leading-relaxed">
                   A gravação de <span className="font-bold text-red-300">{formatDate(data.riskScript.recordingDate)}</span> está próxima, mas nenhum roteiro foi aprovado ainda.
                 </p>
@@ -3322,7 +3517,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           ) : (
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <p className="text-xs font-bold text-emerald-300">Nenhum risco de atraso identificado. Projeto no caminho certo! 🎉</p>
+              <p className="text-xs font-bold text-emerald-300">Nenhum risco de atraso identificado. Projeto no caminho certo!</p>
             </div>
           )}
 
@@ -3330,7 +3525,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
             <div className="flex items-start gap-3 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
               <TrendingUp className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-violet-300">💡 Oportunidade de Growth</p>
+                <p className="text-sm font-black text-violet-300">Oportunidade de Growth</p>
                 <p className="text-xs text-violet-400/80 mt-1 leading-relaxed">
                   O cliente avaliou com 5 estrelas o conteúdo <span className="font-bold text-violet-300">"{data.opportunityScript.title}"</span>. Que tal gerarmos uma nova série parecida?
                 </p>
@@ -3353,14 +3548,8 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
         {/* ── Timeline de Produção ── */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-500">🎬 Timeline de Produção</p>
-            <button
-              onClick={advanceStage}
-              disabled={stageIdx >= PRODUCTION_STAGES.length - 1}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 text-violet-300 text-[11px] font-black border border-violet-500/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              Avançar Etapa <ArrowRight className="w-3 h-3" />
-            </button>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5"><Clapperboard className="w-3.5 h-3.5" /> Timeline de Produção</p>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">Automático</span>
           </div>
 
           <div className="flex items-start">
@@ -3408,14 +3597,14 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           {stageIdx === PRODUCTION_STAGES.length - 1 && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <p className="text-xs font-black text-emerald-300">Projeto Finalizado! 🎉</p>
+              <p className="text-xs font-black text-emerald-300">Projeto Finalizado!</p>
             </div>
           )}
         </div>
 
         {/* ── Próximas Gravações ── */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
-          <p className="text-xs font-black uppercase tracking-widest text-gray-500">📅 Próximas Gravações</p>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5"><Video className="w-3.5 h-3.5" /> Próximas Gravações</p>
           {data.nextRecordings.length === 0 ? (
             <div className="py-8 flex flex-col items-center text-center">
               <Calendar className="w-8 h-8 text-gray-700 mx-auto mb-2" />
@@ -3440,7 +3629,7 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
                         {event.startTime ? `${event.startTime} · ` : ''}{event.location}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 text-lg select-none">🎬</span>
+                    <Video className="w-4 h-4 flex-shrink-0 text-violet-400" />
                   </div>
                 );
               })}
@@ -3476,7 +3665,9 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
                   <p className="text-[11px] text-gray-500 italic leading-relaxed line-clamp-2">"{fb.feedback}"</p>
                 )}
                 <span className="text-[9px] font-black text-gray-600 uppercase tracking-wider">
-                  {fb.type === 'script' ? '📝 Roteiro' : '📦 Entrega'}
+                  {fb.type === 'script'
+                    ? <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Roteiro</span>
+                    : <span className="flex items-center gap-1"><Package className="w-3 h-3" /> Entrega</span>}
                 </span>
               </div>
             ))}
@@ -4487,8 +4678,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                 )}
               </div>
             </div>
-            <span className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800/50">
-              🎙️ {client.voiceTone}
+            <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800/50">
+              <Mic className="w-3 h-3" /> {client.voiceTone}
             </span>
           </div>
         </div>
@@ -4505,7 +4696,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
                 }`}
               >
-                <span>{tab.emoji}</span>
+                <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {tab.label}
               </button>
             ))}
