@@ -6,6 +6,8 @@ const ALLOWED_ORIGINS = [
   'https://creatorflowia.com',
   'https://www.creatorflowia.com',
   'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
 ];
 
 // --- Rate Limiting ---
