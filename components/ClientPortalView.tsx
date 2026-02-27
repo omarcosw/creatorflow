@@ -24,6 +24,8 @@ import {
   Check,
   Send,
   Copy,
+  Menu,
+  AlignLeft,
 } from 'lucide-react';
 import { Client, Invoice } from '@/types';
 
@@ -50,7 +52,7 @@ interface PortalScript {
   status: ReviewStatus;
   feedback?: string;
   rating?: number; // 1–5 stars from portal client
-  body: { scene: number; visual: string; audio: string }[];
+  body: { scene: number; visual: string; audio: string; type?: 'scene' | 'free_text'; freeContent?: string }[];
   caption: string;
   hashtags: string;
 }
@@ -60,7 +62,7 @@ interface PortalScript {
 // ─────────────────────────────────────────────
 type PortalScriptInternalStatus = 'aguardando_cliente' | 'aprovado_cliente' | 'refacao';
 
-interface PortalScriptScene { id: string; visual: string; audio: string; }
+interface PortalScriptScene { id: string; visual: string; audio: string; type?: 'scene' | 'free_text'; freeContent?: string; }
 
 interface PortalScriptDoc {
   id: string;
@@ -487,26 +489,37 @@ const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, 
 
         {/* Script body */}
         <div className="space-y-6">
-          {script.body.map(scene => (
-            <div key={scene.scene} className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-violet-600/20 text-violet-400 text-[10px] font-black flex items-center justify-center border border-violet-500/30">
-                  {scene.scene}
-                </span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Cena {scene.scene}</p>
+          {script.body.map(scene =>
+            scene.type === 'free_text' ? (
+              <div key={scene.scene} className="bg-gray-900 border border-dashed border-gray-700 rounded-xl p-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
+                  <AlignLeft className="w-3 h-3" /> Bloco de Texto Livre
+                </p>
+                <p className="text-sm text-gray-200 leading-relaxed font-mono whitespace-pre-wrap">
+                  {scene.freeContent || '—'}
+                </p>
               </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">🎥 Visual</p>
-                  <p className="text-sm text-gray-300 leading-relaxed">{scene.visual}</p>
+            ) : (
+              <div key={scene.scene} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-violet-600/20 text-violet-400 text-[10px] font-black flex items-center justify-center border border-violet-500/30">
+                    {scene.scene}
+                  </span>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Cena {scene.scene}</p>
                 </div>
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">🎙️ Áudio / Texto</p>
-                  <p className="text-sm text-gray-200 italic leading-relaxed">&ldquo;{scene.audio}&rdquo;</p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">🎥 Visual</p>
+                    <p className="text-sm text-gray-300 leading-relaxed">{scene.visual}</p>
+                  </div>
+                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">🎙️ Áudio / Texto</p>
+                    <p className="text-sm text-gray-200 italic leading-relaxed">&ldquo;{scene.audio}&rdquo;</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
 
         {/* Caption + Hashtags */}
@@ -649,7 +662,7 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
       status:   statusMap[doc.portalStatus],
       feedback: doc.clientFeedback,
       rating:   doc.rating,
-      body:     doc.scenes.map((sc, i) => ({ scene: i + 1, visual: sc.visual, audio: sc.audio })),
+      body:     doc.scenes.map((sc, i) => ({ scene: i + 1, visual: sc.visual, audio: sc.audio, type: sc.type, freeContent: sc.freeContent })),
       caption:  doc.gancho || '',
       hashtags: '',
     };
@@ -1279,12 +1292,12 @@ const _TabPlaceholder: React.FC = () => (
 // ─────────────────────────────────────────────
 // Portal nav tabs config
 // ─────────────────────────────────────────────
-const PORTAL_TABS: { id: PortalTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'dashboard',  label: 'Dashboard',  icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-  { id: 'roteiros',   label: 'Roteiros',   icon: <FileText        className="w-3.5 h-3.5" /> },
-  { id: 'videos',     label: 'Vídeos',     icon: <Video           className="w-3.5 h-3.5" /> },
-  { id: 'reunioes',   label: 'Reuniões',   icon: <Users           className="w-3.5 h-3.5" /> },
-  { id: 'financeiro', label: 'Financeiro', icon: <DollarSign      className="w-3.5 h-3.5" /> },
+const PORTAL_TABS: { id: PortalTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
+  { id: 'roteiros',   label: 'Roteiros',   icon: FileText },
+  { id: 'videos',     label: 'Vídeos',     icon: Video },
+  { id: 'reunioes',   label: 'Reuniões',   icon: Users },
+  { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
 ];
 
 // ─────────────────────────────────────────────
@@ -1296,77 +1309,140 @@ interface ClientPortalViewProps {
 }
 
 const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) => {
-  const [activeTab, setActiveTab] = useState<PortalTab>('dashboard');
+  const [activeTab,   setActiveTab]   = useState<PortalTab>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950 text-white animate-in fade-in duration-300">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-950 text-white animate-in fade-in duration-300">
 
-      {/* ══ Header ══ */}
-      <header className="sticky top-0 z-20 px-4 sm:px-6 py-3.5 border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+      {/* ── Mobile backdrop ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ══════════════════════════════════
+          SIDEBAR
+          Desktop: fixed 256px, always visible
+          Mobile: overlay, slides in from left
+         ══════════════════════════════════ */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-gray-950 border-r border-gray-800/50
+        transition-transform duration-300 ease-in-out
+        lg:relative lg:translate-x-0 lg:flex-shrink-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+
+        {/* ── Sidebar header: back + brand ── */}
+        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-gray-800/50">
+
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 hover:text-gray-400 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-gray-400 transition-colors mb-5"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Sair
+            <ArrowLeft className="w-3.5 h-3.5" /> Sair do Portal
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-[11px] font-black text-white select-none">
-              CF
+
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-sm font-black text-white flex-shrink-0 select-none">
+              {client.brandName.slice(0, 2).toUpperCase()}
             </div>
-            <span className="text-xs font-black text-gray-500 hidden sm:block tracking-widest uppercase">CreatorFlow</span>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold tracking-tight text-white truncate leading-tight">
+                {client.brandName}
+              </h1>
+              <p className="text-[10px] text-gray-500 truncate mt-0.5">Portal do Cliente</p>
+            </div>
           </div>
-          <p className="text-sm font-bold text-gray-300">
+        </div>
+
+        {/* ── Nav pills ── */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+          {PORTAL_TABS.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
+                  isActive
+                    ? 'bg-white/[0.07] text-white'
+                    : 'text-gray-500 hover:text-gray-200 hover:bg-white/[0.04]'
+                }`}
+              >
+                {isActive && <span className="absolute left-0 inset-y-0 my-2 w-[2px] rounded-full bg-indigo-500" />}
+                <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-600 group-hover:text-gray-400'}`} />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* ── Sidebar footer ── */}
+        <div className="flex-shrink-0 px-5 py-4 border-t border-gray-800/50">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-[9px] font-black text-white select-none">CF</div>
+            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">CreatorFlow</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ══════════════════════════════════
+          MAIN AREA
+         ══════════════════════════════════ */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+        {/* ── Mobile top bar ── */}
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-800/50 bg-gray-950 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-bold text-white truncate">{client.brandName}</h1>
+          </div>
+          <span className="text-[10px] font-black text-gray-500 uppercase tracking-wide truncate">
+            {PORTAL_TABS.find(t => t.id === activeTab)?.label}
+          </span>
+        </div>
+
+        {/* ── Desktop top bar ── */}
+        <div className="hidden lg:flex flex-shrink-0 items-center gap-4 px-6 py-2.5 border-b border-gray-800/50 bg-gray-950/80">
+          <div className="flex-1 min-w-0 flex items-center gap-2 text-[11px]">
+            <span className="font-black text-gray-500">Portal</span>
+            <span className="text-gray-700">/</span>
+            <span className="font-black text-gray-400 truncate">{PORTAL_TABS.find(t => t.id === activeTab)?.label}</span>
+          </div>
+          <p className="text-xs font-bold text-gray-500 flex-shrink-0">
             Olá, <span className="text-violet-400 font-black">{client.brandName}</span> 👋
           </p>
         </div>
-      </header>
 
-      {/* ══ Navigation tabs ══ */}
-      <nav className="sticky top-[57px] z-10 border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center gap-0 overflow-x-auto scrollbar-none">
-            {PORTAL_TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-3.5 text-xs font-black whitespace-nowrap border-b-2 transition-all ${
-                  activeTab === tab.id
-                    ? 'border-violet-500 text-violet-400'
-                    : 'border-transparent text-gray-600 hover:text-gray-400 hover:border-gray-700'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+        {/* ── Content ── */}
+        <main className="flex-1 overflow-y-auto bg-gray-900">
+          <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+            {activeTab === 'dashboard' && (
+              <div className="space-y-8 animate-in fade-in duration-200">
+                <ProductionStepper />
+                <AchievementsGrid clientId={client.id} />
+                <FollowerHistoryPortal clientId={client.id} />
+                <PendingActions clientId={client.id} />
+              </div>
+            )}
+
+            {activeTab === 'roteiros'   && <PortalRoteirosTab  clientId={client.id} />}
+            {activeTab === 'videos'     && <PortalVideosTab    clientId={client.id} />}
+            {activeTab === 'reunioes'   && <PortalReunioeTab   clientId={client.id} />}
+            {activeTab === 'financeiro' && <PortalFinanceiroTab clientId={client.id} />}
+
           </div>
-        </div>
-      </nav>
-
-      {/* ══ Content ══ */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-
-          {activeTab === 'dashboard' && (
-            <div className="space-y-8 animate-in fade-in duration-200">
-              <ProductionStepper />
-              <AchievementsGrid clientId={client.id} />
-              <FollowerHistoryPortal clientId={client.id} />
-              <PendingActions clientId={client.id} />
-            </div>
-          )}
-
-          {activeTab === 'roteiros' && <PortalRoteirosTab clientId={client.id} />}
-
-          {activeTab === 'videos' && <PortalVideosTab clientId={client.id} />}
-
-          {activeTab === 'reunioes' && <PortalReunioeTab clientId={client.id} />}
-
-          {activeTab === 'financeiro' && <PortalFinanceiroTab clientId={client.id} />}
-
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
