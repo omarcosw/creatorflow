@@ -66,6 +66,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { Client, HDD, Recording, AgentId, Meeting, MeetingNextStep, Invoice } from '@/types';
 import { sendMessageToAgent } from '@/lib/api';
+import ClientMonthlyReport from './ClientMonthlyReport';
 
 // ─────────────────────────────────────────────
 // Props
@@ -4944,6 +4945,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [activeTab,    setActiveTab]    = useState<TabId>('visao_geral');
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [sidebarHealth]                 = useState(() => computeSidebarHealth(client.id));
+  const [showReport,   setShowReport]   = useState(false);
 
   // ── Motor de Ideias state ─────────────────
   const [themeInput, setThemeInput]                 = useState('');
@@ -5186,6 +5188,14 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-950 animate-in fade-in duration-300">
 
+      {/* ── Monthly report modal ── */}
+      {showReport && (
+        <ClientMonthlyReport
+          client={client}
+          onClose={() => setShowReport(false)}
+        />
+      )}
+
       {/* ── Mobile backdrop ── */}
       {sidebarOpen && (
         <div
@@ -5256,6 +5266,14 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
               />
             </div>
           </div>
+
+          {/* ── Relatório Mensal button ── */}
+          <button
+            onClick={() => setShowReport(true)}
+            className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600/10 border border-indigo-600/20 text-indigo-400 hover:bg-indigo-600/20 hover:text-indigo-300 transition-all text-xs font-bold"
+          >
+            <FileText className="w-3.5 h-3.5" /> Relatório Mensal
+          </button>
         </div>
 
         {/* ── Nav pills ── */}
