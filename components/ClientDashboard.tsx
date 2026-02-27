@@ -59,6 +59,11 @@ import {
   Bell,
   Gauge,
   BarChart3,
+  FolderPlus,
+  ExternalLink,
+  Image as ImageIcon,
+  AlignLeft,
+  LayoutList,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -2099,6 +2104,8 @@ interface ScriptScene {
   visual: string;
   audio: string;
   isChecked: boolean;
+  referencia?: string;       // URL de referência por cena
+  storyboardImage?: string;  // imagem gerada do storyboard
 }
 
 interface ScriptDocument {
@@ -2109,6 +2116,8 @@ interface ScriptDocument {
   gancho: string;
   scenes: ScriptScene[];
   createdAt: number;
+  writeMode?: 'structured' | 'free'; // Modo de Escrita Híbrida
+  freeText?: string;                 // Conteúdo do modo de escrita livre
   // Portal integration
   portalStatus?: 'aguardando_cliente' | 'aprovado_cliente' | 'refacao';
   clientFeedback?: string;
@@ -2121,6 +2130,7 @@ interface ScriptPackage {
   title: string;
   scripts: ScriptDocument[];
   createdAt: number;
+  subFolders?: ScriptPackage[]; // Subpastas (Tree View)
 }
 
 const SCRIPT_STATUS_CYCLE: ScriptStatus[] = ['Rascunho', 'Aprovado', 'Gravado'];
@@ -2138,6 +2148,59 @@ const PORTAL_SCRIPT_STATUS_CONFIG: Record<PortalScriptStatus, { label: string; b
   aprovado_cliente:   { label: 'Aprovado',  badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
   refacao:            { label: 'Refação',   badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' },
 };
+
+// ── Tree-view helpers ────────────────────────────────────────────────────────
+
+function findPkgInTree(pkgs: ScriptPackage[], pkgId: string): ScriptPackage | null {
+  for (const pkg of pkgs) {
+    if (pkg.id === pkgId) return pkg;
+    if (pkg.subFolders?.length) {
+      const found = findPkgInTree(pkg.subFolders, pkgId);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function updatePkgInTree(
+  pkgs: ScriptPackage[],
+  pkgId: string,
+  updater: (pkg: ScriptPackage) => ScriptPackage,
+): ScriptPackage[] {
+  return pkgs.map(pkg => {
+    if (pkg.id === pkgId) return updater(pkg);
+    if (pkg.subFolders?.length) {
+      return { ...pkg, subFolders: updatePkgInTree(pkg.subFolders, pkgId, updater) };
+    }
+    return pkg;
+  });
+}
+
+function removePkgFromTree(pkgs: ScriptPackage[], pkgId: string): ScriptPackage[] {
+  return pkgs
+    .filter(p => p.id !== pkgId)
+    .map(pkg => ({
+      ...pkg,
+      subFolders: pkg.subFolders ? removePkgFromTree(pkg.subFolders, pkgId) : undefined,
+    }));
+}
+
+// ── Storyboard quota helpers ─────────────────────────────────────────────────
+
+const STORYBOARD_QUOTA: Record<string, number> = {
+  agency: 15, pro: 10, starter: 5, free: 2,
+};
+
+function getStoryboardQuotaKey(clientId: string): string {
+  const now = new Date();
+  return `creator_flow_storyboard_quota_${clientId}_${now.getFullYear()}_${now.getMonth() + 1}`;
+}
+
+function isUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const buildDefaultScriptPackages = (): ScriptPackage[] => [
   {
@@ -2160,18 +2223,33 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       return buildDefaultScriptPackages();
     }
   });
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(packages[0]?.id ?? '');
-  const [viewMode, setViewMode]           = useState<'edicao' | 'shotlist'>('edicao');
-  const [expandedId, setExpandedId]       = useState<string | null>(null);
-  const [newPkgTitle, setNewPkgTitle]     = useState('');
-  const [isAddingPkg, setIsAddingPkg]     = useState(false);
+  const [selectedPkgId, setSelectedPkgId]       = useState<string>(packages[0]?.id ?? '');
+  const [viewMode, setViewMode]                 = useState<'edicao' | 'shotlist'>('edicao');
+  const [expandedId, setExpandedId]             = useState<string | null>(null);
+  const [newPkgTitle, setNewPkgTitle]           = useState('');
+  const [isAddingPkg, setIsAddingPkg]           = useState(false);
+  // Tree-view state
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
+  const [addingSubFolderFor, setAddingSubFolderFor] = useState<string | null>(null);
+  const [newSubFolderTitle, setNewSubFolderTitle]   = useState('');
+  // Storyboard quota
+  const [storyboardUsed, setStoryboardUsed] = useState<number>(() => {
+    try {
+      return parseInt(localStorage.getItem(getStoryboardQuotaKey(client.id)) ?? '0', 10) || 0;
+    } catch { return 0; }
+  });
+  const [generatingStoryboardId, setGeneratingStoryboardId] = useState<string | null>(null);
 
   // Persist
   useEffect(() => {
     localStorage.setItem(`creator_flow_roteiros_${client.id}`, JSON.stringify(packages));
   }, [packages, client.id]);
 
-  const selectedPkg = packages.find(p => p.id === selectedPkgId) ?? null;
+  useEffect(() => {
+    localStorage.setItem(getStoryboardQuotaKey(client.id), String(storyboardUsed));
+  }, [storyboardUsed, client.id]);
+
+  const selectedPkg = findPkgInTree(packages, selectedPkgId) ?? null;
 
   // ── Package CRUD ──────────────────────────────────────────────
   const addPackage = () => {
@@ -2187,10 +2265,24 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
   const deletePackage = (pkgId: string) => {
     setPackages(prev => {
-      const remaining = prev.filter(p => p.id !== pkgId);
+      const remaining = removePkgFromTree(prev, pkgId);
       if (selectedPkgId === pkgId) setSelectedPkgId(remaining[0]?.id ?? '');
       return remaining;
     });
+  };
+
+  const addSubFolder = (parentPkgId: string) => {
+    if (!newSubFolderTitle.trim()) return;
+    const sub: ScriptPackage = {
+      id: crypto.randomUUID(), title: newSubFolderTitle.trim(), scripts: [], createdAt: Date.now(),
+    };
+    setPackages(prev => updatePkgInTree(prev, parentPkgId, pkg => ({
+      ...pkg, subFolders: [...(pkg.subFolders ?? []), sub],
+    })));
+    setExpandedFolderIds(prev => new Set([...prev, parentPkgId]));
+    setSelectedPkgId(sub.id);
+    setNewSubFolderTitle('');
+    setAddingSubFolderFor(null);
   };
 
   // ── Script CRUD ───────────────────────────────────────────────
@@ -2198,22 +2290,23 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
     const s: ScriptDocument = {
       id: crypto.randomUUID(), title: 'Novo Roteiro', status: 'Rascunho',
       referenceLink: '', gancho: '',
-      scenes: [{ id: crypto.randomUUID(), visual: '', audio: '', isChecked: false }],
+      scenes: [{ id: crypto.randomUUID(), visual: '', audio: '', isChecked: false, referencia: '' }],
       createdAt: Date.now(),
+      writeMode: 'structured', freeText: '',
     };
-    setPackages(prev => prev.map(p => p.id === pkgId ? { ...p, scripts: [s, ...p.scripts] } : p));
+    setPackages(prev => updatePkgInTree(prev, pkgId, p => ({ ...p, scripts: [s, ...p.scripts] })));
     setExpandedId(s.id);
   };
 
   const updateScript = (pkgId: string, updated: ScriptDocument) =>
-    setPackages(prev => prev.map(p =>
-      p.id === pkgId ? { ...p, scripts: p.scripts.map(s => s.id === updated.id ? updated : s) } : p,
-    ));
+    setPackages(prev => updatePkgInTree(prev, pkgId, p => ({
+      ...p, scripts: p.scripts.map(s => s.id === updated.id ? updated : s),
+    })));
 
   const deleteScript = (pkgId: string, scriptId: string) => {
-    setPackages(prev => prev.map(p =>
-      p.id === pkgId ? { ...p, scripts: p.scripts.filter(s => s.id !== scriptId) } : p,
-    ));
+    setPackages(prev => updatePkgInTree(prev, pkgId, p => ({
+      ...p, scripts: p.scripts.filter(s => s.id !== scriptId),
+    })));
     if (expandedId === scriptId) setExpandedId(null);
   };
 
@@ -2229,13 +2322,31 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   // ── Scene CRUD ────────────────────────────────────────────────
   const addScene = (pkgId: string, script: ScriptDocument) =>
     updateScript(pkgId, {
-      ...script, scenes: [...script.scenes, { id: crypto.randomUUID(), visual: '', audio: '', isChecked: false }],
+      ...script, scenes: [...script.scenes, { id: crypto.randomUUID(), visual: '', audio: '', isChecked: false, referencia: '' }],
     });
 
-  const updateScene = (pkgId: string, script: ScriptDocument, sceneId: string, field: 'visual' | 'audio', value: string) =>
+  const updateScene = (pkgId: string, script: ScriptDocument, sceneId: string, field: 'visual' | 'audio' | 'referencia', value: string) =>
     updateScript(pkgId, {
       ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, [field]: value } : sc),
     });
+
+  const setSceneStoryboard = (pkgId: string, script: ScriptDocument, sceneId: string, imageUrl: string) =>
+    updateScript(pkgId, {
+      ...script, scenes: script.scenes.map(sc => sc.id === sceneId ? { ...sc, storyboardImage: imageUrl } : sc),
+    });
+
+  const generateStoryboard = async (pkgId: string, script: ScriptDocument, scene: ScriptScene) => {
+    const plan = (typeof window !== 'undefined' ? localStorage.getItem('cf_plan') : null) ?? 'free';
+    const limit = STORYBOARD_QUOTA[plan] ?? 5;
+    if (storyboardUsed >= limit) return;
+    setGeneratingStoryboardId(scene.id);
+    // Mock: use a placeholder after a brief delay
+    await new Promise(r => setTimeout(r, 1200));
+    const placeholder = `https://placehold.co/320x180/1e1b4b/a78bfa?text=Cena+${script.scenes.indexOf(scene) + 1}`;
+    setSceneStoryboard(pkgId, script, scene.id, placeholder);
+    setStoryboardUsed(prev => prev + 1);
+    setGeneratingStoryboardId(null);
+  };
 
   const deleteScene = (pkgId: string, script: ScriptDocument, sceneId: string) =>
     updateScript(pkgId, { ...script, scenes: script.scenes.filter(sc => sc.id !== sceneId) });
@@ -2249,7 +2360,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   return (
     <div className="flex flex-col lg:flex-row gap-5">
 
-      {/* ── Sidebar: Packages ── */}
+      {/* ── Sidebar: Packages Tree View ── */}
       <aside className="w-full lg:w-56 xl:w-64 flex-shrink-0">
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 lg:sticky lg:top-4">
           <div className="flex items-center justify-between px-2 py-2 mb-1">
@@ -2287,30 +2398,86 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             <p className="text-xs text-zinc-400 text-center py-4 px-2">Nenhum pacote.<br />Clique em + para criar.</p>
           )}
 
-          <div className="space-y-0.5">
-            {packages.map(pkg => (
-              <div key={pkg.id} className="group flex items-center gap-1">
-                <button
-                  onClick={() => setSelectedPkgId(pkg.id)}
-                  className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left min-w-0 ${
-                    selectedPkgId === pkg.id
-                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <Folder className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate flex-1">{pkg.title}</span>
-                  <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.length}</span>
-                </button>
-                <button
-                  onClick={() => { if (confirm(`Excluir pacote "${pkg.title}"?`)) deletePackage(pkg.id); }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
+          {/* Recursive tree render */}
+          {(() => {
+            const renderTree = (pkgs: ScriptPackage[], depth: number): React.ReactNode => pkgs.map(pkg => {
+              const isSelected = selectedPkgId === pkg.id;
+              const isExpanded = expandedFolderIds.has(pkg.id);
+              const hasSubs    = (pkg.subFolders?.length ?? 0) > 0;
+              const isAddingSub = addingSubFolderFor === pkg.id;
+              return (
+                <div key={pkg.id} style={{ paddingLeft: depth * 12 }}>
+                  <div className="group flex items-center gap-0.5 mb-0.5">
+                    {/* Expand/collapse toggle for folders with subfolders */}
+                    <button
+                      onClick={() => setExpandedFolderIds(prev => {
+                        const next = new Set(prev);
+                        if (next.has(pkg.id)) next.delete(pkg.id); else next.add(pkg.id);
+                        return next;
+                      })}
+                      className={`p-0.5 rounded transition-colors flex-shrink-0 ${hasSubs ? 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200' : 'opacity-0 pointer-events-none'}`}
+                    >
+                      <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedPkgId(pkg.id)}
+                      className={`flex-1 flex items-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold transition-all text-left min-w-0 ${
+                        isSelected
+                          ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      <Folder className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate flex-1">{pkg.title}</span>
+                      <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.length}</span>
+                    </button>
+
+                    {/* Add subfolder button */}
+                    <button
+                      onClick={() => { setAddingSubFolderFor(pkg.id); setNewSubFolderTitle(''); }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-violet-500 transition-all rounded-lg flex-shrink-0"
+                      title="Nova subpasta"
+                    >
+                      <FolderPlus className="w-3 h-3" />
+                    </button>
+
+                    <button
+                      onClick={() => { if (confirm(`Excluir "${pkg.title}"?`)) deletePackage(pkg.id); }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Inline input for new subfolder */}
+                  {isAddingSub && (
+                    <div className="flex gap-1.5 mb-1" style={{ paddingLeft: (depth + 1) * 12 }}>
+                      <input
+                        autoFocus
+                        type="text"
+                        value={newSubFolderTitle}
+                        onChange={e => setNewSubFolderTitle(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') addSubFolder(pkg.id);
+                          if (e.key === 'Escape') { setAddingSubFolderFor(null); setNewSubFolderTitle(''); }
+                        }}
+                        placeholder="Nome da subpasta"
+                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-violet-300 dark:border-violet-700 rounded-lg px-2 py-1 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
+                      />
+                      <button onClick={() => addSubFolder(pkg.id)} className="p-1 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors">
+                        <Check className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Nested subfolders */}
+                  {isExpanded && hasSubs && renderTree(pkg.subFolders!, depth + 1)}
+                </div>
+              );
+            });
+            return <div className="space-y-0">{renderTree(packages, 0)}</div>;
+          })()}
         </div>
       </aside>
 
@@ -2466,124 +2633,261 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       {viewMode === 'edicao' ? (
                         /* ─── EDIT MODE ─── */
                         <>
-                          {/* Reference link */}
-                          <div>
-                            <label className={MODAL_LABEL_CLS}>🔗 Link de Referência</label>
-                            <input
-                              type="text"
-                              value={script.referenceLink}
-                              onChange={e => updateScript(selectedPkg.id, { ...script, referenceLink: e.target.value })}
-                              placeholder="https://notion.so/… ou docs.google.com/…"
-                              className={MODAL_INPUT_CLS}
-                            />
+                          {/* ── Modo de Escrita Híbrida toggle ── */}
+                          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1 gap-1 self-start">
+                            <button
+                              onClick={() => updateScript(selectedPkg.id, { ...script, writeMode: 'structured' })}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                (script.writeMode ?? 'structured') === 'structured'
+                                  ? 'bg-white dark:bg-zinc-700 text-violet-700 dark:text-violet-300 shadow-sm'
+                                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                              }`}
+                            >
+                              <LayoutList className="w-3.5 h-3.5" />
+                              Layout Estruturado
+                            </button>
+                            <button
+                              onClick={() => updateScript(selectedPkg.id, { ...script, writeMode: 'free' })}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                script.writeMode === 'free'
+                                  ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-300 shadow-sm'
+                                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                              }`}
+                            >
+                              <AlignLeft className="w-3.5 h-3.5" />
+                              Escrita Livre
+                            </button>
                           </div>
 
-                          {/* Hook */}
-                          <div>
-                            <label className={MODAL_LABEL_CLS}>🎣 Hook / Gancho</label>
-                            <textarea
-                              value={script.gancho}
-                              onChange={e => updateScript(selectedPkg.id, { ...script, gancho: e.target.value })}
-                              placeholder="A frase de abertura que prende a atenção em 3 segundos…"
-                              rows={3}
-                              className={`${MODAL_INPUT_CLS} resize-none`}
-                            />
-                          </div>
-
-                          {/* Scenes */}
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <label className={MODAL_LABEL_CLS}>🎬 Cenas</label>
-                              <button
-                                onClick={() => addScene(selectedPkg.id, script)}
-                                className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
-                              >
-                                <Plus className="w-3 h-3" /> Cena
-                              </button>
+                          {script.writeMode === 'free' ? (
+                            /* ─── FREE WRITING MODE ─── */
+                            <div>
+                              <label className={MODAL_LABEL_CLS}>Roteiro Livre</label>
+                              <textarea
+                                value={script.freeText ?? ''}
+                                onChange={e => updateScript(selectedPkg.id, { ...script, freeText: e.target.value })}
+                                placeholder="Escreva o roteiro livremente, sem estrutura de cenas. Use parágrafos, timestamps, indicações de câmera — do seu jeito…"
+                                rows={18}
+                                className={`${MODAL_INPUT_CLS} resize-y font-mono text-sm leading-relaxed`}
+                              />
                             </div>
+                          ) : (
+                            /* ─── STRUCTURED MODE ─── */
+                            <>
+                              {/* Reference link */}
+                              <div>
+                                <label className={MODAL_LABEL_CLS}>Link de Referência</label>
+                                <input
+                                  type="text"
+                                  value={script.referenceLink}
+                                  onChange={e => updateScript(selectedPkg.id, { ...script, referenceLink: e.target.value })}
+                                  placeholder="https://notion.so/… ou docs.google.com/…"
+                                  className={MODAL_INPUT_CLS}
+                                />
+                              </div>
 
-                            <div className="space-y-3">
-                              {script.scenes.map((scene, sIdx) => (
-                                <div
-                                  key={scene.id}
-                                  className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
-                                    {script.scenes.length > 1 && (
-                                      <button
-                                        onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
-                                        className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-zinc-400 mb-1 block">📷 Visual / Ação</label>
-                                    <textarea
-                                      value={scene.visual}
-                                      onChange={e => updateScene(selectedPkg.id, script, scene.id, 'visual', e.target.value)}
-                                      placeholder="Descreva o que a câmera vê nessa cena…"
-                                      rows={2}
-                                      className={`${MODAL_INPUT_CLS} resize-none text-xs`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-zinc-400 mb-1 block">🎙️ Áudio / Fala</label>
-                                    <textarea
-                                      value={scene.audio}
-                                      onChange={e => updateScene(selectedPkg.id, script, scene.id, 'audio', e.target.value)}
-                                      placeholder="O que o apresentador fala nessa cena…"
-                                      rows={2}
-                                      className={`${MODAL_INPUT_CLS} resize-none text-xs`}
-                                    />
-                                  </div>
+                              {/* Hook */}
+                              <div>
+                                <label className={MODAL_LABEL_CLS}>Hook / Gancho</label>
+                                <textarea
+                                  value={script.gancho}
+                                  onChange={e => updateScript(selectedPkg.id, { ...script, gancho: e.target.value })}
+                                  placeholder="A frase de abertura que prende a atenção em 3 segundos…"
+                                  rows={3}
+                                  className={`${MODAL_INPUT_CLS} resize-none`}
+                                />
+                              </div>
+
+                              {/* Scenes */}
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  <label className={MODAL_LABEL_CLS}>Cenas</label>
+                                  <button
+                                    onClick={() => addScene(selectedPkg.id, script)}
+                                    className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" /> Cena
+                                  </button>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+
+                                <div className="space-y-3">
+                                  {script.scenes.map((scene, sIdx) => (
+                                    <div
+                                      key={scene.id}
+                                      className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
+                                        {script.scenes.length > 1 && (
+                                          <button
+                                            onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
+                                            className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-zinc-400 mb-1 block">Visual / Ação</label>
+                                        <textarea
+                                          value={scene.visual}
+                                          onChange={e => updateScene(selectedPkg.id, script, scene.id, 'visual', e.target.value)}
+                                          placeholder="Descreva o que a câmera vê nessa cena…"
+                                          rows={2}
+                                          className={`${MODAL_INPUT_CLS} resize-none text-xs`}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-zinc-400 mb-1 block">Áudio / Fala</label>
+                                        <textarea
+                                          value={scene.audio}
+                                          onChange={e => updateScene(selectedPkg.id, script, scene.id, 'audio', e.target.value)}
+                                          placeholder="O que o apresentador fala nessa cena…"
+                                          rows={2}
+                                          className={`${MODAL_INPUT_CLS} resize-none text-xs`}
+                                        />
+                                      </div>
+                                      {/* Referência per-scene */}
+                                      <div>
+                                        <label className="text-[10px] font-bold text-zinc-400 mb-1 block">Referência (URL)</label>
+                                        <input
+                                          type="text"
+                                          value={scene.referencia ?? ''}
+                                          onChange={e => updateScene(selectedPkg.id, script, scene.id, 'referencia', e.target.value)}
+                                          placeholder="https://…"
+                                          className={`${MODAL_INPUT_CLS} text-xs`}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </>
                       ) : (
                         /* ─── SHOTLIST MODE ─── */
                         <>
+                          {/* Storyboard quota counter */}
+                          {(() => {
+                            const plan = (typeof window !== 'undefined' ? localStorage.getItem('cf_plan') : null) ?? 'free';
+                            const limit = STORYBOARD_QUOTA[plan] ?? 5;
+                            return (
+                              <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                  <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
+                                  <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400">Storyboards do plano</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-20 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all"
+                                      style={{ width: `${Math.min((storyboardUsed / limit) * 100, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className={`text-[10px] font-black tabular-nums ${storyboardUsed >= limit ? 'text-red-500' : 'text-zinc-500'}`}>
+                                    {storyboardUsed}/{limit}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
                           {script.gancho && (
                             <div className="flex gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl">
-                              <span className="text-sm flex-shrink-0">🎣</span>
                               <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300 italic leading-relaxed">
                                 &ldquo;{script.gancho}&rdquo;
                               </p>
                             </div>
                           )}
 
-                          <div className="space-y-2">
-                            {script.scenes.map((scene, sIdx) => (
-                              <button
-                                key={scene.id}
-                                onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
-                                className={`w-full flex items-start gap-4 px-4 py-4 rounded-xl border-2 text-left transition-all ${
-                                  scene.isChecked
-                                    ? 'border-emerald-300 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/10 opacity-60'
-                                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700'
-                                }`}
-                              >
-                                <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
-                                  scene.isChecked
-                                    ? 'bg-emerald-500 border-emerald-500'
-                                    : 'border-zinc-300 dark:border-zinc-600'
-                                }`}>
-                                  {scene.isChecked && <Check className="w-3 h-3 text-white" />}
+                          <div className="space-y-3">
+                            {script.scenes.map((scene, sIdx) => {
+                              const isGenerating = generatingStoryboardId === scene.id;
+                              const plan = (typeof window !== 'undefined' ? localStorage.getItem('cf_plan') : null) ?? 'free';
+                              const limit = STORYBOARD_QUOTA[plan] ?? 5;
+                              const quotaExceeded = storyboardUsed >= limit;
+                              return (
+                                <div
+                                  key={scene.id}
+                                  className={`rounded-xl border-2 transition-all ${
+                                    scene.isChecked
+                                      ? 'border-emerald-300 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/10 opacity-70'
+                                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                                  }`}
+                                >
+                                  {/* Scene row — clickable to toggle check */}
+                                  <button
+                                    onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
+                                    className="w-full flex items-start gap-4 px-4 py-4 text-left"
+                                  >
+                                    <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
+                                      scene.isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
+                                    }`}>
+                                      {scene.isChecked && <Check className="w-3 h-3 text-white" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${scene.isChecked ? 'text-emerald-500' : 'text-indigo-400'}`}>
+                                        CENA {sIdx + 1}
+                                      </p>
+                                      <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                                        {scene.visual || '(sem descrição visual)'}
+                                      </p>
+                                      {/* Referência URL link */}
+                                      {scene.referencia && isUrl(scene.referencia) && (
+                                        <a
+                                          href={scene.referencia}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={e => e.stopPropagation()}
+                                          className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-bold text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline transition-colors"
+                                        >
+                                          <ExternalLink className="w-3 h-3" />
+                                          {scene.referencia.length > 45 ? scene.referencia.slice(0, 45) + '…' : scene.referencia}
+                                        </a>
+                                      )}
+                                    </div>
+                                  </button>
+
+                                  {/* Storyboard image or generate button */}
+                                  <div className="px-4 pb-3 flex items-center gap-3">
+                                    {scene.storyboardImage ? (
+                                      <div className="relative group/sb">
+                                        <img
+                                          src={scene.storyboardImage}
+                                          alt={`Storyboard cena ${sIdx + 1}`}
+                                          className="h-24 rounded-lg border border-zinc-200 dark:border-zinc-700 object-cover"
+                                        />
+                                        <button
+                                          onClick={() => setSceneStoryboard(selectedPkg.id, script, scene.id, '')}
+                                          className="absolute top-1 right-1 p-0.5 bg-black/60 text-white rounded opacity-0 group-hover/sb:opacity-100 transition-opacity"
+                                          title="Remover storyboard"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => generateStoryboard(selectedPkg.id, script, scene)}
+                                        disabled={isGenerating || quotaExceeded}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                                          quotaExceeded
+                                            ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 cursor-not-allowed'
+                                            : 'border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
+                                        }`}
+                                        title={quotaExceeded ? 'Cota de storyboards esgotada' : 'Gerar storyboard desta cena'}
+                                      >
+                                        {isGenerating ? (
+                                          <><Loader2 className="w-3 h-3 animate-spin" /> Gerando…</>
+                                        ) : (
+                                          <><ImageIcon className="w-3 h-3" /> Gerar Storyboard</>
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${scene.isChecked ? 'text-emerald-500' : 'text-indigo-400'}`}>
-                                    CENA {sIdx + 1}
-                                  </p>
-                                  <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                                    {scene.visual || '(sem descrição visual)'}
-                                  </p>
-                                </div>
-                              </button>
-                            ))}
+                              );
+                            })}
                           </div>
 
                           {/* Progress bar */}
