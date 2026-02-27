@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ArrowLeft, Plus, Users, Trash2, ChevronRight, AlertTriangle, Calendar,
   X, UserPlus, MoreVertical, Pencil, CheckCircle, Clock, Video, Globe,
+  BarChart3, TrendingUp, AlertCircle, Activity, DollarSign, Layers, Zap,
 } from 'lucide-react';
 import { Client } from '@/types';
 import ClientOnboardingModal from './ClientOnboardingModal';
@@ -497,6 +498,363 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
 };
 
 // ─────────────────────────────────────────────
+// BI Dashboard — types, data, component
+// ─────────────────────────────────────────────
+
+interface _BIInvoice { id: string; dueDate: string; amount: number; status: 'pendente' | 'pago' | 'atrasado'; }
+interface _BIKanbanCard { id: string; dueDate?: string; }
+interface _BIKanbanColumn { id: string; cards: _BIKanbanCard[]; }
+interface _BIRoteiroScript { portalStatus?: string; }
+interface _BIRoteiroPackage { scripts: _BIRoteiroScript[]; }
+
+interface BIFunnelStage { id: string; label: string; count: number; isBottleneck: boolean; }
+interface BICriticalAlert { urgency: 'high' | 'medium'; message: string; detail: string; }
+interface BITeamMember { name: string; role: string; workload: number; approvalRate: number; }
+
+const BI_FUNNEL_COLS = [
+  { id: 'preproducao', label: 'Pré-produção'  },
+  { id: 'gravar',      label: 'Para Gravar'   },
+  { id: 'edicao',      label: 'Em Edição'     },
+  { id: 'aprovacao',   label: 'Ag. Aprovação' },
+  { id: 'finalizado',  label: 'Finalizado'    },
+];
+
+const BI_TEAM_DATA: BITeamMember[] = [
+  { name: 'Ana Costa',  role: 'Roteirista',      workload: 75, approvalRate: 92 },
+  { name: 'Pedro Lima', role: 'Videomaker',       workload: 90, approvalRate: 78 },
+  { name: 'Você',       role: 'Diretor Criativo', workload: 60, approvalRate: 95 },
+];
+
+const formatBRL = (v: number) =>
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+function computeBIData(clients: Client[]) {
+  let totalReceived = 0, totalPending = 0, totalOverdue = 0;
+  const projectTotals = new Map<string, number>();
+  const renewals: { clientName: string; dueDate: string; daysLeft: number; amount: number }[] = [];
+  const alerts: BICriticalAlert[] = [];
+  const funnelCounts: Record<string, number> = Object.fromEntries(BI_FUNNEL_COLS.map(c => [c.id, 0]));
+
+  const today    = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const in30     = new Date(today); in30.setDate(today.getDate() + 30);
+  const in30Str  = in30.toISOString().split('T')[0];
+
+  for (const client of clients) {
+    // Invoices
+    try {
+      const s = localStorage.getItem(`creator_flow_invoices_${client.id}`);
+      if (s) {
+        const invs: _BIInvoice[] = JSON.parse(s);
+        let clientTotal = 0;
+        for (const inv of invs) {
+          clientTotal += inv.amount;
+          if      (inv.status === 'pago')      totalReceived += inv.amount;
+          else if (inv.status === 'pendente')  totalPending  += inv.amount;
+          else if (inv.status === 'atrasado')  totalOverdue  += inv.amount;
+          if (inv.status !== 'pago' && inv.dueDate >= todayStr && inv.dueDate <= in30Str) {
+            const daysLeft = Math.round((new Date(inv.dueDate).getTime() - today.getTime()) / 86400000);
+            renewals.push({ clientName: client.brandName, dueDate: inv.dueDate, daysLeft, amount: inv.amount });
+          }
+        }
+        if (clientTotal > 0) projectTotals.set(client.brandName, (projectTotals.get(client.brandName) ?? 0) + clientTotal);
+        const overdue = invs.filter(i => i.status === 'atrasado');
+        if (overdue.length > 0) alerts.push({ urgency: 'high', message: `Fatura atrasada: ${client.brandName}`, detail: `${overdue.length} fatura(s) vencida(s)` });
+      }
+    } catch { /* ignore */ }
+
+    // Kanban
+    try {
+      const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
+      if (s) {
+        const cols: _BIKanbanColumn[] = JSON.parse(s);
+        for (const col of cols) {
+          if (col.id in funnelCounts) funnelCounts[col.id] += col.cards.length;
+          if (col.id !== 'finalizado') {
+            const overdueCards = col.cards.filter(c => c.dueDate && c.dueDate < todayStr);
+            if (overdueCards.length > 0) alerts.push({ urgency: 'high', message: `Cards atrasados: ${client.brandName}`, detail: `${overdueCards.length} card(s) no Kanban fora do prazo` });
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Roteiros
+    try {
+      const s = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
+      if (s) {
+        const pkgs: _BIRoteiroPackage[] = JSON.parse(s);
+        let waiting = 0;
+        pkgs.forEach(p => p.scripts.forEach(sc => { if (sc.portalStatus === 'aguardando_cliente') waiting++; }));
+        if (waiting > 0) alerts.push({ urgency: 'medium', message: `Aprovação travada: ${client.brandName}`, detail: `${waiting} roteiro(s) aguardando resposta do cliente` });
+      }
+    } catch { /* ignore */ }
+  }
+
+  const topProjects = Array.from(projectTotals.entries())
+    .map(([clientName, amount]) => ({ clientName, amount }))
+    .sort((a, b) => b.amount - a.amount).slice(0, 3);
+
+  renewals.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+  const stages: BIFunnelStage[] = BI_FUNNEL_COLS.map(col => ({ ...col, count: funnelCounts[col.id], isBottleneck: false }));
+  const active = stages.filter(s => s.id !== 'finalizado');
+  const maxCount = Math.max(0, ...active.map(s => s.count));
+  if (maxCount > 0) {
+    const idx = stages.findIndex(s => s.id !== 'finalizado' && s.count === maxCount);
+    if (idx !== -1) stages[idx].isBottleneck = true;
+  }
+
+  alerts.sort((a, b) => (a.urgency === 'high' ? 0 : 1) - (b.urgency === 'high' ? 0 : 1));
+
+  return {
+    totalReceived, totalPending, totalOverdue,
+    totalFinancial: totalReceived + totalPending + totalOverdue,
+    topProjects, renewals, stages, alerts,
+    team: BI_TEAM_DATA,
+  };
+}
+
+const BIDashboard: React.FC<{ clients: Client[] }> = ({ clients }) => {
+  const d = useMemo(() => computeBIData(clients), [clients]);
+  const recPct = d.totalFinancial > 0 ? (d.totalReceived / d.totalFinancial) * 100 : 0;
+  const penPct = d.totalFinancial > 0 ? (d.totalPending  / d.totalFinancial) * 100 : 0;
+  const ovdPct = d.totalFinancial > 0 ? (d.totalOverdue  / d.totalFinancial) * 100 : 0;
+  const bottleneck = d.stages.find(s => s.isBottleneck);
+
+  return (
+    <div className="w-full bg-gray-950 text-white min-h-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-black text-white tracking-tight">Business Intelligence</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Visão executiva · dados em tempo real</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600">
+            <Activity className="w-3.5 h-3.5" />
+            {clients.length} cliente{clients.length !== 1 ? 's' : ''} ativo{clients.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
+        {/* ── Q1: Saúde Financeira ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-3.5 h-3.5 text-gray-500" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Saúde Financeira</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            {/* Faturamento vs Recebíveis */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Faturamento vs Recebíveis</p>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between mb-1.5">
+                    <span className="text-xs font-bold text-gray-400">Recebido</span>
+                    <span className="text-xs font-black text-emerald-400">{formatBRL(d.totalReceived)}</span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${recPct}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1.5">
+                    <span className="text-xs font-bold text-gray-400">A Receber</span>
+                    <span className="text-xs font-black text-amber-400">{formatBRL(d.totalPending)}</span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${penPct}%` }} />
+                  </div>
+                </div>
+                {d.totalOverdue > 0 && (
+                  <div>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-xs font-bold text-gray-400">Atrasado</span>
+                      <span className="text-xs font-black text-red-400">{formatBRL(d.totalOverdue)}</span>
+                    </div>
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${ovdPct}%` }} />
+                    </div>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-gray-800 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-600">Total Contratado</span>
+                  <span className="text-sm font-black text-white">{formatBRL(d.totalFinancial)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Projetos */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Top Projetos Lucrativos</p>
+              {d.topProjects.length === 0 ? (
+                <p className="text-xs text-gray-600 italic">Nenhuma fatura cadastrada ainda</p>
+              ) : (
+                <div className="space-y-3">
+                  {d.topProjects.map((proj, i) => (
+                    <div key={proj.clientName} className="flex items-center gap-3">
+                      <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black ${i === 0 ? 'bg-violet-500/20 text-violet-400' : i === 1 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-gray-800 text-gray-500'}`}>
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{proj.clientName}</p>
+                      </div>
+                      <span className="flex-shrink-0 text-sm font-black text-emerald-400">{formatBRL(proj.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Vencimentos Próximos */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Vencimentos Próximos</p>
+                {d.renewals.length > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] font-black text-amber-400">
+                    <AlertTriangle className="w-3 h-3" /> {d.renewals.length}
+                  </span>
+                )}
+              </div>
+              {d.renewals.length === 0 ? (
+                <div className="flex items-center gap-2 text-xs text-emerald-400 font-bold">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" /> Nenhum vencimento nos próximos 30 dias
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {d.renewals.slice(0, 4).map((r, i) => (
+                    <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${r.daysLeft <= 7 ? 'bg-red-500/10 border-red-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
+                      <Clock className={`w-3.5 h-3.5 flex-shrink-0 ${r.daysLeft <= 7 ? 'text-red-400' : 'text-amber-400'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{r.clientName}</p>
+                        <p className={`text-[10px] font-bold ${r.daysLeft <= 7 ? 'text-red-400' : 'text-amber-400'}`}>
+                          {r.daysLeft === 0 ? 'Vence hoje' : `${r.daysLeft}d restantes`} · {formatBRL(r.amount)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Q2: Funil de Produção ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Layers className="w-3.5 h-3.5 text-gray-500" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Funil de Produção</h3>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <div className="flex items-stretch gap-1 overflow-x-auto pb-1">
+              {d.stages.map((stage, i) => (
+                <React.Fragment key={stage.id}>
+                  <div className={`flex-1 min-w-[90px] flex flex-col items-center gap-2 p-4 rounded-xl ${stage.isBottleneck ? 'ring-2 ring-red-500/50 bg-red-500/5' : 'bg-gray-800/40'}`}>
+                    <span className={`text-2xl font-black ${stage.isBottleneck ? 'text-red-400' : stage.count > 0 ? 'text-white' : 'text-gray-600'}`}>
+                      {stage.count}
+                    </span>
+                    <p className={`text-[10px] font-black text-center uppercase tracking-wide leading-tight ${stage.isBottleneck ? 'text-red-400' : 'text-gray-500'}`}>
+                      {stage.label}
+                    </p>
+                    {stage.isBottleneck && (
+                      <span className="flex items-center gap-1 text-[9px] font-black text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        <Zap className="w-2.5 h-2.5" /> Gargalo
+                      </span>
+                    )}
+                  </div>
+                  {i < d.stages.length - 1 && (
+                    <div className="flex items-center text-gray-700 flex-shrink-0">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            {bottleneck && (
+              <div className="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                <p className="text-xs font-bold text-red-400">
+                  Gargalo detectado: <strong>{bottleneck.count}</strong> {bottleneck.count === 1 ? 'vídeo acumulado' : 'vídeos acumulados'} em <strong>{bottleneck.label}</strong>
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Q3 + Q4: Alertas + Performance ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-8">
+
+          {/* Q3: Alertas Críticos */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="w-3.5 h-3.5 text-gray-500" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Alertas Críticos</h3>
+            </div>
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+              {d.alerts.length === 0 ? (
+                <div className="flex items-center gap-2 text-xs text-emerald-400 font-bold">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" /> Nenhuma pendência crítica no momento
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {d.alerts.slice(0, 7).map((alert, i) => (
+                    <div key={i} className={`flex items-start gap-3 px-3 py-3 rounded-xl border ${alert.urgency === 'high' ? 'bg-red-500/10 border-red-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                      <AlertTriangle className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${alert.urgency === 'high' ? 'text-red-400' : 'text-amber-400'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white">{alert.message}</p>
+                        <p className={`text-[11px] mt-0.5 ${alert.urgency === 'high' ? 'text-red-400' : 'text-amber-400'}`}>{alert.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Q4: Performance da Equipe */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-3.5 h-3.5 text-gray-500" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Performance da Equipe</h3>
+            </div>
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-5">
+              {d.team.map(member => (
+                <div key={member.name} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-white">{member.name}</p>
+                      <p className="text-[10px] text-gray-500">{member.role}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-black text-emerald-400">
+                      <TrendingUp className="w-3 h-3" /> {member.approvalRate}% aprovação
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[10px] font-bold text-gray-500">Carga Horária</span>
+                      <span className={`text-[10px] font-black ${member.workload >= 85 ? 'text-red-400' : member.workload >= 60 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {member.workload}% {member.workload >= 85 ? '· sobrecarregado' : member.workload >= 60 ? '· ocupado' : '· disponível'}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${member.workload >= 85 ? 'bg-red-500' : member.workload >= 60 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${member.workload}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────
 const ClientsHub: React.FC<ClientsHubProps> = ({
@@ -510,6 +868,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
   const [isTeamOpen, setIsTeamOpen]     = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [portalClient, setPortalClient]     = useState<Client | null>(null);
+  const [hubView, setHubView]               = useState<'bi' | 'clientes'>('bi');
 
   if (portalClient) {
     return (
@@ -581,6 +940,40 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
 
       {/* ══ Main ══ */}
       <main className="flex-1 overflow-y-auto">
+
+        {/* ── Hub view toggle ── */}
+        <div className="border-b border-zinc-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 sm:px-6 py-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-gray-900 border border-zinc-200 dark:border-gray-800 w-fit">
+              <button
+                onClick={() => setHubView('bi')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  hubView === 'bi'
+                    ? 'bg-white dark:bg-gray-700 text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 dark:text-gray-500 hover:text-zinc-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" /> Business Intelligence
+              </button>
+              <button
+                onClick={() => setHubView('clientes')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  hubView === 'clientes'
+                    ? 'bg-white dark:bg-gray-700 text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 dark:text-gray-500 hover:text-zinc-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Users className="w-4 h-4" /> Gestão de Clientes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── BI Dashboard ── */}
+        {hubView === 'bi' && <BIDashboard clients={clients} />}
+
+        {/* ── Clients view ── */}
+        {hubView === 'clientes' && (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
 
           {/* ══ Upcoming schedule ══ */}
@@ -710,6 +1103,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
             </div>
           )}
         </div>
+        )}
       </main>
 
       {/* ── FAB Mobile ── */}
