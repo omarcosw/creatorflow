@@ -280,30 +280,94 @@ const FollowerHistoryPortal: React.FC<{ clientId: string }> = ({ clientId }) => 
 // ─────────────────────────────────────────────
 // Pending actions
 // ─────────────────────────────────────────────
-const PENDING_ACTIONS = [
-  { bg: 'bg-amber-500/10 border-amber-500/20', icon: 'text-amber-400', text: 'text-amber-300', title: '2 Roteiros aguardando sua aprovação', sub: 'Prazo: até 28 Fev' },
-  { bg: 'bg-red-500/10 border-red-500/20',     icon: 'text-red-400',   text: 'text-red-300',   title: 'Fatura Fev/2026 em aberto',          sub: 'Vencimento: 01 Mar' },
-];
+const PendingActions: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const actions: { bg: string; icon: string; text: string; title: string; sub: string }[] = [];
 
-const PendingActions: React.FC = () => (
-  <section>
-    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Ações Pendentes</p>
-    <div className="space-y-2">
-      {PENDING_ACTIONS.map(action => (
-        <div key={action.title} className={`flex items-center gap-4 p-4 rounded-2xl border ${action.bg}`}>
-          <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${action.icon}`} />
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-bold ${action.text}`}>{action.title}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{action.sub}</p>
-          </div>
-          <button className={`flex-shrink-0 flex items-center gap-1 text-xs font-black ${action.icon} hover:opacity-70 transition-opacity`}>
-            Ver <ChevronRight className="w-3 h-3" />
-          </button>
+  // Scripts awaiting client approval
+  try {
+    const s = localStorage.getItem(`creator_flow_roteiros_${clientId}`);
+    if (s) {
+      const pkgs = JSON.parse(s) as { scripts: { portalStatus?: string }[]; subFolders?: unknown[] }[];
+      const countScripts = (list: typeof pkgs): number =>
+        list.reduce((acc, p) => {
+          const waiting = p.scripts.filter(sc => sc.portalStatus === 'aguardando_cliente').length;
+          const sub = (p.subFolders as typeof pkgs | undefined) ?? [];
+          return acc + waiting + countScripts(sub);
+        }, 0);
+      const count = countScripts(pkgs);
+      if (count > 0) {
+        actions.push({
+          bg:    'bg-amber-500/10 border-amber-500/20',
+          icon:  'text-amber-400',
+          text:  'text-amber-300',
+          title: `${count} Roteiro${count > 1 ? 's' : ''} aguardando sua aprovação`,
+          sub:   'Clique na aba Roteiros para revisar',
+        });
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Deliverables awaiting client approval
+  try {
+    const s = localStorage.getItem(`creator_flow_entregas_${clientId}`);
+    if (s) {
+      const items = JSON.parse(s) as { status: string }[];
+      const count = items.filter(d => d.status === 'aguardando').length;
+      if (count > 0) {
+        actions.push({
+          bg:    'bg-violet-500/10 border-violet-500/20',
+          icon:  'text-violet-400',
+          text:  'text-violet-300',
+          title: `${count} Vídeo${count > 1 ? 's' : ''} aguardando sua aprovação`,
+          sub:   'Clique na aba Vídeos para revisar',
+        });
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Invoices pending or overdue
+  try {
+    const s = localStorage.getItem(`creator_flow_invoices_${clientId}`);
+    if (s) {
+      const invoices = JSON.parse(s) as { status: string; title: string; dueDate: string }[];
+      const pending  = invoices.filter(inv => inv.status === 'pendente' || inv.status === 'atrasado');
+      pending.forEach(inv => {
+        const isOverdue = inv.status === 'atrasado';
+        actions.push({
+          bg:    isOverdue ? 'bg-red-500/10 border-red-500/20' : 'bg-orange-500/10 border-orange-500/20',
+          icon:  isOverdue ? 'text-red-400'                    : 'text-orange-400',
+          text:  isOverdue ? 'text-red-300'                    : 'text-orange-300',
+          title: `${isOverdue ? 'Fatura em atraso' : 'Fatura pendente'}: ${inv.title}`,
+          sub:   inv.dueDate ? `Vencimento: ${inv.dueDate}` : 'Clique na aba Financeiro',
+        });
+      });
+    }
+  } catch { /* ignore */ }
+
+  return (
+    <section>
+      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Ações Pendentes</p>
+      {actions.length === 0 ? (
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <p className="text-sm font-bold text-emerald-300">Você está em dia! Nada pendente por aqui.</p>
         </div>
-      ))}
-    </div>
-  </section>
-);
+      ) : (
+        <div className="space-y-2">
+          {actions.map(action => (
+            <div key={action.title} className={`flex items-center gap-4 p-4 rounded-2xl border ${action.bg}`}>
+              <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${action.icon}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${action.text}`}>{action.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{action.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
 
 // ─────────────────────────────────────────────
 // Star Rating
@@ -351,10 +415,15 @@ const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, 
   const [feedbackMode, setFeedbackMode] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [sent, setSent]                 = useState(false);
+  const [justApproved, setJustApproved] = useState(false);
 
   const cfg = REVIEW_STATUS_CONFIG[script.status];
 
-  const handleApprove = () => { onApprove(script.id); onClose(); };
+  const handleApprove = () => { onApprove(script.id); setJustApproved(true); };
+  const handleRateAndClose = (rating: number) => {
+    onRate?.(script.id, rating);
+    if (justApproved) setTimeout(onClose, 700);
+  };
   const handleSendFeedback = () => {
     if (!feedbackText.trim()) return;
     onRequestChange(script.id, feedbackText.trim());
@@ -391,21 +460,25 @@ const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, 
 
         {/* Approved feedback block + star rating */}
         {script.status === 'aprovado' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
               <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <p className="text-sm font-bold text-emerald-300">Roteiro aprovado. Obrigado pelo feedback!</p>
+              <p className="text-sm font-bold text-emerald-300">
+                {justApproved ? 'Roteiro aprovado! Como você avalia a escrita?' : 'Roteiro aprovado. Obrigado pelo feedback!'}
+              </p>
             </div>
             <div className="p-4 rounded-2xl bg-gray-900 border border-gray-800 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Avalie este roteiro</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                {justApproved ? 'Avalie antes de fechar' : 'Avalie este roteiro'}
+              </p>
               <div className="flex items-center gap-3">
                 <StarRating
                   value={script.rating ?? 0}
-                  onChange={rating => onRate?.(script.id, rating)}
-                  readonly={!!script.rating && script.rating > 0}
+                  onChange={handleRateAndClose}
+                  readonly={!justApproved && !!script.rating && script.rating > 0}
                 />
                 {!!script.rating && script.rating > 0 && (
-                  <span className="text-xs font-black text-amber-400">{script.rating}/5 ⭐</span>
+                  <span className="text-xs font-black text-amber-400">{script.rating}/5</span>
                 )}
               </div>
             </div>
@@ -692,9 +765,10 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
       return s ? JSON.parse(s) : [];
     } catch { return []; }
   });
-  const [feedbackOpen, setFeedbackOpen]   = useState<string | null>(null);
-  const [feedbackTexts, setFeedbackTexts] = useState<Record<string, string>>({});
-  const [feedbackSent, setFeedbackSent]   = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen]     = useState<string | null>(null);
+  const [feedbackTexts, setFeedbackTexts]   = useState<Record<string, string>>({});
+  const [feedbackSent, setFeedbackSent]     = useState<string | null>(null);
+  const [justApprovedId, setJustApprovedId] = useState<string | null>(null);
 
   const updateDeliverable = (id: string, updates: Partial<PortalDeliverable>) => {
     const updated = deliverables.map(d => d.id === id ? { ...d, ...updates } : d);
@@ -702,10 +776,15 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
     try { localStorage.setItem(ENTREGAS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
   };
 
-  const handleApprove = (id: string) =>
+  const handleApprove = (id: string) => {
     updateDeliverable(id, { status: 'aprovado', rating: deliverables.find(d => d.id === id)?.rating ?? 0 });
+    setJustApprovedId(id);
+  };
 
-  const handleRate = (id: string, rating: number) => updateDeliverable(id, { rating });
+  const handleRate = (id: string, rating: number) => {
+    updateDeliverable(id, { rating });
+    if (justApprovedId === id) setJustApprovedId(null);
+  };
 
   const handleSendFeedback = (id: string) => {
     const text = feedbackTexts[id]?.trim();
@@ -807,17 +886,19 @@ const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
 
                 {/* Approved: star rating */}
                 {item.status === 'aprovado' && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                       <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      <p className="text-xs font-bold text-emerald-300 flex-1">Aprovado!</p>
+                      <p className="text-xs font-bold text-emerald-300 flex-1">
+                        {justApprovedId === item.id ? 'Vídeo aprovado! Como você avalia?' : 'Aprovado!'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3 px-1">
                       <p className="text-xs text-gray-500 font-bold">Avaliação:</p>
                       <StarRating
                         value={item.rating ?? 0}
                         onChange={rating => handleRate(item.id, rating)}
-                        readonly={!!item.rating && item.rating > 0}
+                        readonly={justApprovedId !== item.id && !!item.rating && item.rating > 0}
                       />
                       {item.rating && item.rating > 0 && (
                         <span className="text-xs font-black text-amber-400">{item.rating}/5</span>
@@ -1272,7 +1353,7 @@ const ClientPortalView: React.FC<ClientPortalViewProps> = ({ client, onBack }) =
               <ProductionStepper />
               <AchievementsGrid clientId={client.id} />
               <FollowerHistoryPortal clientId={client.id} />
-              <PendingActions />
+              <PendingActions clientId={client.id} />
             </div>
           )}
 
