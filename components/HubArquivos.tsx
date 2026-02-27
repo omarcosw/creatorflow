@@ -23,6 +23,9 @@ import {
   AlertTriangle,
   Search,
   ExternalLink,
+  FolderPlus,
+  History,
+  RefreshCw,
 } from 'lucide-react';
 import { Client, HDD, Recording, StudioProfile } from '@/types';
 
@@ -138,6 +141,14 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
+  // ── "Continuar Backup" mode ────────────────
+  const [quizMode, setQuizMode]                 = useState<'novo' | 'continuar' | null>(null);
+  const [continueTargetId, setContinueTargetId] = useState('');
+  const [continueNotes, setContinueNotes]       = useState('');
+  const [continueSizeGB, setContinueSizeGB]     = useState('');
+  const [continueNewHddIds, setContinueNewHddIds] = useState<string[]>([]);
+  const [continuePendingDone, setContinuePendingDone] = useState<boolean | null>(null);
+
   // ── Clients — read from shared localStorage (same key as ClientsHub) ──
   const [clients] = useState<Client[]>(() => {
     try {
@@ -150,6 +161,12 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   const openQuiz = () => {
     setQuizForm({ ...INITIAL_FORM, recordedAt: new Date().toISOString().split('T')[0] });
     setCurrentStep(0);
+    setQuizMode(null);
+    setContinueTargetId('');
+    setContinueNotes('');
+    setContinueSizeGB('');
+    setContinueNewHddIds([]);
+    setContinuePendingDone(null);
     setIsQuizOpen(true);
   };
 
@@ -174,6 +191,34 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       case 6: return quizForm.hasPendingTakes !== null; // obrigatório Sim ou Não
       default: return true;
     }
+  };
+
+  const toggleContinueHdd = (id: string) =>
+    setContinueNewHddIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
+    );
+
+  const continueBackup = () => {
+    const target = recordings.find(r => r.id === continueTargetId);
+    if (!target) return;
+    const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const appendedNotes = continueNotes.trim()
+      ? `${target.technicalNotes ? target.technicalNotes + '\n' : ''}[${today}] ${continueNotes.trim()}`
+      : target.technicalNotes;
+    const mergedHdds = continueNewHddIds.length > 0
+      ? [...new Set([...target.hddIds, ...continueNewHddIds])]
+      : target.hddIds;
+    const updated: Recording = {
+      ...target,
+      technicalNotes: appendedNotes,
+      sizeGB: continueSizeGB ? parseFloat(continueSizeGB) : target.sizeGB,
+      lastUpdated: Date.now(),
+      hddIds: mergedHdds,
+      hasPendingTakes: continuePendingDone === false ? false : target.hasPendingTakes,
+      pendingTakesDescription: continuePendingDone === false ? undefined : target.pendingTakesDescription,
+    };
+    onSaveRecording(updated);
+    closeQuiz();
   };
 
   const saveRecording = () => {
@@ -651,6 +696,22 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Data</span>
                   <span className="text-zinc-700 dark:text-zinc-300 font-medium">{formatDate(selectedRecording.recordedAt)}</span>
                 </div>
+                {selectedRecording.lastUpdated && (
+                  <div className="px-4 py-3 flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Atualizado</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                      {new Date(selectedRecording.lastUpdated).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                )}
+                {selectedRecording.sizeGB && (
+                  <div className="px-4 py-3 flex items-center gap-2">
+                    <Archive className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Tamanho</span>
+                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">{selectedRecording.sizeGB} GB</span>
+                  </div>
+                )}
                 {selectedRecording.summary && (
                   <div className="px-4 py-3 flex items-start gap-2">
                     <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
@@ -787,7 +848,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       )}
 
       {/* ══════════════════════════════════════
-          MODAL: Quiz de Ingest (8 passos)
+          MODAL: Quiz de Ingest (8 passos) + Continuar Backup
       ══════════════════════════════════════ */}
       {isQuizOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
@@ -795,51 +856,288 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
             {/* ── Quiz: Header (fixo) ── */}
             <div className="px-6 pt-6 pb-4 flex-shrink-0">
-              {/* Barra de progresso */}
-              <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full mb-4 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500"
-                  style={{ width: `${((currentStep + 1) / TOTAL_STEPS) * 100}%` }}
-                />
-              </div>
 
-              {/* Indicadores de passo */}
-              <div className="flex items-center gap-1 mb-4">
-                {STEP_LABELS.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      idx === currentStep
-                        ? 'w-6 bg-violet-500'
-                        : idx < currentStep
-                        ? 'w-1.5 bg-violet-300 dark:bg-violet-700'
-                        : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
-                    Passo {currentStep + 1} de {TOTAL_STEPS}
-                  </span>
-                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                    <span>{STEP_ICONS[currentStep]}</span>
-                    {STEP_LABELS[currentStep]}
-                  </h3>
+              {/* Mode = null: seleção de tipo */}
+              {quizMode === null && (
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
+                      Registrar Ingest
+                    </span>
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
+                      Tipo de Operação
+                    </h3>
+                  </div>
+                  <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              )}
+
+              {/* Mode = 'continuar': header simples */}
+              {quizMode === 'continuar' && (
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
+                      Backup Existente
+                    </span>
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <History className="w-5 h-5 text-violet-500" />
+                      Continuar Backup
+                    </h3>
+                  </div>
+                  <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Mode = 'novo': header com progresso */}
+              {quizMode === 'novo' && (
+                <>
+                  {/* Barra de progresso */}
+                  <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full mb-4 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500"
+                      style={{ width: `${((currentStep + 1) / TOTAL_STEPS) * 100}%` }}
+                    />
+                  </div>
+                  {/* Indicadores de passo */}
+                  <div className="flex items-center gap-1 mb-4">
+                    {STEP_LABELS.map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          idx === currentStep
+                            ? 'w-6 bg-violet-500'
+                            : idx < currentStep
+                            ? 'w-1.5 bg-violet-300 dark:bg-violet-700'
+                            : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
+                        Passo {currentStep + 1} de {TOTAL_STEPS}
+                      </span>
+                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <span>{STEP_ICONS[currentStep]}</span>
+                        {STEP_LABELS[currentStep]}
+                      </h3>
+                    </div>
+                    <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* ── Quiz: Body (scrollável) ── */}
             <div className="px-6 overflow-y-auto flex-1">
 
+              {/* ─────────────────────────────────────
+                  Tela 0: Seleção de modo
+              ───────────────────────────────────── */}
+              {quizMode === null && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300 pb-6 pt-2">
+                  <p className="text-xs text-zinc-400 mb-1">Este material é um registro completamente novo, ou é a continuação de um backup que já está em andamento?</p>
+
+                  {/* Criar Novo */}
+                  <button
+                    onClick={() => setQuizMode('novo')}
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-violet-400 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all text-left group"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 transition-colors">
+                      <FolderPlus className="w-5 h-5 text-violet-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-zinc-900 dark:text-white">Criar Novo Registro</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">Preencha o quiz completo para um novo ingest de material.</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-violet-500 transition-colors flex-shrink-0" />
+                  </button>
+
+                  {/* Continuar Existente */}
+                  <button
+                    onClick={() => recordings.length > 0 ? setQuizMode('continuar') : undefined}
+                    disabled={recordings.length === 0}
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all text-left group disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                      <History className="w-5 h-5 text-indigo-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-zinc-900 dark:text-white">Continuar Backup Existente</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {recordings.length === 0
+                          ? 'Nenhum registro encontrado ainda.'
+                          : 'Vincule nova sessão a um backup já registrado, sem duplicar o registro.'}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-indigo-500 transition-colors flex-shrink-0" />
+                  </button>
+                </div>
+              )}
+
+              {/* ─────────────────────────────────────
+                  Tela: Continuar Backup Existente
+              ───────────────────────────────────── */}
+              {quizMode === 'continuar' && (() => {
+                const target = recordings.find(r => r.id === continueTargetId);
+                const availableHdds = hdds.filter(h => target ? !target.hddIds.includes(h.id) : true);
+                return (
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-6 pt-2">
+
+                    {/* Select recording */}
+                    <div>
+                      <label className={labelCls}>Selecionar Registro de Backup *</label>
+                      <select
+                        value={continueTargetId}
+                        onChange={e => { setContinueTargetId(e.target.value); setContinueNewHddIds([]); setContinuePendingDone(null); }}
+                        className={inputCls}
+                      >
+                        <option value="">— Escolha um registro —</option>
+                        {[...recordings]
+                          .sort((a, b) => (b.lastUpdated ?? b.createdAt) - (a.lastUpdated ?? a.createdAt))
+                          .map(rec => (
+                            <option key={rec.id} value={rec.id}>
+                              {rec.clientName ? `${rec.clientName} — ` : ''}{rec.title} · {formatDate(rec.recordedAt)}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Current info card */}
+                    {target && (
+                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 divide-y divide-zinc-100 dark:divide-zinc-800 overflow-hidden text-sm animate-in fade-in duration-200">
+                        <div className="px-4 py-3 flex items-center gap-2">
+                          <HardDrive className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">HDs</span>
+                          <span className="text-zinc-600 dark:text-zinc-300 text-xs">
+                            {target.hddIds.length > 0
+                              ? target.hddIds.map(id => hdds.find(h => h.id === id)?.name ?? 'Desconhecido').join(', ')
+                              : 'Sem HD'}
+                          </span>
+                        </div>
+                        {target.sizeGB && (
+                          <div className="px-4 py-3 flex items-center gap-2">
+                            <Archive className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Tamanho</span>
+                            <span className="text-zinc-600 dark:text-zinc-300 text-xs">{target.sizeGB} GB</span>
+                          </div>
+                        )}
+                        {target.technicalNotes && (
+                          <div className="px-4 py-3 flex items-start gap-2">
+                            <StickyNote className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-3">{target.technicalNotes}</p>
+                          </div>
+                        )}
+                        {target.hasPendingTakes && (
+                          <div className="px-4 py-3 flex items-center gap-2">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Pendencias de gravacao registradas</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* New notes */}
+                    <div>
+                      <label className={labelCls}>
+                        Adicionar Nota de Atualizacao{' '}
+                        <span className="normal-case font-normal">(opcional)</span>
+                      </label>
+                      <textarea
+                        value={continueNotes}
+                        onChange={e => setContinueNotes(e.target.value)}
+                        placeholder="Ex: Sessao de continuacao — 2ª parte gravada com Cam-B, 40GB adicionados…"
+                        rows={3}
+                        className={`${inputCls} resize-none`}
+                      />
+                      <p className="text-xs text-zinc-400 mt-1.5 flex items-center gap-1">
+                        <StickyNote className="w-3 h-3" /> A nota sera adicionada ao historico de obs. tecnicas com a data de hoje.
+                      </p>
+                    </div>
+
+                    {/* Update size */}
+                    <div>
+                      <label className={labelCls}>
+                        Tamanho Total Atualizado (GB){' '}
+                        <span className="normal-case font-normal">(opcional)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.1}
+                        value={continueSizeGB}
+                        onChange={e => setContinueSizeGB(e.target.value)}
+                        placeholder="Ex: 128"
+                        className={inputCls}
+                      />
+                    </div>
+
+                    {/* Add new HDs */}
+                    {target && availableHdds.length > 0 && (
+                      <div>
+                        <label className={labelCls}>
+                          Adicionar HDs ao Registro{' '}
+                          <span className="normal-case font-normal">(opcional)</span>
+                        </label>
+                        <div className="space-y-2">
+                          {availableHdds.map(hdd => {
+                            const sel = continueNewHddIds.includes(hdd.id);
+                            return (
+                              <button
+                                key={hdd.id}
+                                onClick={() => toggleContinueHdd(hdd.id)}
+                                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${sel ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700'}`}
+                              >
+                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-indigo-600 border-indigo-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                                  {sel && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                                </div>
+                                <HardDrive className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+                                <span className={`font-bold text-sm flex-1 ${sel ? 'text-indigo-700 dark:text-indigo-300' : 'text-zinc-700 dark:text-zinc-300'}`}>{hdd.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Resolve pending takes if any */}
+                    {target?.hasPendingTakes && (
+                      <div>
+                        <label className={labelCls}>Pendencias de Gravacao</label>
+                        <button
+                          onClick={() => setContinuePendingDone(p => p === false ? null : false)}
+                          className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                            continuePendingDone === false
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                              : 'border-zinc-200 dark:border-zinc-800 hover:border-emerald-300 dark:hover:border-emerald-700'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${continuePendingDone === false ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                            {continuePendingDone === false && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                          </div>
+                          <Check className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+                          <div>
+                            <p className={`font-bold text-sm ${continuePendingDone === false ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                              Pendencias resolvidas nesta sessao
+                            </p>
+                            <p className="text-xs text-zinc-400 mt-0.5">Marque se tudo que estava pendente foi gravado agora.</p>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* ─── Passo 0: O que foi gravado ─── */}
-              {currentStep === 0 && (
+              {quizMode === 'novo' && currentStep === 0 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   <div>
                     <label className={labelCls}>Título do Projeto *</label>
@@ -894,7 +1192,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 1: Data ─── */}
-              {currentStep === 1 && (
+              {quizMode === 'novo' && currentStep === 1 && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   <label className={labelCls}>Data da Gravação *</label>
                   <input
@@ -909,7 +1207,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 2: Roteiro ─── */}
-              {currentStep === 2 && (
+              {quizMode === 'novo' && currentStep === 2 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   <p className="text-xs text-zinc-400">Existe um roteiro para esse projeto?</p>
 
@@ -1001,7 +1299,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 3: HDs ─── */}
-              {currentStep === 3 && (
+              {quizMode === 'novo' && currentStep === 3 && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   {hdds.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
@@ -1045,7 +1343,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 4: Câmeras e Mídia ─── */}
-              {currentStep === 4 && (
+              {quizMode === 'novo' && currentStep === 4 && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
 
                   {/* Fallback: inventário vazio */}
@@ -1106,7 +1404,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 5: Obs. Técnicas ─── */}
-              {currentStep === 5 && (
+              {quizMode === 'novo' && currentStep === 5 && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   <label className={labelCls}>
                     Observações Técnicas{' '}
@@ -1125,7 +1423,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 6: Pendências ─── */}
-              {currentStep === 6 && (
+              {quizMode === 'novo' && currentStep === 6 && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   {/* Destaque visual */}
                   <div className="rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/10 p-4 flex items-start gap-3">
@@ -1182,7 +1480,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               )}
 
               {/* ─── Passo 7: Resumo Final ─── */}
-              {currentStep === 7 && (
+              {quizMode === 'novo' && currentStep === 7 && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   <p className="text-xs text-zinc-400 uppercase tracking-widest font-bold mb-1">Confira antes de salvar:</p>
 
@@ -1262,32 +1560,72 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
             {/* ── Quiz: Footer (fixo) ── */}
             <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
-              {currentStep > 0 ? (
+
+              {/* Mode null: sem footer (ações são nos cards) */}
+              {quizMode === null && (
                 <button
-                  onClick={prevStep}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                  onClick={closeQuiz}
+                  className="flex-1 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Voltar
+                  Cancelar
                 </button>
-              ) : (
-                <div className="flex-1" />
               )}
 
-              {currentStep < TOTAL_STEPS - 1 ? (
-                <button
-                  onClick={nextStep}
-                  disabled={!canProceed()}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Próximo <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={saveRecording}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/30 hover:opacity-90 transition-all"
-                >
-                  <Check className="w-4 h-4" /> Salvar no Acervo
-                </button>
+              {/* Mode 'continuar': Voltar + Atualizar */}
+              {quizMode === 'continuar' && (
+                <>
+                  <button
+                    onClick={() => setQuizMode(null)}
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Voltar
+                  </button>
+                  <button
+                    onClick={continueBackup}
+                    disabled={!continueTargetId}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Atualizar Registro
+                  </button>
+                </>
+              )}
+
+              {/* Mode 'novo': fluxo original de passos */}
+              {quizMode === 'novo' && (
+                <>
+                  {currentStep > 0 ? (
+                    <button
+                      onClick={prevStep}
+                      className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Voltar
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setQuizMode(null)}
+                      className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Voltar
+                    </button>
+                  )}
+
+                  {currentStep < TOTAL_STEPS - 1 ? (
+                    <button
+                      onClick={nextStep}
+                      disabled={!canProceed()}
+                      className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Proximo <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={saveRecording}
+                      className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/30 hover:opacity-90 transition-all"
+                    >
+                      <Check className="w-4 h-4" /> Salvar no Acervo
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

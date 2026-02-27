@@ -405,7 +405,11 @@ export default function DashboardPage() {
   };
 
   const handleSaveRecording = (recording: Recording) => {
-    setRecordings(prev => [recording, ...prev]);
+    setRecordings(prev => {
+      const exists = prev.some(r => r.id === recording.id);
+      if (exists) return prev.map(r => r.id === recording.id ? recording : r);
+      return [recording, ...prev];
+    });
   };
 
   const handleDeleteRecording = (id: string) => {

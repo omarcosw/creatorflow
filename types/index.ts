@@ -156,6 +156,10 @@ export interface Recording {
   hasPendingTakes?: boolean;
   pendingTakesDescription?: string;
 
+  // Tamanho e rastreio de continuações
+  sizeGB?: number;           // Tamanho total do material em GB
+  lastUpdated?: number;      // Timestamp da última atualização por "Continuar Backup"
+
   createdAt: number;
 }
 
