@@ -58,6 +58,7 @@ import {
   FolderPlus,
   Image as ImageIcon,
   Menu,
+  Pin,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -1037,7 +1038,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
   // ─────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-3 lg:h-[calc(100vh-200px)]">
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
 
       {/* ── Archive Modal ── */}
       {showArchiveModal && (
@@ -2134,6 +2135,7 @@ interface ScriptPackage {
   scripts: ScriptDocument[];
   createdAt: number;
   subFolders?: ScriptPackage[];
+  isPinnedToTimeline?: boolean;
 }
 
 const SCRIPT_STATUS_CYCLE: ScriptStatus[] = ['Rascunho', 'Aprovado', 'Gravado'];
@@ -2183,6 +2185,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   const [newSubFolderTitle, setNewSubFolderTitle] = useState('');
   const [expandedFolders, setExpandedFolders]     = useState<Set<string>>(new Set());
   const [generatingStoryboard, setGeneratingStoryboard] = useState<string | null>(null);
+  const [pinnedToast, setPinnedToast]             = useState(false);
   const [storyboardUsed, setStoryboardUsed]       = useState<number>(() => {
     try {
       const s = localStorage.getItem(`creator_flow_storyboard_${client.id}`);
@@ -2258,6 +2261,18 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       if (selectedPkgId === pkgId) setSelectedPkgId(remaining[0]?.id ?? '');
       return remaining;
     });
+  };
+
+  const pinToTimeline = (pkgId: string) => {
+    const setPin = (pkgs: ScriptPackage[]): ScriptPackage[] =>
+      pkgs.map(p => ({
+        ...p,
+        isPinnedToTimeline: p.id === pkgId,
+        subFolders: p.subFolders ? setPin(p.subFolders) : undefined,
+      }));
+    setPackages(prev => setPin(prev));
+    setPinnedToast(true);
+    setTimeout(() => setPinnedToast(false), 2500);
   };
 
   const toggleFolderExpanded = (pkgId: string) => {
@@ -2375,6 +2390,17 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
               <FolderPlus className="w-3 h-3" />
             </button>
             <button
+              onClick={() => pinToTimeline(pkg.id)}
+              className={`opacity-0 group-hover:opacity-100 p-1 transition-all rounded-lg flex-shrink-0 ${
+                pkg.isPinnedToTimeline
+                  ? 'text-amber-500 opacity-100'
+                  : 'text-zinc-300 dark:text-zinc-700 hover:text-amber-500'
+              }`}
+              title="Destacar na Timeline"
+            >
+              <Pin className="w-3 h-3" />
+            </button>
+            <button
               onClick={() => { if (confirm(`Excluir pasta "${pkg.title}"?`)) deletePackage(pkg.id); }}
               className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
             >
@@ -2414,6 +2440,14 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   // ─────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:flex-row gap-5">
+
+      {/* ── Pinned toast ── */}
+      {pinnedToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gray-900 border border-amber-500/30 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <Pin className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <p className="text-sm font-bold text-white">Projeto vinculado à Visão Geral</p>
+        </div>
+      )}
 
       {/* ── Sidebar: Packages ── */}
       <aside className="w-full lg:w-56 xl:w-64 flex-shrink-0">
@@ -3542,7 +3576,8 @@ interface VisaoGeralData {
   opportunityScript: { title: string } | null;
   nextRecordings:    AgendaEvent[];
   radarFeedbacks:    { title: string; rating: number; feedback?: string; type: 'script' | 'deliverable' }[];
-  stageIdx:          number;
+  stageIdx:          number | null;  // null = no pinned package
+  pinnedTitle:       string | null;
   healthScore:       number;
 }
 
@@ -3558,7 +3593,8 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
     let nextRecordings:    AgendaEvent[]   = [];
     let radarFeedbacks:    VisaoGeralData['radarFeedbacks']    = [];
     let allScripts:        ScriptDocument[] = [];
-    let stageIdx           = 0;
+    let stageIdx:          number | null    = null;
+    let pinnedTitle:       string | null    = null;
     let healthScore        = 100;
 
     // ── Roteiros ────────────────────────────────
@@ -3576,6 +3612,33 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
           .slice(0, 3)
           .map(sc => ({ title: sc.title, rating: sc.rating!, type: 'script' as const }));
         radarFeedbacks.push(...scriptFbs);
+
+        // ── Pinned package → Timeline stage ─────
+        const findPinned = (list: ScriptPackage[]): ScriptPackage | null => {
+          for (const p of list) {
+            if (p.isPinnedToTimeline) return p;
+            if (p.subFolders) { const found = findPinned(p.subFolders); if (found) return found; }
+          }
+          return null;
+        };
+        const pinned = findPinned(pkgs);
+        if (pinned) {
+          pinnedTitle = pinned.title;
+          const sc = pinned.scripts;
+          if (sc.length === 0) {
+            stageIdx = 0; // Briefing
+          } else {
+            const allGravado    = sc.every(r => r.status === 'Gravado');
+            const hasGravado    = sc.some(r => r.status === 'Gravado');
+            const hasAprovado   = sc.some(r => r.portalStatus === 'aprovado_cliente' || r.status === 'Aprovado');
+            const hasAguardando = sc.some(r => r.portalStatus === 'aguardando_cliente');
+            if      (allGravado)    stageIdx = 5;
+            else if (hasGravado)    stageIdx = 4;
+            else if (hasAprovado)   stageIdx = 3;
+            else if (hasAguardando) stageIdx = 2;
+            else                    stageIdx = 1;
+          }
+        }
       }
     } catch { /* ignore */ }
 
@@ -3662,11 +3725,13 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
     } catch { /* ignore */ }
 
     radarFeedbacks = radarFeedbacks.slice(0, 3);
-    return { awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks, stageIdx, healthScore };
+    return { awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks, stageIdx, pinnedTitle, healthScore };
   });
 
-  const stageIdx    = data.stageIdx;
-  const progressPct = Math.round((stageIdx / (PRODUCTION_STAGES.length - 1)) * 100);
+  const stageIdx    = data.stageIdx;         // null when no package is pinned
+  const progressPct = stageIdx !== null
+    ? Math.round((stageIdx / (PRODUCTION_STAGES.length - 1)) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -3782,57 +3847,79 @@ const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
         {/* ── Timeline de Produção ── */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5"><Clapperboard className="w-3.5 h-3.5" /> Timeline de Produção</p>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">Automático</span>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+              <Clapperboard className="w-3.5 h-3.5" /> Timeline de Produção
+            </p>
+            {stageIdx !== null && data.pinnedTitle && (
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20 max-w-[140px] truncate">
+                <Pin className="w-2.5 h-2.5 flex-shrink-0" /> {data.pinnedTitle}
+              </span>
+            )}
           </div>
 
-          <div className="flex items-start">
-            {PRODUCTION_STAGES.map((stage, i) => {
-              const isCompleted = i < stageIdx;
-              const isCurrent   = i === stageIdx;
-              return (
-                <React.Fragment key={stage}>
-                  <div className="flex flex-col items-center gap-1.5 flex-1">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      isCompleted ? 'bg-violet-600 border-violet-500'
-                      : isCurrent  ? 'bg-violet-600/20 border-violet-500 ring-2 ring-violet-500/25'
-                      :              'bg-gray-800 border-gray-700'
-                    }`}>
-                      {isCompleted
-                        ? <Check className="w-3 h-3 text-white" />
-                        : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-violet-400' : 'bg-gray-600'}`} />
-                      }
-                    </div>
-                    <p className={`text-[9px] font-black text-center leading-tight ${
-                      isCurrent ? 'text-violet-300' : isCompleted ? 'text-gray-500' : 'text-gray-700'
-                    }`}>{stage}</p>
-                  </div>
-                  {i < PRODUCTION_STAGES.length - 1 && (
-                    <div className={`flex-shrink-0 h-px w-3 mt-3.5 ${i < stageIdx ? 'bg-violet-600' : 'bg-gray-700'}`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+          {stageIdx === null ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center">
+                <Pin className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-500">Nenhuma pasta vinculada</p>
+                <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                  Selecione uma pasta na Sala de Roteiros<br />e clique em <span className="text-amber-500 font-bold">Destacar na Timeline</span>.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start">
+                {PRODUCTION_STAGES.map((stage, i) => {
+                  const isCompleted = i < stageIdx;
+                  const isCurrent   = i === stageIdx;
+                  return (
+                    <React.Fragment key={stage}>
+                      <div className="flex flex-col items-center gap-1.5 flex-1">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                          isCompleted ? 'bg-violet-600 border-violet-500'
+                          : isCurrent  ? 'bg-violet-600/20 border-violet-500 ring-2 ring-violet-500/25'
+                          :              'bg-gray-800 border-gray-700'
+                        }`}>
+                          {isCompleted
+                            ? <Check className="w-3 h-3 text-white" />
+                            : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-violet-400' : 'bg-gray-600'}`} />
+                          }
+                        </div>
+                        <p className={`text-[9px] font-black text-center leading-tight ${
+                          isCurrent ? 'text-violet-300' : isCompleted ? 'text-gray-500' : 'text-gray-700'
+                        }`}>{stage}</p>
+                      </div>
+                      {i < PRODUCTION_STAGES.length - 1 && (
+                        <div className={`flex-shrink-0 h-px w-3 mt-3.5 ${i < stageIdx ? 'bg-violet-600' : 'bg-gray-700'}`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Progresso</span>
-              <span className="text-[11px] font-black text-violet-400">{progressPct}%</span>
-            </div>
-            <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Progresso</span>
+                  <span className="text-[11px] font-black text-violet-400">{progressPct}%</span>
+                </div>
+                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full transition-all duration-500"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+              </div>
 
-          {stageIdx === PRODUCTION_STAGES.length - 1 && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <p className="text-xs font-black text-emerald-300">Projeto Finalizado!</p>
-            </div>
+              {stageIdx === PRODUCTION_STAGES.length - 1 && (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <p className="text-xs font-black text-emerald-300">Projeto Finalizado!</p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -5114,9 +5201,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
         </div>
 
         {/* ── Content ── */}
-        <main className="flex-1 overflow-y-auto bg-gray-900">
+        <main className={`flex-1 bg-gray-900 ${activeTab === 'kanban' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
           <div className={
-            activeTab === 'kanban' || activeTab === 'agenda' || activeTab === 'roteiros'
+            activeTab === 'kanban'
+              ? 'flex flex-col flex-1 min-h-0 p-4'
+              : activeTab === 'agenda' || activeTab === 'roteiros'
               ? 'w-full p-4'
               : 'w-full max-w-4xl mx-auto px-4 sm:px-6 py-8'
           }>
