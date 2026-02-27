@@ -5157,7 +5157,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           Mobile: overlay, slides in from left
          ══════════════════════════════════ */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-gray-950 border-r border-gray-800
+        fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-gray-950 border-r border-gray-800/50
         transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0 lg:flex-shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -5217,21 +5217,30 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
         {/* ── Nav pills ── */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" aria-label="Abas do workspace">
-          {TABS.map(tab => {
+          {TABS.map((tab, i) => {
             const isActive = activeTab === tab.id;
+            /* separator before secondary tabs */
+            const showSep = i === 5; // before 'acervo'
             return (
-              <button
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  isActive
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-                }`}
-              >
-                <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-indigo-400' : 'text-gray-500'}`} />
-                <span className="truncate">{tab.label}</span>
-              </button>
+              <React.Fragment key={tab.id}>
+                {showSep && (
+                  <div className="mx-3 my-2 h-px bg-gray-800/70" />
+                )}
+                <button
+                  onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                  className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
+                    isActive
+                      ? 'bg-white/[0.07] text-white'
+                      : 'text-gray-500 hover:text-gray-200 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute left-0 inset-y-0 my-2 w-[2px] rounded-full bg-indigo-500" />
+                  )}
+                  <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-600 group-hover:text-gray-400'}`} />
+                  <span className="truncate">{tab.label}</span>
+                </button>
+              </React.Fragment>
             );
           })}
         </nav>
@@ -5258,6 +5267,30 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           </span>
         </div>
 
+        {/* ── Desktop topbar ── */}
+        <div className="hidden lg:flex flex-shrink-0 items-center gap-4 px-6 py-2.5 border-b border-gray-800/50 bg-gray-950/80">
+          <div className="flex-1 min-w-0 flex items-center gap-2 text-[11px]">
+            <span className="font-black text-gray-500 truncate">{client.brandName}</span>
+            <span className="text-gray-700">/</span>
+            <span className="font-black text-gray-400 truncate">
+              {TABS.find(t => t.id === activeTab)?.label}
+            </span>
+          </div>
+          <div className="flex-shrink-0 flex items-center gap-2.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700">Saúde</span>
+            <div className="relative w-20 h-1 rounded-full overflow-hidden bg-gray-800">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" />
+              <div
+                className="absolute inset-y-0 right-0 bg-gray-950 transition-all duration-700"
+                style={{ width: `${100 - sidebarHealth}%` }}
+              />
+            </div>
+            <span className={`text-[10px] font-black tabular-nums ${sidebarHealth < 34 ? 'text-red-400' : sidebarHealth < 67 ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {sidebarHealth}%
+            </span>
+          </div>
+        </div>
+
         {/* ── Content ── */}
         <main className={`flex-1 bg-gray-900 ${activeTab === 'kanban' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
           <div className={
@@ -5265,7 +5298,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
               ? 'flex flex-col flex-1 min-h-0 p-4'
               : activeTab === 'agenda' || activeTab === 'roteiros'
               ? 'w-full p-4'
-              : 'w-full max-w-4xl mx-auto px-4 sm:px-6 py-8'
+              : 'w-full max-w-5xl mx-auto px-4 sm:px-6 py-8'
           }>
 
 
