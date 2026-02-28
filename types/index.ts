@@ -284,6 +284,19 @@ export interface ProjectDocument {
   addedAt: number;
 }
 
+export type TransactionStatus = 'pending' | 'paid';
+
+export interface Transaction {
+  id: string;
+  date: string;               // YYYY-MM-DD
+  description: string;
+  category: string;           // budget category name
+  payee: string;              // supplier / professional
+  amount: number;
+  status: TransactionStatus;
+  receiptUrl?: string;        // optional proof link
+}
+
 export interface ExecutiveProject {
   id: string;
   name: string;
@@ -296,4 +309,5 @@ export interface ExecutiveProject {
   teamMembers: TeamMember[];
   milestones: Milestone[];
   documents: ProjectDocument[];
+  transactions: Transaction[];
 }

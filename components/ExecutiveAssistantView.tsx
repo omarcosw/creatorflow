@@ -22,6 +22,7 @@ import ExecutiveTeamManagement from '@/components/ExecutiveTeamManagement';
 import ExecutiveMonitoringCenter from '@/components/ExecutiveMonitoringCenter';
 import ExecutiveSchedule from '@/components/ExecutiveSchedule';
 import ExecutiveDocuments from '@/components/ExecutiveDocuments';
+import ExecutiveFinancialControl from '@/components/ExecutiveFinancialControl';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -94,9 +95,10 @@ function loadProjects(): ExecutiveProject[] {
     return raw.map(p => ({
       ...p,
       budgetCategories: p.budgetCategories ?? createDefaultBudgetCategories(),
-      teamMembers: p.teamMembers ?? [],
-      milestones: p.milestones ?? [],
-      documents:  p.documents  ?? [],
+      teamMembers:      p.teamMembers      ?? [],
+      milestones:       p.milestones       ?? [],
+      documents:        p.documents        ?? [],
+      transactions:     p.transactions     ?? [],
     }));
   } catch {
     return [];
@@ -142,9 +144,10 @@ function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
       status: 'pre_producao',
       createdAt: Date.now(),
       budgetCategories: createDefaultBudgetCategories(),
-      teamMembers: [],
-      milestones: [],
-      documents:  [],
+      teamMembers:  [],
+      milestones:   [],
+      documents:    [],
+      transactions: [],
     });
   };
 
@@ -558,6 +561,8 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
             <ExecutiveSchedule project={project} onUpdate={handleUpdateProject} />
           ) : activeModule === 'documentos' ? (
             <ExecutiveDocuments project={project} onUpdate={handleUpdateProject} />
+          ) : activeModule === 'financeiro' ? (
+            <ExecutiveFinancialControl project={project} onUpdate={handleUpdateProject} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center px-6">
