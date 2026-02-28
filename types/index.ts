@@ -264,6 +264,26 @@ export interface TeamMember {
   totalCost: number;    // days * agreedRate (auto-calculated)
 }
 
+export type MilestoneType = 'pre_producao' | 'captacao' | 'pos';
+
+export interface Milestone {
+  id: string;
+  title: string;
+  date: string;         // YYYY-MM-DD
+  type: MilestoneType;
+  done: boolean;
+}
+
+export type DocumentType = 'documento' | 'planilha' | 'apresentacao' | 'outro';
+
+export interface ProjectDocument {
+  id: string;
+  title: string;
+  url: string;
+  type: DocumentType;
+  addedAt: number;
+}
+
 export interface ExecutiveProject {
   id: string;
   name: string;
@@ -274,4 +294,6 @@ export interface ExecutiveProject {
   createdAt: number;
   budgetCategories: BudgetCategory[];
   teamMembers: TeamMember[];
+  milestones: Milestone[];
+  documents: ProjectDocument[];
 }

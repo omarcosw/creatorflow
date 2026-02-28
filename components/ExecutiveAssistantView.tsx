@@ -17,6 +17,9 @@ import {
 import type { ProjectStatus, ExecutiveProject, BudgetCategory } from '@/types';
 import ExecutiveBudgetSheet from '@/components/ExecutiveBudgetSheet';
 import ExecutiveTeamManagement from '@/components/ExecutiveTeamManagement';
+import ExecutiveMonitoringCenter from '@/components/ExecutiveMonitoringCenter';
+import ExecutiveSchedule from '@/components/ExecutiveSchedule';
+import ExecutiveDocuments from '@/components/ExecutiveDocuments';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -88,6 +91,8 @@ function loadProjects(): ExecutiveProject[] {
       ...p,
       budgetCategories: p.budgetCategories ?? createDefaultBudgetCategories(),
       teamMembers: p.teamMembers ?? [],
+      milestones: p.milestones ?? [],
+      documents:  p.documents  ?? [],
     }));
   } catch {
     return [];
@@ -134,6 +139,8 @@ function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
       createdAt: Date.now(),
       budgetCategories: createDefaultBudgetCategories(),
       teamMembers: [],
+      milestones: [],
+      documents:  [],
     });
   };
 
@@ -506,10 +513,16 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
 
         {/* Content area */}
         <main className="flex-1 overflow-hidden bg-gray-900 flex flex-col">
-          {activeModule === 'orcamento' ? (
+          {activeModule === 'monitoramento' ? (
+            <ExecutiveMonitoringCenter project={project} />
+          ) : activeModule === 'orcamento' ? (
             <ExecutiveBudgetSheet project={project} onUpdate={handleUpdateProject} />
           ) : activeModule === 'equipe' ? (
             <ExecutiveTeamManagement project={project} onUpdate={handleUpdateProject} />
+          ) : activeModule === 'cronograma' ? (
+            <ExecutiveSchedule project={project} onUpdate={handleUpdateProject} />
+          ) : activeModule === 'documentos' ? (
+            <ExecutiveDocuments project={project} onUpdate={handleUpdateProject} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center px-6">
