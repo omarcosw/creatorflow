@@ -243,6 +243,27 @@ export interface BudgetCategory {
   items: BudgetItem[];
 }
 
+export interface Freelancer {
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+  baseDailyRate: number;
+}
+
+export interface TeamMember {
+  id: string;
+  freelancerId: string;
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+  days: number;
+  agreedRate: number;   // daily rate agreed for this project
+  totalCost: number;    // days * agreedRate (auto-calculated)
+}
+
 export interface ExecutiveProject {
   id: string;
   name: string;
@@ -252,4 +273,5 @@ export interface ExecutiveProject {
   status: ProjectStatus;
   createdAt: number;
   budgetCategories: BudgetCategory[];
+  teamMembers: TeamMember[];
 }

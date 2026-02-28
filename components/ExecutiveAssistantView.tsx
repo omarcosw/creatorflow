@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { ProjectStatus, ExecutiveProject, BudgetCategory } from '@/types';
 import ExecutiveBudgetSheet from '@/components/ExecutiveBudgetSheet';
+import ExecutiveTeamManagement from '@/components/ExecutiveTeamManagement';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,10 +83,11 @@ function loadProjects(): ExecutiveProject[] {
     const s = localStorage.getItem(STORAGE_KEY);
     if (!s) return [];
     const raw = JSON.parse(s) as ExecutiveProject[];
-    // Migration: ensure every project has budgetCategories
+    // Migration: ensure every project has all required arrays
     return raw.map(p => ({
       ...p,
       budgetCategories: p.budgetCategories ?? createDefaultBudgetCategories(),
+      teamMembers: p.teamMembers ?? [],
     }));
   } catch {
     return [];
@@ -131,6 +133,7 @@ function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
       status: 'pre_producao',
       createdAt: Date.now(),
       budgetCategories: createDefaultBudgetCategories(),
+      teamMembers: [],
     });
   };
 
@@ -505,6 +508,8 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
         <main className="flex-1 overflow-hidden bg-gray-900 flex flex-col">
           {activeModule === 'orcamento' ? (
             <ExecutiveBudgetSheet project={project} onUpdate={handleUpdateProject} />
+          ) : activeModule === 'equipe' ? (
+            <ExecutiveTeamManagement project={project} onUpdate={handleUpdateProject} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center px-6">
