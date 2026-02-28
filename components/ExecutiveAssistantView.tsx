@@ -13,6 +13,8 @@ import {
   FileText,
   Menu,
   Briefcase,
+  Shield,
+  Eye,
 } from 'lucide-react';
 import type { ProjectStatus, ExecutiveProject, BudgetCategory } from '@/types';
 import ExecutiveBudgetSheet from '@/components/ExecutiveBudgetSheet';
@@ -47,6 +49,8 @@ const MODULES = [
 ] as const;
 
 type ModuleId = typeof MODULES[number]['id'];
+
+const ADMIN_ONLY_MODULE_IDS: ModuleId[] = ['monitoramento', 'orcamento', 'financeiro'];
 
 const STATUS_CONFIG: Record<
   ProjectStatus,
@@ -251,6 +255,7 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
   const [showModal, setShowModal]           = useState(false);
   const [activeModule, setActiveModule]     = useState<ModuleId>('monitoramento');
   const [sidebarOpen, setSidebarOpen]       = useState(false);
+  const [viewRole, setViewRole]             = useState<'admin' | 'member'>('admin');
 
   useEffect(() => {
     saveProjects(projects);
@@ -264,8 +269,16 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
   const handleOpenProject = useCallback((project: ExecutiveProject) => {
     setSelectedProject(project);
     setActiveModule('monitoramento');
+    setViewRole('admin');
     setView('project');
   }, []);
+
+  const handleSetViewRole = useCallback((role: 'admin' | 'member') => {
+    setViewRole(role);
+    if (role === 'member' && ADMIN_ONLY_MODULE_IDS.includes(activeModule)) {
+      setActiveModule('cronograma');
+    }
+  }, [activeModule]);
 
   const handleBackToLobby = useCallback(() => {
     setView('lobby');
@@ -460,11 +473,33 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
               </span>
             );
           })()}
+
+          {/* View role toggle */}
+          <div className="mt-3 flex items-center gap-1 p-1 bg-gray-800 rounded-xl">
+            <button
+              onClick={() => handleSetViewRole('admin')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewRole === 'admin' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <Shield className="w-3 h-3" />
+              Admin
+            </button>
+            <button
+              onClick={() => handleSetViewRole('member')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewRole === 'member' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <Eye className="w-3 h-3" />
+              Membro
+            </button>
+          </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {MODULES.map(mod => {
+          {(viewRole === 'admin' ? MODULES : MODULES.filter(m => !ADMIN_ONLY_MODULE_IDS.includes(m.id))).map(mod => {
             const isActive = activeModule === mod.id;
             const Icon = mod.icon;
             return (
@@ -518,7 +553,7 @@ export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantVie
           ) : activeModule === 'orcamento' ? (
             <ExecutiveBudgetSheet project={project} onUpdate={handleUpdateProject} />
           ) : activeModule === 'equipe' ? (
-            <ExecutiveTeamManagement project={project} onUpdate={handleUpdateProject} />
+            <ExecutiveTeamManagement project={project} onUpdate={handleUpdateProject} readOnly={viewRole === 'member'} />
           ) : activeModule === 'cronograma' ? (
             <ExecutiveSchedule project={project} onUpdate={handleUpdateProject} />
           ) : activeModule === 'documentos' ? (

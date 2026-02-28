@@ -372,9 +372,10 @@ function ScaleModal({ onClose, onAdd }: ScaleModalProps) {
 interface Props {
   project: ExecutiveProject;
   onUpdate: (updated: ExecutiveProject) => void;
+  readOnly?: boolean;
 }
 
-export default function ExecutiveTeamManagement({ project, onUpdate }: Props) {
+export default function ExecutiveTeamManagement({ project, onUpdate, readOnly = false }: Props) {
   const [showModal, setShowModal] = useState(false);
 
   const totalTeamCost = project.teamMembers.reduce((sum, m) => sum + m.totalCost, 0);
@@ -402,27 +403,36 @@ export default function ExecutiveTeamManagement({ project, onUpdate }: Props) {
       <div className="flex-1 overflow-y-auto p-5">
 
         {/* Summary + action bar */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="px-5 py-3.5 bg-gray-900 border border-gray-800 rounded-2xl">
-            <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
-              Custo Total da Equipe
+        {!readOnly ? (
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="px-5 py-3.5 bg-gray-900 border border-gray-800 rounded-2xl">
+              <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                Custo Total da Equipe
+              </div>
+              <div className="text-2xl font-black text-white tabular-nums">
+                {formatCurrency(totalTeamCost)}
+              </div>
+              <div className="text-xs text-gray-600 mt-0.5">
+                {project.teamMembers.length} profissional{project.teamMembers.length !== 1 ? 'is' : ''} escalado{project.teamMembers.length !== 1 ? 's' : ''}
+              </div>
             </div>
-            <div className="text-2xl font-black text-white tabular-nums">
-              {formatCurrency(totalTeamCost)}
-            </div>
-            <div className="text-xs text-gray-600 mt-0.5">
-              {project.teamMembers.length} profissional{project.teamMembers.length !== 1 ? 'is' : ''} escalado{project.teamMembers.length !== 1 ? 's' : ''}
-            </div>
-          </div>
 
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            Escalar Profissional
-          </button>
-        </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Escalar Profissional
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <h2 className="text-base font-bold text-white">Equipe do Projeto</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {project.teamMembers.length} profissional{project.teamMembers.length !== 1 ? 'is' : ''} escalado{project.teamMembers.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
 
         {/* Empty state */}
         {project.teamMembers.length === 0 ? (
@@ -432,15 +442,24 @@ export default function ExecutiveTeamManagement({ project, onUpdate }: Props) {
             </div>
             <h3 className="text-base font-bold text-gray-400 mb-1">Nenhum profissional escalado</h3>
             <p className="text-sm text-gray-600">
-              Clique em "Escalar Profissional" para montar a equipe do projeto.
+              {readOnly
+                ? 'Nenhum profissional foi escalado para este projeto.'
+                : 'Clique em "Escalar Profissional" para montar a equipe do projeto.'}
             </p>
           </div>
         ) : (
           /* Team table */
           <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
             {/* Table header (desktop) */}
-            <div className="hidden md:grid md:grid-cols-[2fr_1.5fr_2fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-gray-800">
-              {['Nome', 'Função', 'Contato', 'Diárias', 'Custo/Dia', 'Custo Total', ''].map(h => (
+            <div className={`hidden gap-4 px-5 py-3 border-b border-gray-800 ${
+              readOnly
+                ? 'md:grid md:grid-cols-[2fr_1.5fr_2fr_auto]'
+                : 'md:grid md:grid-cols-[2fr_1.5fr_2fr_auto_auto_auto_auto]'
+            }`}>
+              {(readOnly
+                ? ['Nome', 'Função', 'Contato', 'Diárias']
+                : ['Nome', 'Função', 'Contato', 'Diárias', 'Custo/Dia', 'Custo Total', '']
+              ).map(h => (
                 <span
                   key={h}
                   className="text-[9px] font-black text-gray-500 uppercase tracking-widest"
@@ -454,7 +473,11 @@ export default function ExecutiveTeamManagement({ project, onUpdate }: Props) {
             {project.teamMembers.map((member, idx) => (
               <div
                 key={member.id}
-                className={`flex flex-col md:grid md:grid-cols-[2fr_1.5fr_2fr_auto_auto_auto_auto] gap-2 md:gap-4 items-start md:items-center px-5 py-4 ${
+                className={`flex flex-col gap-2 items-start px-5 py-4 ${
+                  readOnly
+                    ? 'md:grid md:grid-cols-[2fr_1.5fr_2fr_auto] md:gap-4 md:items-center'
+                    : 'md:grid md:grid-cols-[2fr_1.5fr_2fr_auto_auto_auto_auto] md:gap-4 md:items-center'
+                } ${
                   idx < project.teamMembers.length - 1 ? 'border-b border-gray-800/50' : ''
                 }`}
               >
@@ -496,32 +519,38 @@ export default function ExecutiveTeamManagement({ project, onUpdate }: Props) {
                 </span>
 
                 {/* Agreed rate */}
-                <span className="text-sm text-gray-400 pl-11 md:pl-0 whitespace-nowrap">
-                  {formatCurrency(member.agreedRate)}
-                </span>
+                {!readOnly && (
+                  <span className="text-sm text-gray-400 pl-11 md:pl-0 whitespace-nowrap">
+                    {formatCurrency(member.agreedRate)}
+                  </span>
+                )}
 
                 {/* Total cost */}
-                <span className="text-sm font-black text-white pl-11 md:pl-0 whitespace-nowrap">
-                  {formatCurrency(member.totalCost)}
-                </span>
+                {!readOnly && (
+                  <span className="text-sm font-black text-white pl-11 md:pl-0 whitespace-nowrap">
+                    {formatCurrency(member.totalCost)}
+                  </span>
+                )}
 
                 {/* Remove */}
-                <div className="pl-11 md:pl-0">
-                  <button
-                    onClick={() => handleRemoveMember(member.id)}
-                    className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                    title="Remover da equipe"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="pl-11 md:pl-0">
+                    <button
+                      onClick={() => handleRemoveMember(member.id)}
+                      className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      title="Remover da equipe"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {showModal && (
+      {showModal && !readOnly && (
         <ScaleModal onClose={() => setShowModal(false)} onAdd={handleAddMember} />
       )}
     </div>
