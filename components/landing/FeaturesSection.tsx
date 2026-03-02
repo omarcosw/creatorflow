@@ -1,17 +1,31 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FileText, Sparkles, Film, MessageSquare, Calculator, Search, Play } from 'lucide-react';
+import { Sparkles, Play, Users, Briefcase, Clapperboard, LineChart } from 'lucide-react';
 import FeatureCard from './ui/FeatureCard';
 import GradientButton from './ui/GradientButton';
 
 const features = [
-  { icon: FileText, title: 'Gerador de Roteiro', description: 'Crie roteiros profissionais com IA para qualquer formato de v\u00eddeo.' },
-  { icon: Sparkles, title: 'F\u00e1brica de Conte\u00fado', description: 'Ideias de conte\u00fado ilimitadas baseadas em tend\u00eancias e nicho.' },
-  { icon: Film, title: 'Storyboard Visual', description: 'Visualize suas cenas com imagens geradas por IA.' },
-  { icon: MessageSquare, title: 'Legendas Inteligentes', description: 'Legendas otimizadas para engajamento em todas as redes.' },
-  { icon: Calculator, title: 'Or\u00e7amento AI', description: 'Calcule custos de produ\u00e7\u00e3o de forma r\u00e1pida e precisa.' },
-  { icon: Search, title: 'Otimiza\u00e7\u00e3o SEO', description: 'T\u00edtulos, tags e descri\u00e7\u00f5es que rankeiam no YouTube.' },
+  {
+    icon: Users,
+    title: 'Hub do Cliente',
+    description: 'Portal exclusivo para o cliente aprovar roteiros e vídeos sem atrito. Feedback rastreável, avaliação por estrelas e fim do caos no WhatsApp.',
+  },
+  {
+    icon: Briefcase,
+    title: 'Assistente Executivo',
+    description: 'Gestão financeira de set. Planilhas orçamentárias integradas, escalação de freelancers, controle de diárias e livro-caixa por projeto.',
+  },
+  {
+    icon: Clapperboard,
+    title: 'Central de Criação',
+    description: 'Da ideia à gravação. Editor de roteiros avançado, geração de Storyboard global, Shot Lists e Workflow Kanban.',
+  },
+  {
+    icon: LineChart,
+    title: 'Business Intelligence',
+    description: 'O painel do CEO. Visão global de faturamento, alerta de gargalos na esteira de edição e relatórios em PDF.',
+  },
 ];
 
 // Decorative waveform bars
@@ -43,10 +57,10 @@ export default function FeaturesSection() {
           transition={{ duration: 0.6 }}
           className="mb-14"
         >
-          <p className="text-base text-[#A0A0A0] mb-1">Ferramentas que te auxiliam da</p>
+          <p className="text-base text-[#A0A0A0] mb-1">Um ecossistema completo para</p>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-white">
-            <span className="bg-gradient-to-r from-[#8B5CF6] to-[#C026D3] bg-clip-text text-transparent">Pr&eacute;</span> a{' '}
-            <span className="bg-gradient-to-r from-[#C026D3] to-[#8B5CF6] bg-clip-text text-transparent">P&oacute;s</span>-Produ&ccedil;&atilde;o
+            <span className="bg-gradient-to-r from-[#8B5CF6] to-[#C026D3] bg-clip-text text-transparent">Produtoras</span> e{' '}
+            <span className="bg-gradient-to-r from-[#C026D3] to-[#8B5CF6] bg-clip-text text-transparent">Creators</span>
           </h2>
         </motion.div>
 

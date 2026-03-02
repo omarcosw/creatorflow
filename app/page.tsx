@@ -9,15 +9,15 @@ import Footer from '@/components/landing/Footer';
 import FilmGrain from '@/components/landing/FilmGrain';
 
 export const metadata: Metadata = {
-  title: 'CreatorFlow \u2014 IA para Criadores de Conte\u00fado',
+  title: 'CreatorFlow \u2014 Sistema Operacional para o Audiovisual',
   description:
-    'Suite de IA com 24 agentes especializados para criadores de v\u00eddeo. Roteiros, storyboards, SEO, or\u00e7amentos e muito mais.',
+    'Do briefing \u00e0 aprova\u00e7\u00e3o final do cliente. Gerencie equipe, or\u00e7amentos, roteiros e aprovações em um \u00fanico ecossistema premium para produtoras e creators.',
   keywords:
-    'IA para creators, intelig\u00eancia artificial v\u00eddeo, roteiro IA, storyboard IA, YouTube SEO, criador de conte\u00fado',
+    'ERP audiovisual, gest\u00e3o de produ\u00e7\u00e3o, portal do cliente, or\u00e7amento audiovisual, freelancers, roteiro, storyboard, produtora',
   openGraph: {
-    title: 'CreatorFlow \u2014 IA para Criadores de Conte\u00fado',
+    title: 'CreatorFlow \u2014 Sistema Operacional para o Audiovisual',
     description:
-      'Suite de IA com 24 agentes especializados para criadores de v\u00eddeo.',
+      'Do briefing \u00e0 aprova\u00e7\u00e3o final. Ecossistema premium para produtoras e creators.',
     url: 'https://creatorflowia.com',
     siteName: 'CreatorFlow',
     type: 'website',

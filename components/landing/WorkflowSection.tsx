@@ -1,30 +1,30 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Lightbulb, Cpu, Rocket } from 'lucide-react';
+import { ClipboardList, Clapperboard, Send } from 'lucide-react';
 import SectionLabel from './ui/SectionLabel';
 
 const steps = [
   {
     number: '01',
-    title: 'Descreva sua ideia',
-    description: 'Conte para IA o que voc\u00ea quer produzir: um v\u00eddeo, roteiro, post, campanha ou qualquer pe\u00e7a criativa.',
-    bullets: ['Roteiros e v\u00eddeos', 'Legendas e thumbnails', 'Or\u00e7amento e produ\u00e7\u00e3o'],
-    icon: Lightbulb,
+    title: 'Planeje e Orce',
+    description: 'Monte a proposta, defina a equipe e aprove o orçamento com o cliente antes de começar a produção.',
+    bullets: ['Gestão de propostas', 'Aprovação de orçamento', 'Escalação de equipe'],
+    icon: ClipboardList,
   },
   {
     number: '02',
-    title: 'A IA trabalha para voc\u00ea',
-    description: 'Nosso time de agentes de IA analisa, cria e entrega seu conte\u00fado pronto em segundos.',
-    bullets: ['Processamento r\u00e1pido', 'M\u00faltiplos formatos', 'Conte\u00fado sob medida'],
-    icon: Cpu,
+    title: 'Crie e Produza',
+    description: 'Roteirize, gere Storyboards e gerencie o Creator Stock com a equipe em campo e em pós-produção.',
+    bullets: ['Roteirização assistida', 'Storyboards e Shot Lists', 'Creator Stock'],
+    icon: Clapperboard,
   },
   {
     number: '03',
-    title: 'Refine e publique',
-    description: 'Edite os resultados ao seu gosto, combine cria\u00e7\u00f5es e publique nas suas plataformas.',
-    bullets: ['Ajuste fino', 'Edi\u00e7\u00e3o interativa', 'Exporta\u00e7\u00e3o f\u00e1cil'],
-    icon: Rocket,
+    title: 'Entregue e Fature',
+    description: 'Envie para aprovação no Portal do Cliente, colete feedback rastreável e gerencie os pagamentos.',
+    bullets: ['Portal de aprovação', 'Feedback rastreável', 'Gestão de pagamentos'],
+    icon: Send,
   },
 ];
 
@@ -45,9 +45,9 @@ export default function WorkflowSection() {
         >
           <SectionLabel>Fluxo de Trabalho</SectionLabel>
           <h2 className="font-display text-3xl md:text-[42px] font-bold text-white leading-tight">
-            Do conceito ao conte&uacute;do<br />
+            Do briefing à aprovação<br />
             <span className="bg-gradient-to-r from-[#8B5CF6] to-[#C026D3] bg-clip-text text-transparent">
-              em 3 passos simples
+              em 3 fases
             </span>
           </h2>
         </motion.div>

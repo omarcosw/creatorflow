@@ -135,9 +135,9 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.55 }}
-          className="mt-4 max-w-lg text-center text-base sm:text-lg text-[#A0A0A0] leading-relaxed"
+          className="mt-4 max-w-xl text-center text-base sm:text-lg text-[#A0A0A0] leading-relaxed"
         >
-          Suite de IA com <span className="text-white font-semibold">24 agentes especializados</span> para criadores de vídeo. Da ideia à publicação.
+          Do primeiro briefing à aprovação final do cliente. Esqueça o caos do WhatsApp e Planilhas: gerencie equipe, orçamentos, roteiros e aprovações em um único <span className="text-white font-semibold">ecossistema premium.</span>
         </motion.p>
 
         {/* CTA buttons */}
@@ -151,7 +151,7 @@ export default function HeroSection() {
             Começar Agora
           </GradientButton>
           <GradientButton href="#ferramenta" variant="outline" size="lg">
-            Ver Ferramentas
+            Explorar Módulos
           </GradientButton>
         </motion.div>
       </div>
