@@ -3,8 +3,7 @@ services:
     build: .
     container_name: creatorflow-app
     restart: always
-    ports:
-      - "3000:3000"
+    network_mode: host
     env_file:
       - .env.production
     security_opt:
