@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useClientData } from '@/lib/hooks/useClientData';
+import { fetchClientData, saveClientData } from '@/lib/clients-api';
 import {
   ArrowLeft,
   Sparkles,
@@ -34,8 +36,6 @@ import {
   Link as LinkIcon,
   Star,
   CheckCircle,
-  CheckSquare,
-  PenTool,
   LayoutDashboard,
   Bookmark,
   BookmarkCheck,
@@ -43,7 +43,6 @@ import {
   DollarSign,
   Activity,
   TrendingUp,
-  ArrowRight,
   Video,
   Scissors,
   Archive,
@@ -893,23 +892,18 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   const [todoPriority, setTodoPriority] = useState<TodoPriority>('Média');
   const [showDone, setShowDone]         = useState(false);
 
-  // ── Kanban state ──────────────────────────────────────────
-  const [columns, setColumns] = useState<KanbanColumn[]>(() => {
-    try {
-      const stored = localStorage.getItem(`creator_flow_kanban_${client.id}`);
-      return stored ? (JSON.parse(stored) as KanbanColumn[]) : KANBAN_INITIAL_COLUMNS;
-    } catch {
-      return KANBAN_INITIAL_COLUMNS;
-    }
-  });
+  // ── Kanban state (persisted via API) ──────────────────────
+  const { data: columns, setData: setColumns } = useClientData<KanbanColumn[]>(client.id, 'kanban', KANBAN_INITIAL_COLUMNS);
   const [addingToCol, setAddingToCol]       = useState<string | null>(null);
   const [editingCard, setEditingCard]       = useState<{ card: KanbanCard; colId: string } | null>(null);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
 
-  const ARCHIVE_KEY = `creator_flow_kanban_archive_${client.id}`;
+  const ARCHIVE_KEY = `creator_flow_archive_${client.id}`;
   const [archivedCards, setArchivedCards] = useState<KanbanCard[]>(() => {
-    try { const s = localStorage.getItem(`creator_flow_kanban_archive_${client.id}`); return s ? JSON.parse(s) : []; }
-    catch { return []; }
+    try {
+      const s = localStorage.getItem(`creator_flow_archive_${client.id}`);
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
   });
 
   // ── Date helpers (computed each render) ──────────────────
@@ -925,10 +919,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   const overdueCount  = activeCards.filter(c => c.dueDate < todayStr).length;
   const dueSoonCount  = activeCards.filter(c => c.dueDate >= todayStr && c.dueDate <= tomorrowStr).length;
 
-  // ── Persist kanban columns to localStorage ────────────────
-  useEffect(() => {
-    localStorage.setItem(`creator_flow_kanban_${client.id}`, JSON.stringify(columns));
-  }, [columns, client.id]);
+  // Kanban persistence handled by useClientData hook
 
   // ── Persist archived cards ────────────────────────────────
   useEffect(() => {
@@ -1447,14 +1438,7 @@ interface ClientAgendaTabProps {
 }
 
 const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventTitle, onPendingConsumed }) => {
-  const [events, setEvents] = useState<AgendaEvent[]>(() => {
-    try {
-      const stored = localStorage.getItem(`creator_flow_agenda_${client.id}`);
-      return stored ? (JSON.parse(stored) as AgendaEvent[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { data: events, setData: setEvents } = useClientData<AgendaEvent[]>(client.id, 'agenda', []);
   const [activeFilter, setActiveFilter]         = useState<AgendaFilter>('todas');
   const [calYear, setCalYear]                   = useState(() => new Date().getFullYear());
   const [calMonth, setCalMonth]                 = useState(() => new Date().getMonth());
@@ -1477,10 +1461,7 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
   const todayStr    = getTodayStr();
   const tomorrowStr = getTomorrowStr();
 
-  // ── Persist agenda events to localStorage ─────
-  useEffect(() => {
-    localStorage.setItem(`creator_flow_agenda_${client.id}`, JSON.stringify(events));
-  }, [events, client.id]);
+  // Agenda persistence handled by useClientData hook
 
   // ── Mini-calendar ───────────────────────────
   const prevCalMonth = () => {
@@ -2172,15 +2153,7 @@ const buildDefaultScriptPackages = (): ScriptPackage[] => [
 // ClientRoteirosTab sub-component
 // ─────────────────────────────────────────────
 const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
-  // ── State ────────────────────────────────────────────────────
-  const [packages, setPackages] = useState<ScriptPackage[]>(() => {
-    try {
-      const stored = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
-      return stored ? JSON.parse(stored) : buildDefaultScriptPackages();
-    } catch {
-      return buildDefaultScriptPackages();
-    }
-  });
+  const { data: packages, setData: setPackages } = useClientData<ScriptPackage[]>(client.id, 'roteiros', buildDefaultScriptPackages());
   const [selectedPkgId, setSelectedPkgId]         = useState<string>(packages[0]?.id ?? '');
   const [viewMode, setViewMode]                   = useState<'edicao' | 'shotlist'>('edicao');
   const [expandedId, setExpandedId]               = useState<string | null>(null);
@@ -2199,10 +2172,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   });
   const STORYBOARD_LIMIT = 15;
 
-  // ── Persist ──────────────────────────────────────────────────
-  useEffect(() => {
-    localStorage.setItem(`creator_flow_roteiros_${client.id}`, JSON.stringify(packages));
-  }, [packages, client.id]);
+  // Roteiros persistence handled by useClientData hook
 
   useEffect(() => {
     localStorage.setItem(`creator_flow_storyboard_${client.id}`, String(storyboardUsed));
@@ -2993,7 +2963,6 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                 const structuredIdx = script.scenes.filter(s => !s.type || s.type === 'scene').findIndex(s => s.id === sc.id);
                                 return (
                                   <div key={sc.id} className="rounded-xl overflow-hidden border border-indigo-200 dark:border-indigo-800/50">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                       src={sc.storyboardUrl}
                                       alt={`Storyboard cena ${i + 1}`}
@@ -3348,16 +3317,7 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
 // ClientEntregasTab sub-component
 // ─────────────────────────────────────────────
 const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
-  const STORAGE_KEY = `creator_flow_entregas_${client.id}`;
-
-  const [deliverables, setDeliverables] = useState<Deliverable[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { data: deliverables, setData: setDeliverables } = useClientData<Deliverable[]>(client.id, 'entregas', []);
 
   const [formTitle, setFormTitle]       = useState('');
   const [formExpiry, setFormExpiry]     = useState<DeliverableExpiry>(7);
@@ -3366,9 +3326,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
   const [linkCopiedId, setLinkCopiedId] = useState<string | null>(null);
   const [genLinkToast, setGenLinkToast] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deliverables));
-  }, [deliverables, STORAGE_KEY]);
+  // Entregas persistence handled by useClientData hook
 
   const handleGenerateLink = () => {
     if (!formTitle.trim()) return;
@@ -3686,149 +3644,160 @@ interface VisaoGeralData {
 const ClientVisaoGeralTab: React.FC<{ client: Client }> = ({ client }) => {
   const todayStr = getTodayStr();
 
-  const [data] = useState<VisaoGeralData>(() => {
-    let awaitingClient    = 0;
-    let teamBottleneck    = 0;
-    let readyToRecord     = 0;
-    let riskScript:        VisaoGeralData['riskScript']        = null;
-    let opportunityScript: VisaoGeralData['opportunityScript'] = null;
-    let nextRecordings:    AgendaEvent[]   = [];
-    let radarFeedbacks:    VisaoGeralData['radarFeedbacks']    = [];
-    let allScripts:        ScriptDocument[] = [];
-    let stageIdx:          number | null    = null;
-    let pinnedTitle:       string | null    = null;
-    let healthScore        = 100;
-
-    // ── Roteiros ────────────────────────────────
-    try {
-      const s = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
-      if (s) {
-        const pkgs: ScriptPackage[] = JSON.parse(s);
-        allScripts     = pkgs.flatMap(p => p.scripts);
-        awaitingClient = allScripts.filter(sc => sc.portalStatus === 'aguardando_cliente').length;
-        const topRated = allScripts.find(sc => sc.rating === 5);
-        if (topRated) opportunityScript = { title: topRated.title };
-        const scriptFbs = allScripts
-          .filter(sc => (sc.rating ?? 0) > 0)
-          .sort((a, b) => (b.sentToPortalAt ?? 0) - (a.sentToPortalAt ?? 0))
-          .slice(0, 3)
-          .map(sc => ({ title: sc.title, rating: sc.rating!, type: 'script' as const }));
-        radarFeedbacks.push(...scriptFbs);
-
-        // ── Pinned package → Timeline stage ─────
-        const findPinned = (list: ScriptPackage[]): ScriptPackage | null => {
-          for (const p of list) {
-            if (p.isPinnedToTimeline) return p;
-            if (p.subFolders) { const found = findPinned(p.subFolders); if (found) return found; }
-          }
-          return null;
-        };
-        const pinned = findPinned(pkgs);
-        if (pinned) {
-          pinnedTitle = pinned.title;
-          const sc = pinned.scripts;
-          if (sc.length === 0) {
-            stageIdx = 0; // Briefing
-          } else {
-            const allGravado    = sc.every(r => r.status === 'Gravado');
-            const hasGravado    = sc.some(r => r.status === 'Gravado');
-            const hasAprovado   = sc.some(r => r.portalStatus === 'aprovado_cliente' || r.status === 'Aprovado');
-            const hasAguardando = sc.some(r => r.portalStatus === 'aguardando_cliente');
-            if      (allGravado)    stageIdx = 5;
-            else if (hasGravado)    stageIdx = 4;
-            else if (hasAprovado)   stageIdx = 3;
-            else if (hasAguardando) stageIdx = 2;
-            else                    stageIdx = 1;
-          }
-        }
-      }
-    } catch { /* ignore */ }
-
-    // ── Kanban + auto-stage + health ─────────────
-    try {
-      const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
-      if (s) {
-        const cols: KanbanColumn[] = JSON.parse(s);
-        const today = new Date();
-        const bottleneckCards = cols
-          .filter(c => c.id === 'preproducao' || c.id === 'gravar')
-          .flatMap(c => c.cards);
-        const overdueCards = cols
-          .filter(c => c.id !== 'finalizado')
-          .flatMap(c => c.cards)
-          .filter(card => card.dueDate && new Date(card.dueDate) < today);
-        const combined = new Set([...bottleneckCards.map(c => c.id), ...overdueCards.map(c => c.id)]);
-        teamBottleneck = combined.size;
-
-        // Auto-calculate production stage from most-advanced column with cards
-        for (const col of cols) {
-          if (col.cards.length > 0) {
-            const s = COLUMN_STAGE_MAP[col.id] ?? 0;
-            if (s > stageIdx) stageIdx = s;
-          }
-        }
-
-        // Health: overdue kanban cards penalise score
-        healthScore -= Math.min(overdueCards.length * 20, 60);
-      }
-    } catch { /* ignore */ }
-
-    // ── Health: overdue invoices ─────────────────
-    try {
-      const s = localStorage.getItem(`creator_flow_invoices_${client.id}`);
-      if (s) {
-        const inv: Invoice[] = JSON.parse(s);
-        const overdueInv = inv.filter(i => i.status === 'atrasado').length;
-        healthScore -= Math.min(overdueInv * 25, 50);
-      }
-    } catch { /* ignore */ }
-
-    // Health: scripts awaiting approval
-    healthScore -= Math.min(awaitingClient * 10, 30);
-    healthScore = Math.max(0, Math.min(100, healthScore));
-
-    // ── Agenda ──────────────────────────────────
-    try {
-      const s = localStorage.getItem(`creator_flow_agenda_${client.id}`);
-      if (s) {
-        const events: AgendaEvent[] = JSON.parse(s);
-        const futureRecs = events
-          .filter(e => e.type === 'Gravação' && e.date >= todayStr)
-          .sort((a, b) => a.date.localeCompare(b.date));
-        nextRecordings = futureRecs.slice(0, 3);
-
-        const threeDaysLater = new Date();
-        threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-        const threeDaysStr = threeDaysLater.toISOString().split('T')[0];
-        const urgentRec = futureRecs.find(e => e.date <= threeDaysStr);
-        if (urgentRec) {
-          const hasApproved = allScripts.some(sc => sc.portalStatus === 'aprovado_cliente');
-          if (!hasApproved) riskScript = { title: urgentRec.title, recordingDate: urgentRec.date };
-        }
-      }
-    } catch { /* ignore */ }
-
-    const approvedCount = allScripts.filter(sc => sc.portalStatus === 'aprovado_cliente').length;
-    readyToRecord = nextRecordings.length > 0 ? 0 : approvedCount;
-
-    // ── Entregas (radar) ─────────────────────────
-    try {
-      const s = localStorage.getItem(`creator_flow_entregas_${client.id}`);
-      if (s) {
-        interface _D { title: string; rating?: number; feedback?: string; sentAt: number; }
-        const deliverables: _D[] = JSON.parse(s);
-        const withRating = deliverables
-          .filter(d => (d.rating ?? 0) > 0)
-          .sort((a, b) => b.sentAt - a.sentAt)
-          .slice(0, 2)
-          .map(d => ({ title: d.title, rating: d.rating!, feedback: d.feedback, type: 'deliverable' as const }));
-        radarFeedbacks.push(...withRating);
-      }
-    } catch { /* ignore */ }
-
-    radarFeedbacks = radarFeedbacks.slice(0, 3);
-    return { awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks, stageIdx, pinnedTitle, healthScore };
+  const [data, setData] = useState<VisaoGeralData>({
+    awaitingClient: 0, teamBottleneck: 0, readyToRecord: 0,
+    riskScript: null, opportunityScript: null, nextRecordings: [],
+    radarFeedbacks: [], stageIdx: null, pinnedTitle: null, healthScore: 100,
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      let awaitingClient    = 0;
+      let teamBottleneck    = 0;
+      let readyToRecord     = 0;
+      let riskScript:        VisaoGeralData['riskScript']        = null;
+      let opportunityScript: VisaoGeralData['opportunityScript'] = null;
+      let nextRecordings:    AgendaEvent[]   = [];
+      let radarFeedbacks:    VisaoGeralData['radarFeedbacks']    = [];
+      let allScripts:        ScriptDocument[] = [];
+      let stageIdx:          number | null    = null;
+      let pinnedTitle:       string | null    = null;
+      let healthScore        = 100;
+
+      // ── Roteiros ────────────────────────────────
+      try {
+        const pkgs = await fetchClientData<ScriptPackage[]>(client.id, 'roteiros');
+        if (Array.isArray(pkgs)) {
+          allScripts     = pkgs.flatMap(p => p.scripts);
+          awaitingClient = allScripts.filter(sc => sc.portalStatus === 'aguardando_cliente').length;
+          const topRated = allScripts.find(sc => sc.rating === 5);
+          if (topRated) opportunityScript = { title: topRated.title };
+          const scriptFbs = allScripts
+            .filter(sc => (sc.rating ?? 0) > 0)
+            .sort((a, b) => (b.sentToPortalAt ?? 0) - (a.sentToPortalAt ?? 0))
+            .slice(0, 3)
+            .map(sc => ({ title: sc.title, rating: sc.rating!, type: 'script' as const }));
+          radarFeedbacks.push(...scriptFbs);
+
+          // ── Pinned package → Timeline stage ─────
+          const findPinned = (list: ScriptPackage[]): ScriptPackage | null => {
+            for (const p of list) {
+              if (p.isPinnedToTimeline) return p;
+              if (p.subFolders) { const found = findPinned(p.subFolders); if (found) return found; }
+            }
+            return null;
+          };
+          const pinned = findPinned(pkgs);
+          if (pinned) {
+            pinnedTitle = pinned.title;
+            const sc = pinned.scripts;
+            if (sc.length === 0) {
+              stageIdx = 0; // Briefing
+            } else {
+              const allGravado    = sc.every(r => r.status === 'Gravado');
+              const hasGravado    = sc.some(r => r.status === 'Gravado');
+              const hasAprovado   = sc.some(r => r.portalStatus === 'aprovado_cliente' || r.status === 'Aprovado');
+              const hasAguardando = sc.some(r => r.portalStatus === 'aguardando_cliente');
+              if      (allGravado)    stageIdx = 5;
+              else if (hasGravado)    stageIdx = 4;
+              else if (hasAprovado)   stageIdx = 3;
+              else if (hasAguardando) stageIdx = 2;
+              else                    stageIdx = 1;
+            }
+          }
+        }
+      } catch { /* ignore */ }
+
+      // ── Kanban + auto-stage + health ─────────────
+      try {
+        const cols = await fetchClientData<KanbanColumn[]>(client.id, 'kanban');
+        if (Array.isArray(cols)) {
+          const today = new Date();
+          const bottleneckCards = cols
+            .filter(c => c.id === 'preproducao' || c.id === 'gravar')
+            .flatMap(c => c.cards);
+          const overdueCards = cols
+            .filter(c => c.id !== 'finalizado')
+            .flatMap(c => c.cards)
+            .filter(card => card.dueDate && new Date(card.dueDate) < today);
+          const combined = new Set([...bottleneckCards.map(c => c.id), ...overdueCards.map(c => c.id)]);
+          teamBottleneck = combined.size;
+
+          // Auto-calculate production stage from most-advanced column with cards
+          for (const col of cols) {
+            if (col.cards.length > 0) {
+              const colStage = COLUMN_STAGE_MAP[col.id] ?? 0;
+              if (colStage > (stageIdx ?? -1)) stageIdx = colStage;
+            }
+          }
+
+          // Health: overdue kanban cards penalise score
+          healthScore -= Math.min(overdueCards.length * 20, 60);
+        }
+      } catch { /* ignore */ }
+
+      // ── Health: overdue invoices ─────────────────
+      try {
+        const inv = await fetchClientData<Invoice[]>(client.id, 'invoices');
+        if (Array.isArray(inv)) {
+          const overdueInv = inv.filter(i => i.status === 'atrasado').length;
+          healthScore -= Math.min(overdueInv * 25, 50);
+        }
+      } catch { /* ignore */ }
+
+      // Health: scripts awaiting approval
+      healthScore -= Math.min(awaitingClient * 10, 30);
+      healthScore = Math.max(0, Math.min(100, healthScore));
+
+      // ── Agenda ──────────────────────────────────
+      try {
+        const events = await fetchClientData<AgendaEvent[]>(client.id, 'agenda');
+        if (Array.isArray(events)) {
+          const futureRecs = events
+            .filter(e => e.type === 'Gravação' && e.date >= todayStr)
+            .sort((a, b) => a.date.localeCompare(b.date));
+          nextRecordings = futureRecs.slice(0, 3);
+
+          const threeDaysLater = new Date();
+          threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+          const threeDaysStr = threeDaysLater.toISOString().split('T')[0];
+          const urgentRec = futureRecs.find(e => e.date <= threeDaysStr);
+          if (urgentRec) {
+            const hasApproved = allScripts.some(sc => sc.portalStatus === 'aprovado_cliente');
+            if (!hasApproved) riskScript = { title: urgentRec.title, recordingDate: urgentRec.date };
+          }
+        }
+      } catch { /* ignore */ }
+
+      const approvedCount = allScripts.filter(sc => sc.portalStatus === 'aprovado_cliente').length;
+      readyToRecord = nextRecordings.length > 0 ? 0 : approvedCount;
+
+      // ── Entregas (radar) ─────────────────────────
+      try {
+        interface _D { title: string; rating?: number; feedback?: string; sentAt: number; }
+        const deliverables = await fetchClientData<_D[]>(client.id, 'entregas');
+        if (Array.isArray(deliverables)) {
+          const withRating = deliverables
+            .filter(d => (d.rating ?? 0) > 0)
+            .sort((a, b) => b.sentAt - a.sentAt)
+            .slice(0, 2)
+            .map(d => ({ title: d.title, rating: d.rating!, feedback: d.feedback, type: 'deliverable' as const }));
+          radarFeedbacks.push(...withRating);
+        }
+      } catch { /* ignore */ }
+
+      radarFeedbacks = radarFeedbacks.slice(0, 3);
+
+      if (!cancelled) {
+        setData({ awaitingClient, teamBottleneck, readyToRecord, riskScript, opportunityScript, nextRecordings, radarFeedbacks, stageIdx, pinnedTitle, healthScore });
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [client.id, todayStr]);
 
   const stageIdx    = data.stageIdx;         // null when no package is pinned
   const progressPct = stageIdx !== null
@@ -4127,20 +4096,8 @@ const INVOICE_STATUS_STYLES: Record<Invoice['status'], { label: string; badge: s
 const INPUT_CLS = 'w-full text-sm px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all';
 
 const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
-  const METRICS_KEY  = `creator_flow_metrics_${client.id}`;
-  const INVOICES_KEY = `creator_flow_invoices_${client.id}`;
-
-  // ── Follower history ──────────────────────────
-  const [metrics, setMetrics] = useState<ClientMetrics>(() => {
-    try {
-      const s = localStorage.getItem(METRICS_KEY);
-      if (s) {
-        const parsed = JSON.parse(s);
-        return { followerHistory: parsed.followerHistory ?? [] };
-      }
-    } catch { /* ignore */ }
-    return DEFAULT_METRICS;
-  });
+  // ── Metrics (persisted via API) ──
+  const { data: metrics, setData: setMetrics } = useClientData<ClientMetrics>(client.id, 'metrics', DEFAULT_METRICS);
   const [newMonth, setNewMonth] = useState<string>('Fev/2026');
   const [newCount, setNewCount] = useState<string>('');
   const [recordSaved, setRecordSaved] = useState(false);
@@ -4148,25 +4105,21 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
   const addFollowerRecord = () => {
     const count = parseInt(newCount);
     if (!newCount || isNaN(count) || count < 0) return;
-    const updated: ClientMetrics = {
+    setMetrics(prev => ({
       followerHistory: [
-        ...metrics.followerHistory.filter(r => r.month !== newMonth),
+        ...prev.followerHistory.filter(r => r.month !== newMonth),
         { month: newMonth, count },
       ],
-    };
-    setMetrics(updated);
-    try { localStorage.setItem(METRICS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+    }));
     setNewCount('');
     setRecordSaved(true);
     setTimeout(() => setRecordSaved(false), 2000);
   };
 
   const removeFollowerRecord = (month: string) => {
-    const updated: ClientMetrics = {
-      followerHistory: metrics.followerHistory.filter(r => r.month !== month),
-    };
-    setMetrics(updated);
-    try { localStorage.setItem(METRICS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+    setMetrics(prev => ({
+      followerHistory: prev.followerHistory.filter(r => r.month !== month),
+    }));
   };
 
   const sortedHistory = [...metrics.followerHistory].sort(
@@ -4177,17 +4130,13 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
     ? (((sortedHistory[sortedHistory.length - 1].count - sortedHistory[0].count) / sortedHistory[0].count) * 100).toFixed(1)
     : null;
 
-  // ── Invoices ──────────────────────────────────
-  const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    try { const s = localStorage.getItem(INVOICES_KEY); return s ? JSON.parse(s) : []; }
-    catch { return []; }
-  });
+  // ── Invoices (persisted via API) ──
+  const { data: invoices, setData: setInvoices } = useClientData<Invoice[]>(client.id, 'invoices', []);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ title: '', dueDate: '', amount: '', status: 'pendente' as Invoice['status'], pixCode: '', boletoLink: '' });
 
   const persistInvoices = (next: Invoice[]) => {
     setInvoices(next);
-    try { localStorage.setItem(INVOICES_KEY, JSON.stringify(next)); } catch { /* ignore */ }
   };
 
   const addInvoice = () => {
@@ -4433,15 +4382,8 @@ interface MeetingExtract {
   nextSteps: { text: string; assignedTo: 'agencia' | 'cliente' }[];
 }
 
-const MEETINGS_STORAGE_KEY = (id: string) => `creator_flow_meetings_${id}`;
-
 const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
-  const [meetings, setMeetings] = useState<Meeting[]>(() => {
-    try {
-      const s = localStorage.getItem(MEETINGS_STORAGE_KEY(client.id));
-      return s ? JSON.parse(s) : [];
-    } catch { return []; }
-  });
+  const { data: meetings, setData: setMeetings } = useClientData<Meeting[]>(client.id, 'meetings', []);
 
   const [formOpen, setFormOpen]       = useState(false);
   const [expandedId, setExpandedId]   = useState<string | null>(null);
@@ -4550,7 +4492,6 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
     };
     const updated = [meeting, ...meetings];
     setMeetings(updated);
-    try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch { /* ignore */ }
     setFormOpen(false);
     resetForm();
     setExpandedId(meeting.id);
@@ -4881,10 +4822,8 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                     <div className="flex justify-end pt-1">
                       <button
                         onClick={() => {
-                          const updated = meetings.filter(m => m.id !== meeting.id);
-                          setMeetings(updated);
+                          setMeetings(prev => prev.filter(m => m.id !== meeting.id));
                           setExpandedId(null);
-                          try { localStorage.setItem(MEETINGS_STORAGE_KEY(client.id), JSON.stringify(updated)); } catch { /* ignore */ }
                         }}
                         className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-xl transition-all"
                       >
@@ -4960,12 +4899,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [copiedId, setCopiedId]                     = useState<string | null>(null);
   const [quantidadeIdeias, setQuantidadeIdeias]     = useState(5);
   const [ideasView, setIdeasView]                   = useState<'generator' | 'banco'>('generator');
-  const [savedIdeas, setSavedIdeas]                 = useState<IdeaCard[]>(() => {
-    try {
-      const stored = localStorage.getItem(`creator_flow_saved_ideas_${client.id}`);
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+  const { data: savedIdeas, setData: setSavedIdeas } = useClientData<IdeaCard[]>(client.id, 'saved_ideas', []);
   const [savedIdeaToast, setSavedIdeaToast]         = useState(false);
 
   const addTheme = (value: string) => {
@@ -5104,11 +5038,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
   const toggleSaveIdea = (idea: IdeaCard) => {
     const isAlreadySaved = savedIdeas.some(s => s.id === idea.id);
-    setSavedIdeas(prev => {
-      const updated = isAlreadySaved ? prev.filter(s => s.id !== idea.id) : [idea, ...prev];
-      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch { /* ignore */ }
-      return updated;
-    });
+    setSavedIdeas(prev => isAlreadySaved ? prev.filter(s => s.id !== idea.id) : [idea, ...prev]);
     if (!isAlreadySaved) {
       setSavedIdeaToast(true);
       setTimeout(() => setSavedIdeaToast(false), 3000);
@@ -5116,11 +5046,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   };
 
   const removeFromBank = (ideaId: string) => {
-    setSavedIdeas(prev => {
-      const updated = prev.filter(s => s.id !== ideaId);
-      try { localStorage.setItem(`creator_flow_saved_ideas_${client.id}`, JSON.stringify(updated)); } catch { /* ignore */ }
-      return updated;
-    });
+    setSavedIdeas(prev => prev.filter(s => s.id !== ideaId));
   };
 
   const canGenerate = selectedFormats.length > 0 || selectedAngles.length > 0 || themes.length > 0;
@@ -5129,33 +5055,27 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   const [scriptIdea, setScriptIdea]             = useState<IdeaCard | null>(null);
   const [pendingAgendaTitle, setPendingAgendaTitle] = useState<string | null>(null);
 
-  // ── Workflow: write card directly to localStorage (ClientWorkflowTab
-  //    re-hydrates on next mount when user switches to the tab) ──────────
-  const addCardToWorkflow = (title: string) => {
+  // ── Workflow: add card to kanban via API ──────────
+  const addCardToWorkflow = async (title: string) => {
     try {
-      const key     = `creator_flow_kanban_${client.id}`;
-      const stored  = localStorage.getItem(key);
-      const cols: KanbanColumn[] = stored ? JSON.parse(stored) : KANBAN_INITIAL_COLUMNS;
-      const newCard: KanbanCard  = { id: crypto.randomUUID(), title, priority: 'Normal', startDate: '', dueDate: '', notes: '' };
+      const current = await fetchClientData<KanbanColumn[]>(client.id, 'kanban');
+      const cols = Array.isArray(current) && current.length > 0 ? current : KANBAN_INITIAL_COLUMNS;
+      const newCard: KanbanCard = { id: crypto.randomUUID(), title, priority: 'Normal', startDate: '', dueDate: '', notes: '' };
       const updated = cols.map(c => c.id === 'preproducao' ? { ...c, cards: [newCard, ...c.cards] } : c);
-      localStorage.setItem(key, JSON.stringify(updated));
+      await saveClientData(client.id, 'kanban', updated);
     } catch { /* ignore */ }
   };
 
-  // ── Roteiros: convert IdeaCard → ScriptDocument and persist to localStorage.
-  //    ClientRoteirosTab re-hydrates on next mount when user switches to the tab.
-  const saveToRoteiros = (idea: IdeaCard) => {
+  // ── Roteiros: convert IdeaCard → ScriptDocument and persist via API ──
+  const saveToRoteiros = async (idea: IdeaCard) => {
     try {
-      const key = `creator_flow_roteiros_${client.id}`;
-      const stored = localStorage.getItem(key);
-      let pkgs: ScriptPackage[] = stored ? JSON.parse(stored) : [];
+      const current = await fetchClientData<ScriptPackage[]>(client.id, 'roteiros');
+      let pkgs = Array.isArray(current) && current.length > 0 ? current : [];
 
-      // Ensure there is at least one package to receive the script
       if (pkgs.length === 0) {
         pkgs = [{ id: crypto.randomUUID(), title: 'Roteiros Gerados', scripts: [], createdAt: Date.now() }];
       }
 
-      // Parse IdeaCard slides into ScriptScenes
       const scenes: ScriptScene[] = idea.script.slides.map(slide => ({
         id: crypto.randomUUID(),
         visual: slide.visual || '',
@@ -5173,9 +5093,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
         createdAt: Date.now(),
       };
 
-      // Insert into the first (active) package
       pkgs[0] = { ...pkgs[0], scripts: [newScript, ...pkgs[0].scripts] };
-      localStorage.setItem(key, JSON.stringify(pkgs));
+      await saveClientData(client.id, 'roteiros', pkgs);
     } catch { /* ignore */ }
   };
 

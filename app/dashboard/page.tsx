@@ -5,6 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
 import { AgentId, ChatSession, InstagramProfile, ShotList, BrandKit, HDD, Recording, StudioProfile, Client } from '@/types';
+import { fetchClients, createClient, deleteClientAPI, migrateFromLocalStorage } from '@/lib/clients-api';
 import AgentView from '@/components/AgentView';
 import ShotListManager from '@/components/ShotListManager';
 import HubArquivos from '@/components/HubArquivos';
@@ -268,7 +269,6 @@ export default function DashboardPage() {
     const savedBrandKits = localStorage.getItem(BRAND_KITS_KEY);
     const savedHdds = localStorage.getItem(HDDS_KEY);
     const savedRecordings = localStorage.getItem(RECORDINGS_KEY);
-    const savedClients = localStorage.getItem(CLIENTS_KEY);
 
     if (savedSessions) {
       try { setSessions(JSON.parse(savedSessions)); } catch (e) { console.error(e); }
@@ -292,8 +292,49 @@ export default function DashboardPage() {
     if (savedStudio) {
       try { setStudioProfile(JSON.parse(savedStudio)); } catch (e) { console.error(e); }
     }
-    if (savedClients) {
-      try { setClients(JSON.parse(savedClients)); } catch (e) { console.error(e); }
+
+    // Load clients from API (DB) instead of localStorage
+    const plan = localStorage.getItem('cf_plan') || '';
+    if (plan && plan !== 'solo') {
+      const localClients = localStorage.getItem(CLIENTS_KEY);
+
+      // First, try to migrate localStorage data if not yet migrated
+      if (!localStorage.getItem('cf_clients_migrated') && localClients) {
+        try {
+          const parsed: Client[] = JSON.parse(localClients);
+          if (parsed.length > 0) {
+            const DATA_TYPES = ['kanban', 'agenda', 'roteiros', 'entregas', 'meetings', 'invoices', 'metrics', 'saved_ideas'] as const;
+            const migrationPayload = parsed.map(c => {
+              const subData: Record<string, unknown> = {};
+              for (const dt of DATA_TYPES) {
+                const key = dt === 'saved_ideas' ? `creator_flow_saved_ideas_${c.id}` : `creator_flow_${dt}_${c.id}`;
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                  try { subData[dt] = JSON.parse(raw); } catch { /* skip */ }
+                }
+              }
+              return { ...c, subData };
+            });
+            migrateFromLocalStorage(migrationPayload)
+              .then(() => localStorage.setItem('cf_clients_migrated', 'true'))
+              .catch(err => console.error('Migration error:', err));
+          } else {
+            localStorage.setItem('cf_clients_migrated', 'true');
+          }
+        } catch { /* skip migration */ }
+      }
+
+      // Load from API
+      fetchClients()
+        .then(apiClients => setClients(apiClients))
+        .catch(err => {
+          console.error('Failed to load clients from API:', err);
+          // Fallback to localStorage
+          const local = localStorage.getItem(CLIENTS_KEY);
+          if (local) {
+            try { setClients(JSON.parse(local)); } catch { /* ignore */ }
+          }
+        });
     }
   }, []);
 
@@ -325,9 +366,7 @@ export default function DashboardPage() {
     localStorage.setItem(STUDIO_KEY, JSON.stringify(studioProfile));
   }, [studioProfile]);
 
-  useEffect(() => {
-    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-  }, [clients]);
+  // Clients are persisted via API — no localStorage sync needed
 
   const handleSaveSession = (agentId: string, updatedSession: ChatSession) => {
     setSessions(prev => {
@@ -420,12 +459,41 @@ export default function DashboardPage() {
     setRecordings(prev => prev.filter(r => r.id !== id));
   };
 
-  const handleSaveClient = (client: Client) => {
+  const handleSaveClient = async (client: Client) => {
+    // Optimistic update
     setClients(prev => [client, ...prev]);
+    try {
+      const saved = await createClient({
+        brandName: client.brandName,
+        niche: client.niche,
+        subniche: client.subniche,
+        idealClient: client.idealClient,
+        mainPains: client.mainPains,
+        mainDesires: client.mainDesires,
+        voiceTone: client.voiceTone,
+        visualStyle: client.visualStyle,
+        defaultCta: client.defaultCta,
+      });
+      // Replace optimistic entry with server-returned one (has server-generated ID)
+      setClients(prev => prev.map(c => c.id === client.id ? saved : c));
+    } catch (err) {
+      console.error('Failed to save client:', err);
+      // Revert optimistic update
+      setClients(prev => prev.filter(c => c.id !== client.id));
+    }
   };
 
-  const handleDeleteClient = (id: string) => {
+  const handleDeleteClient = async (id: string) => {
+    const backup = clients;
+    // Optimistic update
     setClients(prev => prev.filter(c => c.id !== id));
+    try {
+      await deleteClientAPI(id);
+    } catch (err) {
+      console.error('Failed to delete client:', err);
+      // Revert on failure
+      setClients(backup);
+    }
   };
 
   // Dá baixa em uma pendência: mantém a gravação, apenas limpa os campos de alerta.

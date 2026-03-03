@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { stripe, getPlanKeyByPriceId } from '@/lib/stripe';
 import { query } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         const periodStart = subscription.current_period_start || subscription.items?.data?.[0]?.current_period_start || Math.floor(Date.now() / 1000);
         const periodEnd = subscription.current_period_end || subscription.items?.data?.[0]?.current_period_end || Math.floor(Date.now() / 1000) + 30 * 86400;
 
-        await query(
+        const result = await query(
           `UPDATE subscriptions SET
             stripe_subscription_id = $1,
             status = 'active',
@@ -42,15 +42,14 @@ export async function POST(req: NextRequest) {
             current_period_end = to_timestamp($3),
             updated_at = NOW()
           WHERE user_id = (SELECT id FROM users WHERE stripe_customer_id = $4)`,
-          [
-            subscriptionId,
-            periodStart,
-            periodEnd,
-            customerId,
-          ]
+          [subscriptionId, periodStart, periodEnd, customerId]
         );
 
-        console.warn('Checkout completed — subscription activated for customer:', customerId);
+        if (result.rowCount === 0) {
+          console.error('Webhook: no subscription found for customer:', customerId);
+        } else {
+          console.warn('Checkout completed — subscription activated for customer:', customerId);
+        }
         break;
       }
 
@@ -60,27 +59,41 @@ export async function POST(req: NextRequest) {
         const status = subscription.status;
         const subPeriodStart = subscription.current_period_start || subscription.items?.data?.[0]?.current_period_start || 0;
         const subPeriodEnd = subscription.current_period_end || subscription.items?.data?.[0]?.current_period_end || 0;
+        const newPriceId = subscription.items?.data?.[0]?.price?.id || null;
 
-        await query(
-          `UPDATE subscriptions SET
-            status = $1,
-            current_period_start = to_timestamp($2),
-            current_period_end = to_timestamp($3),
-            cancel_at_period_end = $4,
-            stripe_price_id = $5,
-            updated_at = NOW()
-          WHERE stripe_subscription_id = $6`,
-          [
-            status,
-            subPeriodStart,
-            subPeriodEnd,
-            subscription.cancel_at_period_end,
-            subscription.items?.data?.[0]?.price?.id || null,
-            subscription.id,
-          ]
-        );
+        // Resolve plan key from price ID (handles upgrades/downgrades)
+        const newPlanKey = newPriceId ? getPlanKeyByPriceId(newPriceId) : null;
 
-        console.warn('Subscription updated:', subscription.id, '->', status);
+        if (newPlanKey) {
+          // Update including plan field
+          await query(
+            `UPDATE subscriptions SET
+              status = $1,
+              current_period_start = to_timestamp($2),
+              current_period_end = to_timestamp($3),
+              cancel_at_period_end = $4,
+              stripe_price_id = $5,
+              plan = $6,
+              updated_at = NOW()
+            WHERE stripe_subscription_id = $7`,
+            [status, subPeriodStart, subPeriodEnd, subscription.cancel_at_period_end, newPriceId, newPlanKey, subscription.id]
+          );
+        } else {
+          // Update without changing plan field
+          await query(
+            `UPDATE subscriptions SET
+              status = $1,
+              current_period_start = to_timestamp($2),
+              current_period_end = to_timestamp($3),
+              cancel_at_period_end = $4,
+              stripe_price_id = $5,
+              updated_at = NOW()
+            WHERE stripe_subscription_id = $6`,
+            [status, subPeriodStart, subPeriodEnd, subscription.cancel_at_period_end, newPriceId, subscription.id]
+          );
+        }
+
+        console.warn('Subscription updated:', subscription.id, '->', status, newPlanKey ? `plan: ${newPlanKey}` : '');
         break;
       }
 
@@ -122,7 +135,8 @@ export async function POST(req: NextRequest) {
     }
   } catch (dbError) {
     console.error('Database error processing webhook:', dbError);
-    return NextResponse.json({ received: true, error: 'db_error' });
+    // Return 500 so Stripe retries the webhook
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

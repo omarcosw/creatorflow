@@ -88,10 +88,7 @@ export default function SignupPage() {
         return;
       }
 
-      // Save JWT token
-      localStorage.setItem('cf_token', data.token);
-
-      // Redirect to Stripe Checkout
+      // Redirect to Stripe Checkout (JWT issued after payment via login)
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       }
@@ -271,9 +268,9 @@ export default function SignupPage() {
           </div>
           <span className="text-[13px] leading-relaxed text-[#A0A0A0]">
             Li e aceito os{' '}
-            <a href="#" className="text-[#8B5CF6] hover:underline">Termos de Uso</a>
+            <span className="text-[#8B5CF6]">Termos de Uso</span>
             {' '}e{' '}
-            <a href="#" className="text-[#8B5CF6] hover:underline">Política de Privacidade</a>
+            <span className="text-[#8B5CF6]">Política de Privacidade</span>
           </span>
         </label>
         {errors.accepted && <p className="text-[13px] text-red-400 -mt-2">{errors.accepted}</p>}

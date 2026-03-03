@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
+import { verifyToken } from '@/lib/jwt';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 // ─── DEV BYPASS ───────────────────────────────────────────────────────────────
 const DEV_USER_ID = 'dev-user-00000000-0000-0000-0000-000000000001';
@@ -27,7 +26,7 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = verifyToken(token);
 
     // DEV BYPASS: skip DB for the dev test user
     if (process.env.NODE_ENV !== 'production' && decoded.userId === DEV_USER_ID) {
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
       `SELECT u.id, u.name, u.email, u.stripe_customer_id,
               s.plan, s.status as subscription_status, s.current_period_end, s.cancel_at_period_end
        FROM users u
-       LEFT JOIN subscriptions s ON s.user_id = u.id
+       LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
        WHERE u.id = $1
        ORDER BY s.created_at DESC
        LIMIT 1`,
@@ -57,12 +56,16 @@ export async function GET(req: NextRequest) {
         name: user.name,
         email: user.email,
         plan: user.plan,
-        subscriptionStatus: user.subscription_status,
+        subscriptionStatus: user.subscription_status || 'inactive',
         currentPeriodEnd: user.current_period_end,
         cancelAtPeriodEnd: user.cancel_at_period_end,
       },
     });
-  } catch {
-    return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+  } catch (error) {
+    if (error instanceof JsonWebTokenError || error instanceof TokenExpiredError) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+    console.error('Auth /me error:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
 import { PLANS } from '@/lib/stripe';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
+import { verifyToken } from '@/lib/jwt';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,10 +12,8 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.split(' ')[1];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = verifyToken(token);
 
-    // Get user's current plan
     const result = await query(
       `SELECT s.plan, s.status FROM subscriptions s
        WHERE s.user_id = $1 AND s.status = 'active'
@@ -40,7 +37,11 @@ export async function GET(req: NextRequest) {
       name: plan.name,
       limits: plan.limits,
     });
-  } catch {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  } catch (error) {
+    if (error instanceof JsonWebTokenError || error instanceof TokenExpiredError) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+    console.error('Plan limits error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

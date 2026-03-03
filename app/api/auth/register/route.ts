@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
 import { stripe, PLANS } from '@/lib/stripe';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +13,7 @@ export async function POST(req: NextRequest) {
     if (password.length < 8) {
       return NextResponse.json({ error: 'Senha deve ter no mínimo 8 caracteres' }, { status: 400 });
     }
-    const validPlans = ['solo', 'maker', 'studio', 'agency'];
+    const validPlans = Object.keys(PLANS);
     if (!validPlans.includes(plan)) {
       return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
     }
@@ -57,7 +54,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       customer: customer.id,
       line_items: [{ price: planData.priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/login?registered=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup?plan=${plan}&canceled=true`,
       allow_promotion_codes: true,
       billing_address_collection: 'required',
@@ -68,15 +65,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const token = jwt.sign(
-      { userId, email: email.toLowerCase(), name },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
+    // No JWT issued here — token only granted after payment confirmed via login
     return NextResponse.json({
       checkoutUrl: session.url,
-      token,
     });
   } catch (error: unknown) {
     console.error('Registration error:', error);

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
+import { signToken } from '@/lib/jwt';
 
 // ─── DEV BYPASS ───────────────────────────────────────────────────────────────
 // Ativo apenas fora de produção. Remove ou ignore em deploy.
@@ -18,10 +16,9 @@ const DEV_USER = {
 function devBypass(email: string, password: string) {
   if (process.env.NODE_ENV === 'production') return null;
   if (email.toLowerCase() !== DEV_USER.email || password !== DEV_USER.password) return null;
-  const token = jwt.sign(
+  const token = signToken(
     { userId: DEV_USER.id, email: DEV_USER.email, name: DEV_USER.name, plan: DEV_USER.plan, subscriptionStatus: 'active' },
-    JWT_SECRET,
-    { expiresIn: '7d' },
+    '7d',
   );
   return NextResponse.json({
     token,
@@ -45,7 +42,7 @@ export async function POST(req: NextRequest) {
       `SELECT u.id, u.name, u.email, u.password_hash, u.stripe_customer_id,
               s.plan, s.status as subscription_status, s.current_period_end
        FROM users u
-       LEFT JOIN subscriptions s ON s.user_id = u.id
+       LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
        WHERE u.email = $1
        ORDER BY s.created_at DESC
        LIMIT 1`,
@@ -63,36 +60,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email ou senha incorretos' }, { status: 401 });
     }
 
-    if (user.subscription_status !== 'active') {
-      return NextResponse.json({
-        error: 'Assinatura inativa',
-        subscriptionStatus: user.subscription_status,
-        requiresPayment: true,
-      }, { status: 403 });
-    }
-
     await query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
-    const token = jwt.sign(
+    const token = signToken(
       {
         userId: user.id,
         email: user.email,
         name: user.name,
-        plan: user.plan,
-        subscriptionStatus: user.subscription_status,
+        plan: user.plan || null,
+        subscriptionStatus: user.subscription_status || 'inactive',
       },
-      JWT_SECRET,
-      { expiresIn: '7d' }
+      '7d'
     );
 
+    // Allow login even with inactive subscription — frontend handles redirect
     return NextResponse.json({
       token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        plan: user.plan,
-        subscriptionStatus: user.subscription_status,
+        plan: user.plan || null,
+        subscriptionStatus: user.subscription_status || 'inactive',
         currentPeriodEnd: user.current_period_end,
       },
     });

@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useClientData } from '@/lib/hooks/useClientData';
+import { fetchClientData, saveClientData } from '@/lib/clients-api';
 import {
   ArrowLeft,
   Trophy,
@@ -155,44 +157,48 @@ const PORTAL_MONTH_OPTIONS = [2025, 2026].flatMap(y => PORTAL_MONTHS_PT.map(m =>
 // Achievements (dynamic)
 // ─────────────────────────────────────────────
 const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const [data] = useState(() => {
-    let videosProduced  = 0;
-    let instagramGrowth = '+0%';
-    let latestFollowers = '—';
+  const [data, setData] = useState({ videosProduced: 0, instagramGrowth: '+0%', latestFollowers: '—' });
 
-    try {
-      const s = localStorage.getItem(`creator_flow_entregas_${clientId}`);
-      if (s) {
-        const deliverables = JSON.parse(s) as PortalDeliverable[];
-        videosProduced = deliverables.filter(d => d.status === 'aprovado').length;
-      }
-    } catch { /* ignore */ }
+  useEffect(() => {
+    const load = async () => {
+      let videosProduced = 0;
+      let instagramGrowth = '+0%';
+      let latestFollowers = '—';
 
-    try {
-      const s = localStorage.getItem(`creator_flow_metrics_${clientId}`);
-      if (s) {
-        const m = JSON.parse(s) as { followerHistory?: { month: string; count: number }[]; initialFollowers?: number; currentFollowers?: number };
-        if (m.followerHistory && m.followerHistory.length > 0) {
-          const sorted = [...m.followerHistory].sort(
-            (a, b) => PORTAL_MONTH_OPTIONS.indexOf(a.month) - PORTAL_MONTH_OPTIONS.indexOf(b.month),
-          );
-          const first = sorted[0].count;
-          const last  = sorted[sorted.length - 1].count;
-          latestFollowers = last.toLocaleString('pt-BR');
-          if (sorted.length >= 2 && first > 0) {
-            const pct = ((last - first) / first) * 100;
-            instagramGrowth = `+${pct.toFixed(0)}%`;
-          }
-        } else if (m.initialFollowers && m.currentFollowers && m.initialFollowers > 0) {
-          const pct = ((m.currentFollowers - m.initialFollowers) / m.initialFollowers) * 100;
-          instagramGrowth = `+${pct.toFixed(0)}%`;
-          latestFollowers = m.currentFollowers.toLocaleString('pt-BR');
+      try {
+        const deliverables = await fetchClientData<PortalDeliverable[]>(clientId, 'entregas');
+        if (Array.isArray(deliverables)) {
+          videosProduced = deliverables.filter(d => d.status === 'aprovado').length;
         }
-      }
-    } catch { /* ignore */ }
+      } catch { /* ignore */ }
 
-    return { videosProduced, instagramGrowth, latestFollowers };
-  });
+      try {
+        const m = await fetchClientData<{ followerHistory?: { month: string; count: number }[]; initialFollowers?: number; currentFollowers?: number }>(clientId, 'metrics');
+        if (m && typeof m === 'object') {
+          if (m.followerHistory && m.followerHistory.length > 0) {
+            const sorted = [...m.followerHistory].sort(
+              (a, b) => PORTAL_MONTH_OPTIONS.indexOf(a.month) - PORTAL_MONTH_OPTIONS.indexOf(b.month),
+            );
+            const first = sorted[0].count;
+            const last  = sorted[sorted.length - 1].count;
+            latestFollowers = last.toLocaleString('pt-BR');
+            if (sorted.length >= 2 && first > 0) {
+              const pct = ((last - first) / first) * 100;
+              instagramGrowth = `+${pct.toFixed(0)}%`;
+            }
+          } else if (m.initialFollowers && m.currentFollowers && m.initialFollowers > 0) {
+            const pct = ((m.currentFollowers - m.initialFollowers) / m.initialFollowers) * 100;
+            instagramGrowth = `+${pct.toFixed(0)}%`;
+            latestFollowers = m.currentFollowers.toLocaleString('pt-BR');
+          }
+        }
+      } catch { /* ignore */ }
+
+      setData({ videosProduced, instagramGrowth, latestFollowers });
+    };
+
+    load();
+  }, [clientId]);
 
   const achievements = [
     { icon: <Flame className="w-5 h-5" />,      iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',       hover: 'hover:border-amber-700/50',   value: String(data.videosProduced), label: 'Vídeos Produzidos' },
@@ -608,34 +614,36 @@ const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({ script, onClose, 
 // Roteiros tab
 // ─────────────────────────────────────────────
 const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const ROTEIROS_KEY = `creator_flow_roteiros_${clientId}`;
-
-  const loadScripts = (): PortalScriptDoc[] => {
-    try {
-      const s = localStorage.getItem(ROTEIROS_KEY);
-      const pkgs: _PortalPkg[] = s ? JSON.parse(s) : [];
-      return pkgs.flatMap(pkg =>
-        pkg.scripts
-          .filter(sc => !!sc.portalStatus)
-          .map(sc => ({ ...(sc as unknown as PortalScriptDoc), _pkgTitle: pkg.title })),
-      );
-    } catch { return []; }
-  };
-
-  const [scripts, setScripts]       = useState<PortalScriptDoc[]>(loadScripts);
+  const [scripts, setScripts]       = useState<PortalScriptDoc[]>([]);
   const [openScript, setOpenScript] = useState<PortalScriptDoc | null>(null);
 
-  const writeBack = (id: string, updates: Partial<PortalScriptDoc>) => {
-    try {
-      const s = localStorage.getItem(ROTEIROS_KEY);
-      const pkgs: _PortalPkg[] = s ? JSON.parse(s) : [];
-      const updated = pkgs.map(pkg => ({
-        ...pkg,
-        scripts: pkg.scripts.map(sc => sc.id === id ? { ...sc, ...updates } : sc),
-      }));
-      localStorage.setItem(ROTEIROS_KEY, JSON.stringify(updated));
-    } catch { /* ignore */ }
+  useEffect(() => {
+    fetchClientData<_PortalPkg[]>(clientId, 'roteiros')
+      .then(pkgs => {
+        if (Array.isArray(pkgs)) {
+          const loaded = pkgs.flatMap(pkg =>
+            pkg.scripts
+              .filter(sc => !!sc.portalStatus)
+              .map(sc => ({ ...(sc as unknown as PortalScriptDoc), _pkgTitle: pkg.title })),
+          );
+          setScripts(loaded);
+        }
+      })
+      .catch(() => {});
+  }, [clientId]);
+
+  const writeBack = async (id: string, updates: Partial<PortalScriptDoc>) => {
     setScripts(prev => prev.map(sc => sc.id === id ? { ...sc, ...updates } : sc));
+    try {
+      const pkgs = await fetchClientData<_PortalPkg[]>(clientId, 'roteiros');
+      if (Array.isArray(pkgs)) {
+        const updated = pkgs.map(pkg => ({
+          ...pkg,
+          scripts: pkg.scripts.map(sc => sc.id === id ? { ...sc, ...updates } : sc),
+        }));
+        await saveClientData(clientId, 'roteiros', updated);
+      }
+    } catch { /* ignore */ }
   };
 
   const handleApprove = (id: string) => writeBack(id, { portalStatus: 'aprovado_cliente' });
@@ -770,23 +778,14 @@ const PortalRoteirosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
 // Videos / Materiais tab
 // ─────────────────────────────────────────────
 const PortalVideosTab: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const ENTREGAS_KEY = `creator_flow_entregas_${clientId}`;
-
-  const [deliverables, setDeliverables] = useState<PortalDeliverable[]>(() => {
-    try {
-      const s = localStorage.getItem(ENTREGAS_KEY);
-      return s ? JSON.parse(s) : [];
-    } catch { return []; }
-  });
+  const { data: deliverables, setData: setDeliverables } = useClientData<PortalDeliverable[]>(clientId, 'entregas', []);
   const [feedbackOpen, setFeedbackOpen]     = useState<string | null>(null);
   const [feedbackTexts, setFeedbackTexts]   = useState<Record<string, string>>({});
   const [feedbackSent, setFeedbackSent]     = useState<string | null>(null);
   const [justApprovedId, setJustApprovedId] = useState<string | null>(null);
 
   const updateDeliverable = (id: string, updates: Partial<PortalDeliverable>) => {
-    const updated = deliverables.map(d => d.id === id ? { ...d, ...updates } : d);
-    setDeliverables(updated);
-    try { localStorage.setItem(ENTREGAS_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+    setDeliverables(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
   };
 
   const handleApprove = (id: string) => {
@@ -998,12 +997,7 @@ interface PortalMeeting {
 }
 
 const PortalReunioeTab: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const [meetings] = useState<PortalMeeting[]>(() => {
-    try {
-      const s = localStorage.getItem(`creator_flow_meetings_${clientId}`);
-      return s ? JSON.parse(s) : [];
-    } catch { return []; }
-  });
+  const { data: meetings } = useClientData<PortalMeeting[]>(clientId, 'meetings', []);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const formatDate = (dateStr: string): string => {
@@ -1157,10 +1151,7 @@ const INVOICE_STATUS_PORTAL: Record<Invoice['status'], { label: string; badge: s
 };
 
 const PortalFinanceiroTab: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const [invoices] = useState<Invoice[]>(() => {
-    try { const s = localStorage.getItem(`creator_flow_invoices_${clientId}`); return s ? JSON.parse(s) : []; }
-    catch { return []; }
-  });
+  const { data: invoices } = useClientData<Invoice[]>(clientId, 'invoices', []);
   const [payModalFor, setPayModalFor] = useState<Invoice | null>(null);
   const [copied, setCopied]           = useState(false);
 

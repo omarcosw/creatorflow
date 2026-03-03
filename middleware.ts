@@ -15,6 +15,12 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 30; // 30 requests per minute per IP
 
+// --- Auth Rate Limiting (stricter) ---
+const authRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const AUTH_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const AUTH_RATE_LIMIT_MAX_LOGIN = 5; // 5 login attempts per minute per IP
+const AUTH_RATE_LIMIT_MAX_REGISTER = 3; // 3 registrations per minute per IP
+
 // --- Bot Protection ---
 const BOT_PATTERNS = [
   'python-requests',
@@ -57,6 +63,24 @@ function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count };
 }
 
+function checkAuthRateLimit(ip: string, maxAttempts: number): { allowed: boolean } {
+  const now = Date.now();
+  const key = `auth:${ip}`;
+  const entry = authRateLimitMap.get(key);
+
+  if (!entry || now > entry.resetTime) {
+    authRateLimitMap.set(key, { count: 1, resetTime: now + AUTH_RATE_LIMIT_WINDOW });
+    return { allowed: true };
+  }
+
+  entry.count++;
+  if (entry.count > maxAttempts) {
+    return { allowed: false };
+  }
+
+  return { allowed: true };
+}
+
 function isBot(request: NextRequest): boolean {
   const ua = (request.headers.get('user-agent') || '').toLowerCase();
   if (!ua) return true; // No user-agent = suspicious
@@ -75,13 +99,34 @@ setInterval(() => {
       rateLimitMap.delete(key);
     }
   }
+  for (const [key, value] of authRateLimitMap) {
+    if (now > value.resetTime) {
+      authRateLimitMap.delete(key);
+    }
+  }
 }, 5 * 60 * 1000);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // --- Skip rate limiting and bot blocking for these endpoints ---
-  if (pathname === '/api/health' || pathname === '/api/stripe/webhook' || pathname.startsWith('/api/auth/')) {
+  // --- Skip rate limiting for health and webhook only ---
+  if (pathname === '/api/health' || pathname === '/api/stripe/webhook') {
+    return addSecurityHeaders(NextResponse.next(), request);
+  }
+
+  // --- Auth routes: separate stricter rate limiting ---
+  if (pathname.startsWith('/api/auth/')) {
+    const ip = getClientIp(request);
+    const maxAttempts = pathname.includes('/login') ? AUTH_RATE_LIMIT_MAX_LOGIN : AUTH_RATE_LIMIT_MAX_REGISTER;
+    const { allowed } = checkAuthRateLimit(ip, maxAttempts);
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Aguarde 1 minuto.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      );
+    }
+
     return addSecurityHeaders(NextResponse.next(), request);
   }
 

@@ -39,12 +39,6 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      if (res.status === 403 && data.requiresPayment) {
-        setErrors({ general: 'Sua assinatura está inativa. Renove seu plano.' });
-        setLoading(false);
-        return;
-      }
-
       if (!res.ok) {
         setErrors({ general: data.error || 'Erro ao fazer login' });
         setLoading(false);
@@ -55,9 +49,14 @@ export default function LoginPage() {
       localStorage.setItem('cf_token', data.token);
       localStorage.setItem('cf_email', data.user.email);
       localStorage.setItem('cf_name', data.user.name);
-      localStorage.setItem('cf_plan', data.user.plan);
+      if (data.user.plan) localStorage.setItem('cf_plan', data.user.plan);
 
-      router.push('/dashboard');
+      // Redirect based on subscription status
+      if (data.user.subscriptionStatus !== 'active') {
+        router.push('/subscription-inactive');
+      } else {
+        router.push('/dashboard');
+      }
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
       setLoading(false);

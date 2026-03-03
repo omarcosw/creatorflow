@@ -39,3 +39,39 @@ CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe ON subscriptions(stripe_subscription_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+
+-- Clients table (CRM profiles)
+CREATE TABLE IF NOT EXISTS clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  brand_name VARCHAR(255) NOT NULL,
+  niche VARCHAR(255) DEFAULT '',
+  subniche VARCHAR(255) DEFAULT '',
+  ideal_client TEXT DEFAULT '',
+  main_pains TEXT DEFAULT '',
+  main_desires TEXT DEFAULT '',
+  voice_tone VARCHAR(50) NOT NULL DEFAULT 'Descontraído',
+  visual_style TEXT DEFAULT '',
+  default_cta TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_clients_user ON clients(user_id);
+CREATE INDEX IF NOT EXISTS idx_clients_user_created ON clients(user_id, created_at DESC);
+
+-- Client data table (JSONB storage for per-client sub-features: kanban, agenda, etc.)
+CREATE TABLE IF NOT EXISTS client_data (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  data_type VARCHAR(50) NOT NULL,
+  data JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(client_id, data_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_client_data_client ON client_data(client_id);
+CREATE INDEX IF NOT EXISTS idx_client_data_user ON client_data(user_id);
+CREATE INDEX IF NOT EXISTS idx_client_data_type ON client_data(client_id, data_type);

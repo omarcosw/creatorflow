@@ -73,18 +73,30 @@ export async function checkLimit(userId: string, plan: PlanKey, feature: Trackab
   };
 }
 
+// Valid feature columns (whitelist to prevent SQL injection)
+const VALID_FEATURES: ReadonlySet<string> = new Set(['script_generator', 'proposals', 'image_analysis', 'storyboard']);
+
 // Increment usage counter for a feature
 export async function incrementUsage(userId: string, feature: TrackableFeature, count: number = 1): Promise<void> {
+  if (!VALID_FEATURES.has(feature)) {
+    throw new Error(`Invalid feature: ${feature}`);
+  }
+
   const now = new Date();
   const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
   await query(
-    `INSERT INTO usage (user_id, period_start, period_end, ${feature})
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO usage (user_id, period_start, period_end)
+     VALUES ($1, $2, $3)
      ON CONFLICT (user_id, period_start)
-     DO UPDATE SET ${feature} = usage.${feature} + $4, updated_at = NOW()`,
-    [userId, periodStart, periodEnd, count]
+     DO UPDATE SET
+       script_generator = CASE WHEN $4 = 'script_generator' THEN usage.script_generator + $5 ELSE usage.script_generator END,
+       proposals = CASE WHEN $4 = 'proposals' THEN usage.proposals + $5 ELSE usage.proposals END,
+       image_analysis = CASE WHEN $4 = 'image_analysis' THEN usage.image_analysis + $5 ELSE usage.image_analysis END,
+       storyboard = CASE WHEN $4 = 'storyboard' THEN usage.storyboard + $5 ELSE usage.storyboard END,
+       updated_at = NOW()`,
+    [userId, periodStart, periodEnd, feature, count]
   );
 }
 

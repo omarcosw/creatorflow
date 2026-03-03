@@ -1,31 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessageToAgent } from '@/lib/gemini';
 import { AgentId } from '@/types';
-import jwt from 'jsonwebtoken';
 import { checkLimit, incrementUsage, TrackableFeature } from '@/lib/usage';
 import { PlanKey } from '@/lib/stripe';
 import { query } from '@/lib/db';
+import { verifyToken } from '@/lib/jwt';
 
 const VALID_AGENT_IDS = new Set(Object.values(AgentId));
 const MAX_HISTORY_LENGTH = 100;
 const MAX_MESSAGE_LENGTH = 50000; // 50k chars
-const JWT_SECRET = process.env.JWT_SECRET || 'creatorflow-jwt-secret-change-me';
-
-const ALLOWED_ORIGINS = [
-  'https://creatorflowia.com',
-  'https://www.creatorflowia.com',
-  'http://localhost:3000',
-];
-
-function isValidOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get('origin');
-  const referer = request.headers.get('referer');
-  // Allow server-side calls (no origin/referer)
-  if (!origin && !referer) return true;
-  if (origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return true;
-  if (referer && ALLOWED_ORIGINS.some(o => referer.startsWith(o))) return true;
-  return false;
-}
 
 // Map agent IDs to trackable feature categories
 const AGENT_FEATURE_MAP: Record<string, TrackableFeature> = {
@@ -64,9 +47,6 @@ const AGENT_FEATURE_MAP: Record<string, TrackableFeature> = {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!isValidOrigin(request)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
     const body = await request.json();
     const { agentId, message, image, audio, history, systemInstruction, imageSize } = body;
 
@@ -119,8 +99,7 @@ export async function POST(request: NextRequest) {
     if (authHeader?.startsWith('Bearer ')) {
       try {
         const token = authHeader.split(' ')[1];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        const decoded = verifyToken(token);
         userId = decoded.userId;
 
         // Get fresh plan from DB (JWT plan may be stale)
@@ -174,7 +153,7 @@ export async function POST(request: NextRequest) {
     // Increment usage after successful response
     if (userId) {
       incrementUsage(userId, feature).catch(err => {
-        console.error('Failed to increment usage:', err);
+        console.error('Failed to increment usage for user', userId, 'feature', feature, ':', err);
       });
     }
 

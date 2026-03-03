@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { fetchClientData } from '@/lib/clients-api';
 import {
   ArrowLeft, Plus, Users, Trash2, ChevronRight, AlertTriangle, Calendar,
   X, UserPlus, MoreVertical, Pencil, CheckCircle, Clock, Video, Globe,
@@ -58,20 +59,20 @@ interface _AgendaEventWithClient extends _AgendaEvent {
 const _getTodayStr = (): string => new Date().toISOString().split('T')[0];
 
 // ─────────────────────────────────────────────
-// Agenda aggregation — reads all clients' localStorage
+// Agenda aggregation — async, fetches from API
 // ─────────────────────────────────────────────
-const getUpcomingEvents = (clients: Client[]): _AgendaEventWithClient[] => {
+const fetchUpcomingEvents = async (clients: Client[]): Promise<_AgendaEventWithClient[]> => {
   const todayStr = _getTodayStr();
   const all: _AgendaEventWithClient[] = [];
 
   for (const client of clients) {
     try {
-      const stored = localStorage.getItem(`creator_flow_agenda_${client.id}`);
-      if (!stored) continue;
-      const events: _AgendaEvent[] = JSON.parse(stored);
-      for (const e of events) {
-        if (e.date >= todayStr) {
-          all.push({ ...e, clientId: client.id, clientName: client.brandName });
+      const events = await fetchClientData<_AgendaEvent[]>(client.id, 'agenda');
+      if (Array.isArray(events)) {
+        for (const e of events) {
+          if (e.date >= todayStr) {
+            all.push({ ...e, clientId: client.id, clientName: client.brandName });
+          }
         }
       }
     } catch { /* ignore */ }
@@ -114,36 +115,7 @@ const getEventIcon = (type: string) => {
   return                                   <Calendar className="w-3.5 h-3.5" />;
 };
 
-const getClientAlerts = (clientId: string): ClientAlerts => {
-  const todayStr = _getTodayStr();
-  let hasOverdue = false;
-  let hasToday   = false;
-
-  // ── Check kanban cards ───────────────────────
-  try {
-    const stored = localStorage.getItem(`creator_flow_kanban_${clientId}`);
-    if (stored) {
-      const columns: _WorkflowColumn[] = JSON.parse(stored);
-      const active = columns
-        .filter(c => c.id !== 'finalizado')
-        .flatMap(c => c.cards)
-        .filter(c => c.dueDate);
-      if (active.some(c => c.dueDate < todayStr)) hasOverdue = true;
-      if (active.some(c => c.dueDate === todayStr)) hasToday = true;
-    }
-  } catch { /* ignore */ }
-
-  // ── Check agenda events today ────────────────
-  try {
-    const stored = localStorage.getItem(`creator_flow_agenda_${clientId}`);
-    if (stored) {
-      const agendaEvents: _AgendaEvent[] = JSON.parse(stored);
-      if (agendaEvents.some(e => e.date === todayStr)) hasToday = true;
-    }
-  } catch { /* ignore */ }
-
-  return { hasOverdue, hasToday };
-};
+// Client alerts are now loaded async via useEffect in the main component
 
 // ─────────────────────────────────────────────
 // Minha Equipe — types & constants
@@ -193,7 +165,11 @@ interface UpcomingScheduleSectionProps {
 }
 
 const UpcomingScheduleSection: React.FC<UpcomingScheduleSectionProps> = ({ clients, onSelectClient }) => {
-  const events = getUpcomingEvents(clients);
+  const [events, setEvents] = useState<_AgendaEventWithClient[]>([]);
+
+  useEffect(() => {
+    fetchUpcomingEvents(clients).then(setEvents).catch(() => {});
+  }, [clients]);
 
   return (
     <section className="mb-8">
@@ -871,6 +847,42 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [portalClient, setPortalClient]     = useState<Client | null>(null);
   const [hubView, setHubView]               = useState<'bi' | 'clientes'>('bi');
+  const [alertsCache, setAlertsCache]       = useState<Record<string, ClientAlerts>>({});
+
+  // Load alerts for all clients from API
+  useEffect(() => {
+    const loadAlerts = async () => {
+      const todayStr = _getTodayStr();
+      const cache: Record<string, ClientAlerts> = {};
+
+      for (const client of clients) {
+        let hasOverdue = false;
+        let hasToday = false;
+
+        try {
+          const columns = await fetchClientData<_WorkflowColumn[]>(client.id, 'kanban');
+          if (Array.isArray(columns)) {
+            const active = columns.filter(c => c.id !== 'finalizado').flatMap(c => c.cards).filter(c => c.dueDate);
+            if (active.some(c => c.dueDate < todayStr)) hasOverdue = true;
+            if (active.some(c => c.dueDate === todayStr)) hasToday = true;
+          }
+        } catch { /* ignore */ }
+
+        try {
+          const agendaEvents = await fetchClientData<_AgendaEvent[]>(client.id, 'agenda');
+          if (Array.isArray(agendaEvents)) {
+            if (agendaEvents.some(e => e.date === todayStr)) hasToday = true;
+          }
+        } catch { /* ignore */ }
+
+        cache[client.id] = { hasOverdue, hasToday };
+      }
+
+      setAlertsCache(cache);
+    };
+
+    if (clients.length > 0) loadAlerts();
+  }, [clients]);
 
   if (portalClient) {
     return (
@@ -1018,7 +1030,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
           {clients.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {clients.map(client => {
-                const alerts = getClientAlerts(client.id);
+                const alerts = alertsCache[client.id] || { hasOverdue: false, hasToday: false };
                 return (
                   <div
                     key={client.id}

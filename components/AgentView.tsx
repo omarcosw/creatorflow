@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import React from 'react';
+import { fetchClientData, saveClientData } from '@/lib/clients-api';
 import { ArrowLeft, Send, Trash2, StopCircle, ImageIcon, X, Lightbulb, Volume2, Check, CheckCircle2, History, Plus, MessageSquare, Keyboard, Sparkles, PlayCircle, ThumbsUp, ThumbsDown, UserPlus, UserCircle, ChevronRight, Mic, Loader2, Maximize2, Minimize2, Clock, Copy, ExternalLink, Wand2, Monitor, Zap, ListChecks, Palette, Printer, Upload, Play, Layers, Film, Pause, Music, FolderInput } from 'lucide-react';
 import { AgentConfig, AgentId, Message, StylePreset, ChatSession, InstagramProfile, ShotList, ShotItem, BrandKit, Client } from '@/types';
 import { sendMessageToAgent, transcribeAudio, LimitReachedData } from '@/lib/api';
@@ -1482,25 +1483,26 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
       createdAt:     Date.now(),
     };
 
-    const storageKey = `creator_flow_roteiros_${linkClientId}`;
-    try {
-      const stored = localStorage.getItem(storageKey);
-      const pkgs: { id: string; title: string; scripts: typeof newScript[]; createdAt: number }[] =
-        stored ? JSON.parse(stored) : [];
+    // Save script to client's roteiros via API
+    (async () => {
+      try {
+        const existing = await fetchClientData<{ id: string; title: string; scripts: typeof newScript[]; createdAt: number }[]>(linkClientId, 'roteiros');
+        const pkgs = Array.isArray(existing) ? existing : [];
 
-      const globalPkgIdx = pkgs.findIndex(p => p.title === 'Gerado Globalmente');
-      if (globalPkgIdx >= 0) {
-        pkgs[globalPkgIdx] = { ...pkgs[globalPkgIdx], scripts: [newScript, ...pkgs[globalPkgIdx].scripts] };
-      } else {
-        pkgs.unshift({
-          id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
-          title:     'Gerado Globalmente',
-          scripts:   [newScript],
-          createdAt: Date.now(),
-        });
-      }
-      localStorage.setItem(storageKey, JSON.stringify(pkgs));
-    } catch { /* ignore */ }
+        const globalPkgIdx = pkgs.findIndex(p => p.title === 'Gerado Globalmente');
+        if (globalPkgIdx >= 0) {
+          pkgs[globalPkgIdx] = { ...pkgs[globalPkgIdx], scripts: [newScript, ...pkgs[globalPkgIdx].scripts] };
+        } else {
+          pkgs.unshift({
+            id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
+            title:     'Gerado Globalmente',
+            scripts:   [newScript],
+            createdAt: Date.now(),
+          });
+        }
+        await saveClientData(linkClientId, 'roteiros', pkgs);
+      } catch { /* ignore */ }
+    })();
 
     const clientName = clients.find(c => c.id === linkClientId)?.brandName || 'Cliente';
     setLinkToast(`✅ Roteiro enviado para a Sala de Roteiros de ${clientName}!`);
