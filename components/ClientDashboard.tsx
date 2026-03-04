@@ -2164,8 +2164,14 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       try {
         const fetched = await fetchClientData<KanbanColumn[]>(client.id, 'kanban');
         if (Array.isArray(fetched) && fetched.length > 0) cols = fetched;
-      } catch { /* fall through to defaults */ }
-      if (cols.length === 0) cols = KANBAN_INITIAL_COLUMNS.map(c => ({ ...c, cards: [] as KanbanCard[] }));
+      } catch { /* no kanban data yet — fall through to defaults */ }
+
+      // Force-init: use defaults if empty; ensure every column has a valid cards array
+      if (cols.length === 0) {
+        cols = KANBAN_INITIAL_COLUMNS.map(c => ({ ...c, cards: [] as KanbanCard[] }));
+      } else {
+        cols = cols.map(c => ({ ...c, cards: Array.isArray(c.cards) ? c.cards : [] }));
+      }
 
       const newCard: KanbanCard = {
         id: `script_${script.id}_${Date.now()}`,
@@ -2191,7 +2197,8 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
       const firstColTitle = cols[0]?.title || 'Pré-produção';
       setWorkflowToast(`Roteiro enviado para a coluna "${firstColTitle}" do Workflow!`);
       setTimeout(() => setWorkflowToast(''), 4000);
-    } catch {
+    } catch (err) {
+      console.error('[sendToWorkflow] erro ao enviar roteiro para o kanban:', err);
       setWorkflowToast('Erro ao enviar para o Workflow. Tente novamente.');
       setTimeout(() => setWorkflowToast(''), 4000);
     }
