@@ -66,6 +66,7 @@ import {
   Square,
   ArrowRight,
   Pencil,
+  User,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -383,6 +384,13 @@ const getTomorrowStr = (): string => {
 
 
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+function getInitials(name: string): string {
+  return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
 // Shared modal style constants
 // ─────────────────────────────────────────────
 const MODAL_INPUT_CLS =
@@ -498,17 +506,16 @@ const AddCardModal: React.FC<AddCardModalProps> = ({ columnTitle, onSave, onClos
           </div>
 
           <div>
-            <label className={MODAL_LABEL_CLS}>Atribuir a (Opcional)</label>
-            <select
+            <label className={MODAL_LABEL_CLS}>
+              <span className="flex items-center gap-1.5"><User className="w-3 h-3" /> Responsavel (Opcional)</span>
+            </label>
+            <input
+              type="text"
               value={assignedTo}
               onChange={e => setAssignedTo(e.target.value)}
-              className={`${MODAL_INPUT_CLS} cursor-pointer`}
-            >
-              <option value="">— Ninguém —</option>
-              {KANBAN_ASSIGNEES.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
+              placeholder="Ex: Gabriel Correia, Editor..."
+              className={MODAL_INPUT_CLS}
+            />
           </div>
         </div>
 
@@ -642,6 +649,19 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({
               placeholder="Detalhes adicionais sobre o conteúdo…"
               rows={3}
               className={`${MODAL_INPUT_CLS} resize-none`}
+            />
+          </div>
+
+          <div>
+            <label className={MODAL_LABEL_CLS}>
+              <span className="flex items-center gap-1.5"><User className="w-3 h-3" /> Responsavel (Opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={draft.assignedTo ?? ''}
+              onChange={e => set('assignedTo', e.target.value || undefined)}
+              placeholder="Ex: Gabriel Correia, Editor..."
+              className={MODAL_INPUT_CLS}
             />
           </div>
         </div>
@@ -1413,15 +1433,18 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                       )}
 
                                       {card.assignedTo && (() => {
-                                        const assignee = KANBAN_ASSIGNEES.find(a => a.id === card.assignedTo);
-                                        if (!assignee) return null;
+                                        // Support legacy ID-based assignees and new free-text names
+                                        const legacy   = KANBAN_ASSIGNEES.find(a => a.id === card.assignedTo);
+                                        const fullName = legacy?.name     ?? card.assignedTo!;
+                                        const initials = legacy?.initials ?? getInitials(fullName);
+                                        const color    = legacy?.color    ?? 'bg-violet-600';
                                         return (
                                           <div className="flex justify-end mt-2">
                                             <div
-                                              className={`w-6 h-6 rounded-full ${assignee.color} flex items-center justify-center text-white text-[9px] font-black border-2 border-white dark:border-zinc-800`}
-                                              title={assignee.name}
+                                              className={`w-6 h-6 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-black ring-2 ring-white dark:ring-zinc-900`}
+                                              title={fullName}
                                             >
-                                              {assignee.initials}
+                                              {initials}
                                             </div>
                                           </div>
                                         );
