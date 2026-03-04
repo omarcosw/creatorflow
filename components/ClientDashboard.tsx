@@ -2604,6 +2604,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
                       {/* ── Global storyboard action ── */}
                       <div className="flex flex-wrap items-center gap-3">
+                        <BrandBrainBadge clientId={client.id} />
                         <button
                           onClick={e => { e.stopPropagation(); generateStoryboard(selectedPkg.id, script); }}
                           disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard || script.scenes.filter(sc => !sc.type || sc.type === 'scene').length === 0}
@@ -4070,6 +4071,34 @@ const INVOICE_STATUS_STYLES: Record<Invoice['status'], { label: string; badge: s
   pendente: { label: 'Pendente',  badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
   pago:     { label: 'Pago',      badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
   atrasado: { label: 'Atrasado',  badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50' },
+};
+
+// ─────────────────────────────────────────────
+// BrandBrainBadge — indicador visual reutilizável
+// ─────────────────────────────────────────────
+const BrandBrainBadge: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const [active, setActive] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`creator_flow_brand_brain_${clientId}`);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      setActive(typeof data === 'object' && !!data.coreTransformation?.trim());
+    } catch { /* ignore */ }
+  }, [clientId]);
+
+  if (!active) return null;
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium w-fit"
+      title="IA contextualizada com o DNA deste cliente."
+    >
+      <Brain className="w-3.5 h-3.5 flex-shrink-0" />
+      Cérebro da Marca Ativado
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────
@@ -5699,6 +5728,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       ))}
                     </div>
                   </div>
+
+                  <BrandBrainBadge clientId={client.id} />
 
                   <button
                     onClick={handleGenerate}
