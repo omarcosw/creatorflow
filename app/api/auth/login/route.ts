@@ -8,7 +8,7 @@ import { signToken } from '@/lib/jwt';
 const DEV_USER = {
   email: 'teste@creatorflow.com',
   password: '12345678',
-  id: 'dev-user-00000000-0000-0000-0000-000000000001',
+  id: '00000000-0000-0000-0000-000000000001',
   name: 'Usuário Teste',
   plan: 'agency',
 };
