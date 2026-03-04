@@ -1070,6 +1070,16 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
     setNewColTitle('');
   };
 
+  const deleteColumn = (colId: string) => {
+    const col = columns.find(c => c.id === colId);
+    if (!col) return;
+    const msg = col.cards.length > 0
+      ? 'Esta coluna contém tarefas. Deseja realmente excluí-la junto com todas as tarefas dentro dela?'
+      : 'Tem certeza que deseja excluir esta coluna?';
+    if (!window.confirm(msg)) return;
+    setColumns(prev => prev.filter(c => c.id !== colId));
+  };
+
   // ─────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
@@ -1332,6 +1342,13 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                 title="Renomear coluna"
                               >
                                 <Pencil className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => deleteColumn(col.id)}
+                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-red-500 transition-colors"
+                                title="Excluir coluna"
+                              >
+                                <Trash2 className="w-3 h-3" />
                               </button>
                             </>
                           )}
