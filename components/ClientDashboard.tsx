@@ -64,6 +64,7 @@ import {
   Brain,
   Save,
   Square,
+  ArrowRight,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -2095,6 +2096,7 @@ interface ScriptDocument {
   clientFeedback?: string;
   sentToPortalAt?: number;
   rating?: number; // 1–5 stars from portal client
+  inWorkflow?: boolean; // true when sent to the Kanban workflow
 }
 
 interface ScriptPackage {
@@ -2146,6 +2148,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   const [expandedFolders, setExpandedFolders]     = useState<Set<string>>(new Set());
   const [generatingStoryboard, setGeneratingStoryboard] = useState<string | null>(null);
   const [pinnedToast, setPinnedToast]             = useState(false);
+  const [workflowToast, setWorkflowToast]         = useState('');
   const { data: storyboardData, setData: setStoryboardData } = useClientData<{ count: number }>(client.id, 'storyboard_usage', { count: 0 });
   const storyboardUsed = storyboardData.count;
   const setStoryboardUsed = (v: number | ((prev: number) => number)) => {
@@ -2154,6 +2157,45 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
     }));
   };
   const STORYBOARD_LIMIT = 15;
+
+  const sendToWorkflow = async (pkgId: string, script: ScriptDocument) => {
+    try {
+      let cols: KanbanColumn[] = [];
+      try {
+        const fetched = await fetchClientData<KanbanColumn[]>(client.id, 'kanban');
+        if (Array.isArray(fetched) && fetched.length > 0) cols = fetched;
+      } catch { /* fall through to defaults */ }
+      if (cols.length === 0) cols = KANBAN_INITIAL_COLUMNS.map(c => ({ ...c, cards: [] as KanbanCard[] }));
+
+      const newCard: KanbanCard = {
+        id: `script_${script.id}_${Date.now()}`,
+        title: script.title || 'Roteiro sem título',
+        priority: 'Normal',
+        startDate: '',
+        dueDate: '',
+        notes: 'Criado automaticamente a partir do roteiro aprovado.',
+        assignedTo: '',
+      };
+
+      const updatedCols = cols.map((col, idx) =>
+        idx === 0 ? { ...col, cards: [...col.cards, newCard] } : col
+      );
+      await saveClientData(client.id, 'kanban', updatedCols);
+
+      setPackages(prev => prev.map(pkg =>
+        pkg.id === pkgId
+          ? { ...pkg, scripts: pkg.scripts.map(s => s.id === script.id ? { ...s, inWorkflow: true } : s) }
+          : pkg
+      ));
+
+      const firstColTitle = cols[0]?.title || 'Pré-produção';
+      setWorkflowToast(`Roteiro enviado para a coluna "${firstColTitle}" do Workflow!`);
+      setTimeout(() => setWorkflowToast(''), 4000);
+    } catch {
+      setWorkflowToast('Erro ao enviar para o Workflow. Tente novamente.');
+      setTimeout(() => setWorkflowToast(''), 4000);
+    }
+  };
 
   // Roteiros persistence handled by useClientData hook
 
@@ -2423,6 +2465,14 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
         </div>
       )}
 
+      {/* ── Workflow toast ── */}
+      {workflowToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gray-900 border border-indigo-500/30 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <CheckCircle className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+          <p className="text-sm font-bold text-white">{workflowToast}</p>
+        </div>
+      )}
+
       {/* ── Sidebar: Packages ── */}
       <aside className="w-full lg:w-56 xl:w-64 flex-shrink-0">
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 lg:sticky lg:top-4">
@@ -2590,6 +2640,21 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                         <UploadCloud className="w-3 h-3" /> Enviar
                       </button>
                     )}
+                    <button
+                      onClick={e => { e.stopPropagation(); if (!script.inWorkflow) sendToWorkflow(selectedPkg.id, script); }}
+                      disabled={!!script.inWorkflow}
+                      className={`flex-shrink-0 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all ${
+                        script.inWorkflow
+                          ? 'border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 cursor-not-allowed opacity-70'
+                          : 'border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
+                      }`}
+                      title={script.inWorkflow ? 'Já está no Workflow' : 'Enviar para o Workflow'}
+                    >
+                      {script.inWorkflow
+                        ? <><CheckCircle className="w-3 h-3" /> No Workflow</>
+                        : <><ArrowRight className="w-3 h-3" /> Workflow</>
+                      }
+                    </button>
                     <button
                       onClick={e => { e.stopPropagation(); if (confirm(`Excluir "${script.title}"?`)) deleteScript(selectedPkg.id, script.id); }}
                       className="flex-shrink-0 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded-lg"
