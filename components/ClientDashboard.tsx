@@ -1281,11 +1281,11 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
           </div>
           <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex overflow-x-auto overflow-y-hidden w-full h-full pb-4 gap-4 items-start">
+            <div className="flex overflow-x-auto overflow-y-hidden w-full h-full min-h-[70vh] pb-4 gap-4 items-stretch">
                 {columns.map(col => {
                   const isLastCol = col.id === 'finalizado';
                   return (
-                    <div key={col.id} className="w-64 flex-shrink-0 flex flex-col max-h-full">
+                    <div key={col.id} className="w-64 flex-shrink-0 flex flex-col h-full">
 
                       {/* Column header */}
                       <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0 gap-1">
