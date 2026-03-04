@@ -14,7 +14,7 @@ import CreatorStockView from '@/components/CreatorStockView';
 import ExecutiveAssistantView from '@/components/ExecutiveAssistantView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -906,16 +906,28 @@ export default function DashboardPage() {
               Seu painel criativo para planejar, produzir e publicar.
             </h1>
 
-            <div className="flex flex-row gap-4 mb-16">
-              <button
-                onClick={() => handleAgentClick(AgentId.SCRIPT_GENERATOR)}
-                className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:bg-gray-100 transition-colors"
-              >
-                Gerar roteiro
-              </button>
+            <div className="flex flex-row gap-3 mb-16">
+              {userPlan === 'solo' ? (
+                <div className="relative">
+                  <div className="bg-white/30 text-black/40 px-6 py-2.5 rounded-xl text-sm font-semibold cursor-not-allowed select-none">
+                    Hub de clientes
+                  </div>
+                  <div className="absolute -top-2 -right-2 flex items-center gap-1 rounded-full bg-gray-800 border border-gray-700 px-2 py-0.5 shadow">
+                    <Lock className="w-2.5 h-2.5 text-gray-300" />
+                    <span className="text-[9px] font-bold text-gray-300">Maker+</span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsClientesHubOpen(true)}
+                  className="bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                >
+                  Hub de clientes
+                </button>
+              )}
               <button
                 onClick={() => setIsProductionHubOpen(true)}
-                className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition-colors"
+                className="bg-transparent border border-white/20 hover:bg-white/5 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors"
               >
                 Abrir central de criação
               </button>
@@ -970,6 +982,80 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Gestão & CRM */}
+            <div className="w-full mb-12">
+              <h2 className="text-xs font-bold tracking-wider text-gray-500 mb-4 uppercase">Gestão & CRM</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button
+                  onClick={() => setIsArquivosHubOpen(true)}
+                  className="group bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-2xl p-5 flex items-start gap-4 text-left transition-all duration-300"
+                >
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 group-hover:bg-white/10 transition-colors">
+                    <FolderOpen className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white mb-1">Hub de Arquivos</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">Gerencie HDs e registre ingests como Backup.</p>
+                  </div>
+                </button>
+                <div className="relative bg-[#0a0a0a] border border-white/5 rounded-2xl p-5 flex items-start gap-4 opacity-60 pointer-events-none">
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex-shrink-0">
+                    <DollarSign className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-white">Auxiliar Financeiro</h3>
+                      <span className="bg-white/10 text-[10px] px-2 py-1 rounded text-gray-400">Em breve</span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">Controle de receitas, despesas e precificação.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Ferramentas Extras */}
+            <div className="w-full mb-12">
+              <h2 className="text-xs font-bold tracking-wider text-gray-500 mb-4 uppercase">Ferramentas Extras</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <button
+                  onClick={() => handleAgentClick(AgentId.IMAGE_GENERATOR)}
+                  className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
+                >
+                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
+                    <Image className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">Gerador de Imagens</span>
+                </button>
+                <button
+                  onClick={() => handleAgentClick(AgentId.VIDEO_PROMPTS)}
+                  className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
+                >
+                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
+                    <MessageSquare className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">Prompt para Videos</span>
+                </button>
+                <button
+                  onClick={() => handleAgentClick(AgentId.YOUTUBE_SEO)}
+                  className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
+                >
+                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
+                    <Youtube className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">YouTube SEO</span>
+                </button>
+                <button
+                  onClick={() => handleAgentClick(AgentId.INSTAGRAM_CAPTIONS)}
+                  className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
+                >
+                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
+                    <Instagram className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">Legendas Instagram</span>
+                </button>
+              </div>
+            </div>
+
             {/* Usage Panel */}
             {usageData && (
               <div className="w-full bg-[#0a0a0a] border border-white/5 rounded-2xl p-6">
@@ -1009,6 +1095,16 @@ export default function DashboardPage() {
                 )}
               </div>
             )}
+            {/* Search */}
+            <div className="max-w-3xl mx-auto w-full relative mt-12 mb-8">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              <input
+                value={agentQuery}
+                onChange={(e) => setAgentQuery(e.target.value)}
+                placeholder="Buscar agentes, tarefas ou ferramentas..."
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm text-gray-400 placeholder-gray-600 focus:border-purple-500/50 outline-none transition-colors"
+              />
+            </div>
           </div>
 
           {/* Fixed feedback button */}
