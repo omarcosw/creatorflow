@@ -228,16 +228,15 @@ const AchievementsGrid: React.FC<{ clientId: string }> = ({ clientId }) => {
 // Follower history bar chart (portal)
 // ─────────────────────────────────────────────
 const FollowerHistoryPortal: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const [history] = useState<{ month: string; count: number }[]>(() => {
-    try {
-      const s = localStorage.getItem(`creator_flow_metrics_${clientId}`);
-      if (s) {
-        const m = JSON.parse(s) as { followerHistory?: { month: string; count: number }[] };
-        return m.followerHistory ?? [];
-      }
-    } catch { /* ignore */ }
-    return [];
-  });
+  const [history, setHistory] = useState<{ month: string; count: number }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchClientData<{ followerHistory?: { month: string; count: number }[] }>(clientId, 'metrics')
+      .then(m => { if (!cancelled && m?.followerHistory) setHistory(m.followerHistory); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [clientId]);
 
   if (history.length === 0) return null;
 
@@ -289,68 +288,78 @@ const FollowerHistoryPortal: React.FC<{ clientId: string }> = ({ clientId }) => 
 // Pending actions
 // ─────────────────────────────────────────────
 const PendingActions: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const actions: { bg: string; icon: string; text: string; title: string; sub: string }[] = [];
+  const [actions, setActions] = useState<{ bg: string; icon: string; text: string; title: string; sub: string }[]>([]);
 
-  // Scripts awaiting client approval
-  try {
-    const s = localStorage.getItem(`creator_flow_roteiros_${clientId}`);
-    if (s) {
-      const pkgs = JSON.parse(s) as { scripts: { portalStatus?: string }[]; subFolders?: unknown[] }[];
-      const countScripts = (list: typeof pkgs): number =>
-        list.reduce((acc, p) => {
-          const waiting = p.scripts.filter(sc => sc.portalStatus === 'aguardando_cliente').length;
-          const sub = (p.subFolders as typeof pkgs | undefined) ?? [];
-          return acc + waiting + countScripts(sub);
-        }, 0);
-      const count = countScripts(pkgs);
-      if (count > 0) {
-        actions.push({
-          bg:    'bg-amber-500/10 border-amber-500/20',
-          icon:  'text-amber-400',
-          text:  'text-amber-300',
-          title: `${count} Roteiro${count > 1 ? 's' : ''} aguardando sua aprovação`,
-          sub:   'Clique na aba Roteiros para revisar',
-        });
-      }
-    }
-  } catch { /* ignore */ }
+  useEffect(() => {
+    let cancelled = false;
 
-  // Deliverables awaiting client approval
-  try {
-    const s = localStorage.getItem(`creator_flow_entregas_${clientId}`);
-    if (s) {
-      const items = JSON.parse(s) as { status: string }[];
-      const count = items.filter(d => d.status === 'aguardando').length;
-      if (count > 0) {
-        actions.push({
-          bg:    'bg-violet-500/10 border-violet-500/20',
-          icon:  'text-violet-400',
-          text:  'text-violet-300',
-          title: `${count} Vídeo${count > 1 ? 's' : ''} aguardando sua aprovação`,
-          sub:   'Clique na aba Vídeos para revisar',
-        });
-      }
-    }
-  } catch { /* ignore */ }
+    const load = async () => {
+      const result: typeof actions = [];
 
-  // Invoices pending or overdue
-  try {
-    const s = localStorage.getItem(`creator_flow_invoices_${clientId}`);
-    if (s) {
-      const invoices = JSON.parse(s) as { status: string; title: string; dueDate: string }[];
-      const pending  = invoices.filter(inv => inv.status === 'pendente' || inv.status === 'atrasado');
-      pending.forEach(inv => {
-        const isOverdue = inv.status === 'atrasado';
-        actions.push({
-          bg:    isOverdue ? 'bg-red-500/10 border-red-500/20' : 'bg-orange-500/10 border-orange-500/20',
-          icon:  isOverdue ? 'text-red-400'                    : 'text-orange-400',
-          text:  isOverdue ? 'text-red-300'                    : 'text-orange-300',
-          title: `${isOverdue ? 'Fatura em atraso' : 'Fatura pendente'}: ${inv.title}`,
-          sub:   inv.dueDate ? `Vencimento: ${inv.dueDate}` : 'Clique na aba Financeiro',
-        });
-      });
-    }
-  } catch { /* ignore */ }
+      // Scripts awaiting client approval
+      try {
+        const pkgs = await fetchClientData<{ scripts: { portalStatus?: string }[]; subFolders?: unknown[] }[]>(clientId, 'roteiros');
+        if (Array.isArray(pkgs)) {
+          const countScripts = (list: typeof pkgs): number =>
+            list.reduce((acc, p) => {
+              const waiting = p.scripts.filter(sc => sc.portalStatus === 'aguardando_cliente').length;
+              const sub = (p.subFolders as typeof pkgs | undefined) ?? [];
+              return acc + waiting + countScripts(sub);
+            }, 0);
+          const count = countScripts(pkgs);
+          if (count > 0) {
+            result.push({
+              bg:    'bg-amber-500/10 border-amber-500/20',
+              icon:  'text-amber-400',
+              text:  'text-amber-300',
+              title: `${count} Roteiro${count > 1 ? 's' : ''} aguardando sua aprovação`,
+              sub:   'Clique na aba Roteiros para revisar',
+            });
+          }
+        }
+      } catch { /* ignore */ }
+
+      // Deliverables awaiting client approval
+      try {
+        const items = await fetchClientData<{ status: string }[]>(clientId, 'entregas');
+        if (Array.isArray(items)) {
+          const count = items.filter(d => d.status === 'aguardando').length;
+          if (count > 0) {
+            result.push({
+              bg:    'bg-violet-500/10 border-violet-500/20',
+              icon:  'text-violet-400',
+              text:  'text-violet-300',
+              title: `${count} Vídeo${count > 1 ? 's' : ''} aguardando sua aprovação`,
+              sub:   'Clique na aba Vídeos para revisar',
+            });
+          }
+        }
+      } catch { /* ignore */ }
+
+      // Invoices pending or overdue
+      try {
+        const invoices = await fetchClientData<{ status: string; title: string; dueDate: string }[]>(clientId, 'invoices');
+        if (Array.isArray(invoices)) {
+          const pending = invoices.filter(inv => inv.status === 'pendente' || inv.status === 'atrasado');
+          pending.forEach(inv => {
+            const isOverdue = inv.status === 'atrasado';
+            result.push({
+              bg:    isOverdue ? 'bg-red-500/10 border-red-500/20' : 'bg-orange-500/10 border-orange-500/20',
+              icon:  isOverdue ? 'text-red-400'                    : 'text-orange-400',
+              text:  isOverdue ? 'text-red-300'                    : 'text-orange-300',
+              title: `${isOverdue ? 'Fatura em atraso' : 'Fatura pendente'}: ${inv.title}`,
+              sub:   inv.dueDate ? `Vencimento: ${inv.dueDate}` : 'Clique na aba Financeiro',
+            });
+          });
+        }
+      } catch { /* ignore */ }
+
+      if (!cancelled) setActions(result);
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [clientId]);
 
   return (
     <section>

@@ -796,6 +796,7 @@ export default function DashboardPage() {
           hdds={hdds}
           recordings={recordings}
           studioProfile={studioProfile}
+          clients={clients}
           onSaveHDD={handleSaveHDD}
           onDeleteHDD={handleDeleteHDD}
           onSaveRecording={handleSaveRecording}

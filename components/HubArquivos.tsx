@@ -36,6 +36,7 @@ interface HubArquivosProps {
   hdds: HDD[];
   recordings: Recording[];
   studioProfile: StudioProfile;
+  clients: Client[];
   onSaveHDD: (hdd: HDD) => void;
   onDeleteHDD: (id: string) => void;
   onSaveRecording: (recording: Recording) => void;
@@ -127,6 +128,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   hdds,
   recordings,
   studioProfile,
+  clients,
   onSaveHDD,
   onDeleteHDD,
   onSaveRecording,
@@ -149,13 +151,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   const [continueNewHddIds, setContinueNewHddIds] = useState<string[]>([]);
   const [continuePendingDone, setContinuePendingDone] = useState<boolean | null>(null);
 
-  // ── Clients — read from shared localStorage (same key as ClientsHub) ──
-  const [clients] = useState<Client[]>(() => {
-    try {
-      const stored = localStorage.getItem('creator_flow_clients');
-      return stored ? (JSON.parse(stored) as Client[]) : [];
-    } catch { return []; }
-  });
+  // ── Clients received via props from dashboard ──
 
   // ── Quiz controls ──────────────────────────
   const openQuiz = () => {

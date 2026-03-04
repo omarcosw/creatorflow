@@ -4844,37 +4844,47 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
 // ─────────────────────────────────────────────
 // Sidebar health score helper
 // ─────────────────────────────────────────────
-function computeSidebarHealth(clientId: string): number {
-  let score = 100;
-  try {
-    const s = localStorage.getItem(`creator_flow_kanban_${clientId}`);
-    if (s) {
-      const today = new Date().toISOString().split('T')[0];
-      const cols = JSON.parse(s) as { id: string; items: { dueDate?: string }[] }[];
-      let overdue = 0;
-      cols.forEach(col => col.items.forEach(item => {
-        if (item.dueDate && item.dueDate < today && col.id !== 'done') overdue++;
-      }));
-      score -= Math.min(overdue * 20, 60);
-    }
-  } catch { /* ignore */ }
-  try {
-    const s = localStorage.getItem(`creator_flow_invoices_${clientId}`);
-    if (s) {
-      const inv = JSON.parse(s) as { status: string }[];
-      score -= Math.min(inv.filter(i => i.status === 'atrasado').length * 25, 50);
-    }
-  } catch { /* ignore */ }
-  try {
-    const s = localStorage.getItem(`creator_flow_roteiros_${clientId}`);
-    if (s) {
-      const pkgs = JSON.parse(s) as { scripts: { portalStatus?: string }[] }[];
-      let waiting = 0;
-      pkgs.forEach(p => p.scripts.forEach(sc => { if (sc.portalStatus === 'aguardando_cliente') waiting++; }));
-      score -= Math.min(waiting * 10, 30);
-    }
-  } catch { /* ignore */ }
-  return Math.max(0, Math.min(100, score));
+function useSidebarHealth(clientId: string): number {
+  const [score, setScore] = useState(100);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const compute = async () => {
+      let s = 100;
+      try {
+        const cols = await fetchClientData<{ id: string; cards: { dueDate?: string }[] }[]>(clientId, 'kanban');
+        if (Array.isArray(cols)) {
+          const today = new Date().toISOString().split('T')[0];
+          let overdue = 0;
+          cols.forEach(col => col.cards.forEach(card => {
+            if (card.dueDate && card.dueDate < today && col.id !== 'finalizado') overdue++;
+          }));
+          s -= Math.min(overdue * 20, 60);
+        }
+      } catch { /* ignore */ }
+      try {
+        const inv = await fetchClientData<{ status: string }[]>(clientId, 'invoices');
+        if (Array.isArray(inv)) {
+          s -= Math.min(inv.filter(i => i.status === 'atrasado').length * 25, 50);
+        }
+      } catch { /* ignore */ }
+      try {
+        const pkgs = await fetchClientData<{ scripts: { portalStatus?: string }[] }[]>(clientId, 'roteiros');
+        if (Array.isArray(pkgs)) {
+          let waiting = 0;
+          pkgs.forEach(p => p.scripts.forEach(sc => { if (sc.portalStatus === 'aguardando_cliente') waiting++; }));
+          s -= Math.min(waiting * 10, 30);
+        }
+      } catch { /* ignore */ }
+      if (!cancelled) setScore(Math.max(0, Math.min(100, s)));
+    };
+
+    compute();
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  return score;
 }
 
 // ─────────────────────────────────────────────
@@ -4883,7 +4893,7 @@ function computeSidebarHealth(clientId: string): number {
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNavigateToArquivos }) => {
   const [activeTab,    setActiveTab]    = useState<TabId>('visao_geral');
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
-  const [sidebarHealth]                 = useState(() => computeSidebarHealth(client.id));
+  const sidebarHealth                   = useSidebarHealth(client.id);
   const [showReport,   setShowReport]   = useState(false);
 
   // ── Motor de Ideias state ─────────────────

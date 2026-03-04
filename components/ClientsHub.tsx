@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchClientData } from '@/lib/clients-api';
 import {
   ArrowLeft, Plus, Users, Trash2, ChevronRight, AlertTriangle, Calendar,
@@ -505,94 +505,115 @@ const BI_TEAM_DATA: BITeamMember[] = [
 const formatBRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-function computeBIData(clients: Client[]) {
-  let totalReceived = 0, totalPending = 0, totalOverdue = 0;
-  const projectTotals = new Map<string, number>();
-  const renewals: { clientName: string; dueDate: string; daysLeft: number; amount: number }[] = [];
-  const alerts: BICriticalAlert[] = [];
-  const funnelCounts: Record<string, number> = Object.fromEntries(BI_FUNNEL_COLS.map(c => [c.id, 0]));
+const EMPTY_BI_DATA = {
+  totalReceived: 0, totalPending: 0, totalOverdue: 0, totalFinancial: 0,
+  topProjects: [] as { clientName: string; amount: number }[],
+  renewals: [] as { clientName: string; dueDate: string; daysLeft: number; amount: number }[],
+  stages: BI_FUNNEL_COLS.map(col => ({ ...col, count: 0, isBottleneck: false })) as BIFunnelStage[],
+  alerts: [] as BICriticalAlert[],
+  team: BI_TEAM_DATA,
+};
 
-  const today    = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const in30     = new Date(today); in30.setDate(today.getDate() + 30);
-  const in30Str  = in30.toISOString().split('T')[0];
+function useBIData(clients: Client[]) {
+  const [data, setData] = useState(EMPTY_BI_DATA);
 
-  for (const client of clients) {
-    // Invoices
-    try {
-      const s = localStorage.getItem(`creator_flow_invoices_${client.id}`);
-      if (s) {
-        const invs: _BIInvoice[] = JSON.parse(s);
-        let clientTotal = 0;
-        for (const inv of invs) {
-          clientTotal += inv.amount;
-          if      (inv.status === 'pago')      totalReceived += inv.amount;
-          else if (inv.status === 'pendente')  totalPending  += inv.amount;
-          else if (inv.status === 'atrasado')  totalOverdue  += inv.amount;
-          if (inv.status !== 'pago' && inv.dueDate >= todayStr && inv.dueDate <= in30Str) {
-            const daysLeft = Math.round((new Date(inv.dueDate).getTime() - today.getTime()) / 86400000);
-            renewals.push({ clientName: client.brandName, dueDate: inv.dueDate, daysLeft, amount: inv.amount });
+  useEffect(() => {
+    let cancelled = false;
+
+    const compute = async () => {
+      let totalReceived = 0, totalPending = 0, totalOverdue = 0;
+      const projectTotals = new Map<string, number>();
+      const renewals: typeof EMPTY_BI_DATA.renewals = [];
+      const alerts: BICriticalAlert[] = [];
+      const funnelCounts: Record<string, number> = Object.fromEntries(BI_FUNNEL_COLS.map(c => [c.id, 0]));
+
+      const today    = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const in30     = new Date(today); in30.setDate(today.getDate() + 30);
+      const in30Str  = in30.toISOString().split('T')[0];
+
+      for (const client of clients) {
+        // Invoices
+        try {
+          const invs = await fetchClientData<_BIInvoice[]>(client.id, 'invoices');
+          if (Array.isArray(invs)) {
+            let clientTotal = 0;
+            for (const inv of invs) {
+              clientTotal += inv.amount;
+              if      (inv.status === 'pago')      totalReceived += inv.amount;
+              else if (inv.status === 'pendente')  totalPending  += inv.amount;
+              else if (inv.status === 'atrasado')  totalOverdue  += inv.amount;
+              if (inv.status !== 'pago' && inv.dueDate >= todayStr && inv.dueDate <= in30Str) {
+                const daysLeft = Math.round((new Date(inv.dueDate).getTime() - today.getTime()) / 86400000);
+                renewals.push({ clientName: client.brandName, dueDate: inv.dueDate, daysLeft, amount: inv.amount });
+              }
+            }
+            if (clientTotal > 0) projectTotals.set(client.brandName, (projectTotals.get(client.brandName) ?? 0) + clientTotal);
+            const overdue = invs.filter(i => i.status === 'atrasado');
+            if (overdue.length > 0) alerts.push({ urgency: 'high', message: `Fatura atrasada: ${client.brandName}`, detail: `${overdue.length} fatura(s) vencida(s)` });
           }
-        }
-        if (clientTotal > 0) projectTotals.set(client.brandName, (projectTotals.get(client.brandName) ?? 0) + clientTotal);
-        const overdue = invs.filter(i => i.status === 'atrasado');
-        if (overdue.length > 0) alerts.push({ urgency: 'high', message: `Fatura atrasada: ${client.brandName}`, detail: `${overdue.length} fatura(s) vencida(s)` });
-      }
-    } catch { /* ignore */ }
+        } catch { /* ignore */ }
 
-    // Kanban
-    try {
-      const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
-      if (s) {
-        const cols: _BIKanbanColumn[] = JSON.parse(s);
-        for (const col of cols) {
-          if (col.id in funnelCounts) funnelCounts[col.id] += col.cards.length;
-          if (col.id !== 'finalizado') {
-            const overdueCards = col.cards.filter(c => c.dueDate && c.dueDate < todayStr);
-            if (overdueCards.length > 0) alerts.push({ urgency: 'high', message: `Cards atrasados: ${client.brandName}`, detail: `${overdueCards.length} card(s) no Kanban fora do prazo` });
+        // Kanban
+        try {
+          const cols = await fetchClientData<_BIKanbanColumn[]>(client.id, 'kanban');
+          if (Array.isArray(cols)) {
+            for (const col of cols) {
+              if (col.id in funnelCounts) funnelCounts[col.id] += col.cards.length;
+              if (col.id !== 'finalizado') {
+                const overdueCards = col.cards.filter(c => c.dueDate && c.dueDate < todayStr);
+                if (overdueCards.length > 0) alerts.push({ urgency: 'high', message: `Cards atrasados: ${client.brandName}`, detail: `${overdueCards.length} card(s) no Kanban fora do prazo` });
+              }
+            }
           }
-        }
+        } catch { /* ignore */ }
+
+        // Roteiros
+        try {
+          const pkgs = await fetchClientData<_BIRoteiroPackage[]>(client.id, 'roteiros');
+          if (Array.isArray(pkgs)) {
+            let waiting = 0;
+            pkgs.forEach(p => p.scripts.forEach(sc => { if (sc.portalStatus === 'aguardando_cliente') waiting++; }));
+            if (waiting > 0) alerts.push({ urgency: 'medium', message: `Aprovação travada: ${client.brandName}`, detail: `${waiting} roteiro(s) aguardando resposta do cliente` });
+          }
+        } catch { /* ignore */ }
       }
-    } catch { /* ignore */ }
 
-    // Roteiros
-    try {
-      const s = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
-      if (s) {
-        const pkgs: _BIRoteiroPackage[] = JSON.parse(s);
-        let waiting = 0;
-        pkgs.forEach(p => p.scripts.forEach(sc => { if (sc.portalStatus === 'aguardando_cliente') waiting++; }));
-        if (waiting > 0) alerts.push({ urgency: 'medium', message: `Aprovação travada: ${client.brandName}`, detail: `${waiting} roteiro(s) aguardando resposta do cliente` });
+      const topProjects = Array.from(projectTotals.entries())
+        .map(([clientName, amount]) => ({ clientName, amount }))
+        .sort((a, b) => b.amount - a.amount).slice(0, 3);
+
+      renewals.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+      const stages: BIFunnelStage[] = BI_FUNNEL_COLS.map(col => ({ ...col, count: funnelCounts[col.id], isBottleneck: false }));
+      const active = stages.filter(s => s.id !== 'finalizado');
+      const maxCount = Math.max(0, ...active.map(s => s.count));
+      if (maxCount > 0) {
+        const idx = stages.findIndex(s => s.id !== 'finalizado' && s.count === maxCount);
+        if (idx !== -1) stages[idx].isBottleneck = true;
       }
-    } catch { /* ignore */ }
-  }
 
-  const topProjects = Array.from(projectTotals.entries())
-    .map(([clientName, amount]) => ({ clientName, amount }))
-    .sort((a, b) => b.amount - a.amount).slice(0, 3);
+      alerts.sort((a, b) => (a.urgency === 'high' ? 0 : 1) - (b.urgency === 'high' ? 0 : 1));
 
-  renewals.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+      if (!cancelled) {
+        setData({
+          totalReceived, totalPending, totalOverdue,
+          totalFinancial: totalReceived + totalPending + totalOverdue,
+          topProjects, renewals, stages, alerts,
+          team: BI_TEAM_DATA,
+        });
+      }
+    };
 
-  const stages: BIFunnelStage[] = BI_FUNNEL_COLS.map(col => ({ ...col, count: funnelCounts[col.id], isBottleneck: false }));
-  const active = stages.filter(s => s.id !== 'finalizado');
-  const maxCount = Math.max(0, ...active.map(s => s.count));
-  if (maxCount > 0) {
-    const idx = stages.findIndex(s => s.id !== 'finalizado' && s.count === maxCount);
-    if (idx !== -1) stages[idx].isBottleneck = true;
-  }
+    if (clients.length > 0) compute();
+    return () => { cancelled = true; };
+  }, [clients]);
 
-  alerts.sort((a, b) => (a.urgency === 'high' ? 0 : 1) - (b.urgency === 'high' ? 0 : 1));
-
-  return {
-    totalReceived, totalPending, totalOverdue,
-    totalFinancial: totalReceived + totalPending + totalOverdue,
-    topProjects, renewals, stages, alerts,
-    team: BI_TEAM_DATA,
-  };
+  return data;
 }
 
 const BIDashboard: React.FC<{ clients: Client[] }> = ({ clients }) => {
-  const d = useMemo(() => computeBIData(clients), [clients]);
+  const d = useBIData(clients);
   const recPct = d.totalFinancial > 0 ? (d.totalReceived / d.totalFinancial) * 100 : 0;
   const penPct = d.totalFinancial > 0 ? (d.totalPending  / d.totalFinancial) * 100 : 0;
   const ovdPct = d.totalFinancial > 0 ? (d.totalOverdue  / d.totalFinancial) * 100 : 0;
