@@ -65,6 +65,7 @@ import {
   Save,
   Square,
   ArrowRight,
+  Pencil,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -900,9 +901,14 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
   // ── Kanban state (persisted via API) ──────────────────────
   const { data: columns, setData: setColumns } = useClientData<KanbanColumn[]>(client.id, 'kanban', KANBAN_INITIAL_COLUMNS);
-  const [addingToCol, setAddingToCol]       = useState<string | null>(null);
-  const [editingCard, setEditingCard]       = useState<{ card: KanbanCard; colId: string } | null>(null);
+  const [addingToCol, setAddingToCol]           = useState<string | null>(null);
+  const [editingCard, setEditingCard]           = useState<{ card: KanbanCard; colId: string } | null>(null);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [renamingColId, setRenamingColId]       = useState<string | null>(null);
+  const [renamingTitle, setRenamingTitle]       = useState('');
+  const [addingCol, setAddingCol]               = useState(false);
+  const [newColTitle, setNewColTitle]           = useState('');
+  const MAX_COLUMNS = 8;
 
   const { data: archivedCards, setData: setArchivedCards } = useClientData<KanbanCard[]>(client.id, 'archive', []);
 
@@ -1020,9 +1026,28 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
   const restoreCard = (card: KanbanCard) => {
     setArchivedCards(prev => prev.filter(c => c.id !== card.id));
-    setColumns(prev =>
-      prev.map(c => c.id === 'preproducao' ? { ...c, cards: [card, ...c.cards] } : c),
-    );
+    setColumns(prev => {
+      const firstId = prev[0]?.id ?? 'preproducao';
+      return prev.map(c => c.id === firstId ? { ...c, cards: [card, ...c.cards] } : c);
+    });
+  };
+
+  const renameColumn = (colId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) { setRenamingColId(null); return; }
+    setColumns(prev => prev.map(c => c.id === colId ? { ...c, title: trimmed } : c));
+    setRenamingColId(null);
+  };
+
+  const addColumn = (title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    setColumns(prev => [
+      ...prev,
+      { id: crypto.randomUUID(), emoji: '', title: trimmed, cards: [] },
+    ]);
+    setAddingCol(false);
+    setNewColTitle('');
   };
 
   // ─────────────────────────────────────────────────────────
@@ -1244,14 +1269,54 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                     <div key={col.id} className="w-56 flex-shrink-0 flex flex-col h-full">
 
                       {/* Column header */}
-                      <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0">
-                        <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
-                          {(() => { const ColIcon = KANBAN_COL_ICON[col.id]; return ColIcon ? <ColIcon className="w-3.5 h-3.5 flex-shrink-0 text-zinc-400" /> : null; })()}
-                          <span className="truncate">{col.title}</span>
-                          <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
-                            {col.cards.length}
-                          </span>
-                        </h4>
+                      <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0 gap-1">
+                        {/* Title / inline rename */}
+                        <div className="flex items-center gap-1 min-w-0 flex-1">
+                          {renamingColId === col.id ? (
+                            <>
+                              <input
+                                autoFocus
+                                value={renamingTitle}
+                                onChange={e => setRenamingTitle(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') renameColumn(col.id, renamingTitle);
+                                  if (e.key === 'Escape') setRenamingColId(null);
+                                }}
+                                onBlur={() => renameColumn(col.id, renamingTitle || col.title)}
+                                className="flex-1 min-w-0 text-xs font-bold bg-transparent border-b border-violet-400 dark:border-violet-500 text-zinc-800 dark:text-white focus:outline-none pb-0.5"
+                              />
+                              <button
+                                onMouseDown={e => { e.preventDefault(); renameColumn(col.id, renamingTitle); }}
+                                className="flex-shrink-0 p-0.5 text-emerald-500 hover:text-emerald-400 transition-colors"
+                              >
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button
+                                onMouseDown={e => { e.preventDefault(); setRenamingColId(null); }}
+                                className="flex-shrink-0 p-0.5 text-red-400 hover:text-red-500 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
+                                {(() => { const ColIcon = KANBAN_COL_ICON[col.id]; return ColIcon ? <ColIcon className="w-3.5 h-3.5 flex-shrink-0 text-zinc-400" /> : null; })()}
+                                <span className="truncate">{col.title}</span>
+                                <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                                  {col.cards.length}
+                                </span>
+                              </h4>
+                              <button
+                                onClick={() => { setRenamingColId(col.id); setRenamingTitle(col.title); }}
+                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+                                title="Renomear coluna"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {/* Clear button — only on "Finalizado" when it has cards */}
                           {isLastCol && col.cards.length > 0 && (
@@ -1390,6 +1455,46 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                     </div>
                   );
                 })}
+
+                {/* ── Add column ── */}
+                {columns.length < MAX_COLUMNS && (
+                  addingCol ? (
+                    <div className="w-56 flex-shrink-0 flex flex-col gap-2 self-start pt-0.5">
+                      <input
+                        autoFocus
+                        value={newColTitle}
+                        onChange={e => setNewColTitle(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') addColumn(newColTitle);
+                          if (e.key === 'Escape') { setAddingCol(false); setNewColTitle(''); }
+                        }}
+                        placeholder="Nome da coluna..."
+                        className="w-full text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-violet-400 dark:border-violet-600 rounded-xl px-3 py-2 text-zinc-800 dark:text-white focus:outline-none placeholder:text-zinc-400"
+                      />
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => addColumn(newColTitle)}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-500 transition-colors"
+                        >
+                          <Check className="w-3 h-3" /> Criar
+                        </button>
+                        <button
+                          onClick={() => { setAddingCol(false); setNewColTitle(''); }}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <X className="w-3 h-3" /> Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAddingCol(true)}
+                      className="w-52 flex-shrink-0 h-16 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-500 dark:hover:border-violet-600 dark:hover:text-violet-400 transition-all text-xs font-bold self-start"
+                    >
+                      <Plus className="w-4 h-4" /> Adicionar Coluna
+                    </button>
+                  )
+                )}
               </div>
             </div>
           </DragDropContext>
