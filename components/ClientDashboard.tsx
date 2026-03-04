@@ -386,7 +386,7 @@ const getTomorrowStr = (): string => {
 // Shared modal style constants
 // ─────────────────────────────────────────────
 const MODAL_INPUT_CLS =
-  'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400';
+  'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400 dark:[color-scheme:dark]';
 const MODAL_LABEL_CLS = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
 
 // ─────────────────────────────────────────────
