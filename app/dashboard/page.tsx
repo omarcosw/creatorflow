@@ -982,6 +982,17 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Search */}
+            <div className="w-full max-w-3xl mx-auto my-10 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              <input
+                value={agentQuery}
+                onChange={(e) => setAgentQuery(e.target.value)}
+                placeholder="Buscar agentes, tarefas ou ferramentas..."
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm text-gray-400 placeholder-gray-600 focus:border-purple-500/50 outline-none transition-colors"
+              />
+            </div>
+
             {/* Gestão & CRM */}
             <div className="w-full mb-12">
               <h2 className="text-xs font-bold tracking-wider text-gray-500 mb-4 uppercase">Gestão & CRM</h2>
@@ -1021,8 +1032,8 @@ export default function DashboardPage() {
                   onClick={() => handleAgentClick(AgentId.IMAGE_GENERATOR)}
                   className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
                 >
-                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
-                    <Image className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
+                    <Image className="w-4 h-4 text-purple-400" />
                   </div>
                   <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">Gerador de Imagens</span>
                 </button>
@@ -1030,8 +1041,8 @@ export default function DashboardPage() {
                   onClick={() => handleAgentClick(AgentId.VIDEO_PROMPTS)}
                   className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
                 >
-                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
-                    <MessageSquare className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
+                    <MessageSquare className="w-4 h-4 text-blue-400" />
                   </div>
                   <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">Prompt para Videos</span>
                 </button>
@@ -1039,8 +1050,8 @@ export default function DashboardPage() {
                   onClick={() => handleAgentClick(AgentId.YOUTUBE_SEO)}
                   className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
                 >
-                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
-                    <Youtube className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="p-2 rounded-lg bg-red-500/10 flex-shrink-0">
+                    <Youtube className="w-4 h-4 text-red-500" />
                   </div>
                   <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">YouTube SEO</span>
                 </button>
@@ -1048,8 +1059,8 @@ export default function DashboardPage() {
                   onClick={() => handleAgentClick(AgentId.INSTAGRAM_CAPTIONS)}
                   className="group flex items-center gap-3 p-4 bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-xl text-left transition-all duration-200"
                 >
-                  <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
-                    <Instagram className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
+                    <Instagram className="w-4 h-4 text-pink-400" />
                   </div>
                   <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors truncate">Legendas Instagram</span>
                 </button>
@@ -1095,16 +1106,6 @@ export default function DashboardPage() {
                 )}
               </div>
             )}
-            {/* Search */}
-            <div className="max-w-3xl mx-auto w-full relative mt-12 mb-8">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-              <input
-                value={agentQuery}
-                onChange={(e) => setAgentQuery(e.target.value)}
-                placeholder="Buscar agentes, tarefas ou ferramentas..."
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm text-gray-400 placeholder-gray-600 focus:border-purple-500/50 outline-none transition-colors"
-              />
-            </div>
           </div>
 
           {/* Fixed feedback button */}
