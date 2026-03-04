@@ -5092,6 +5092,9 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [ideasView, setIdeasView]                   = useState<'generator' | 'banco'>('generator');
   const { data: savedIdeas, setData: setSavedIdeas } = useClientData<IdeaCard[]>(client.id, 'saved_ideas', []);
   const [savedIdeaToast, setSavedIdeaToast]         = useState(false);
+  const [campaignContext, setCampaignContext]        = useState('');
+  const [importMeetingToast, setImportMeetingToast] = useState(false);
+  const [isImportingMeeting, setIsImportingMeeting] = useState(false);
 
   const addTheme = (value: string) => {
     const t = value.trim();
@@ -5109,11 +5112,39 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const removeTheme = (theme: string) =>
     setThemes(prev => prev.filter(t => t !== theme));
 
+  const handleImportMeeting = async () => {
+    setIsImportingMeeting(true);
+    try {
+      const meetings = await fetchClientData<Meeting[]>(client.id, 'meetings');
+      if (!meetings || meetings.length === 0) return;
+      const latest = meetings[0]; // stored newest-first
+      const lines: string[] = [];
+      if (latest.title) lines.push(`Reunião: ${latest.title}`);
+      if (latest.date) lines.push(`Data: ${latest.date}`);
+      if (latest.executiveSummary) lines.push(`Resumo: ${latest.executiveSummary}`);
+      if (latest.decisions?.length) lines.push(`Decisões: ${latest.decisions.join('; ')}`);
+      if (latest.nextSteps?.length) {
+        const steps = latest.nextSteps.map(s => s.text).join('; ');
+        lines.push(`Próximos passos: ${steps}`);
+      }
+      setCampaignContext(lines.join('\n'));
+      setImportMeetingToast(true);
+      setTimeout(() => setImportMeetingToast(false), 3000);
+    } catch {
+      // silently ignore
+    } finally {
+      setIsImportingMeeting(false);
+    }
+  };
+
   const handleSuggestThemes = async () => {
     if (isSuggestingThemes) return;
     setIsSuggestingThemes(true);
     try {
-      const prompt = `Atue como estrategista de conteúdo digital. O cliente é do nicho "${client.niche || 'geral'}", subnicho "${client.subniche || 'geral'}", público-alvo: "${client.idealClient || 'geral'}". Sugira 12 temas de vídeos MUITO ESPECÍFICOS e práticos para este nicho. Divida em 3 categorias. Retorne APENAS JSON válido, sem markdown, sem explicações, no formato exato: {"groups":[{"label":"Alta Demanda","emoji":"🔥","themes":["tema1","tema2","tema3","tema4"]},{"label":"Educacional","emoji":"📚","themes":["tema5","tema6","tema7","tema8"]},{"label":"Autoridade","emoji":"🏆","themes":["tema9","tema10","tema11","tema12"]}]}`;
+      const campaignLine = campaignContext.trim()
+        ? `\nALERTA DE CAMPANHA ATIVA: Além do DNA da marca, ESTA geração de temas deve focar EXCLUSIVAMENTE neste briefing/direcionamento específico: ${campaignContext.trim()}`
+        : '';
+      const prompt = `Atue como estrategista de conteúdo digital. O cliente é do nicho "${client.niche || 'geral'}", subnicho "${client.subniche || 'geral'}", público-alvo: "${client.idealClient || 'geral'}".${campaignLine} Sugira 12 temas de vídeos MUITO ESPECÍFICOS e práticos para este nicho. Divida em 3 categorias. Retorne APENAS JSON válido, sem markdown, sem explicações, no formato exato: {"groups":[{"label":"Alta Demanda","emoji":"🔥","themes":["tema1","tema2","tema3","tema4"]},{"label":"Educacional","emoji":"📚","themes":["tema5","tema6","tema7","tema8"]},{"label":"Autoridade","emoji":"🏆","themes":["tema9","tema10","tema11","tema12"]}]}`;
       const result = await sendMessageToAgent(
         AgentId.SCRIPT_GENERATOR,
         prompt,
@@ -5163,6 +5194,10 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
       const formatsText = selectedFormats.length > 0 ? selectedFormats.join(', ') : 'qualquer formato';
       const anglesText  = selectedAngles.length > 0 ? selectedAngles.join(', ') : 'qualquer ângulo';
 
+      const campaignLine = campaignContext.trim()
+        ? `\nALERTA DE CAMPANHA ATIVA: Além do DNA da marca, ESTA geração de ideias deve focar EXCLUSIVAMENTE neste briefing/direcionamento específico: ${campaignContext.trim()}\n`
+        : '';
+
       const prompt = `Gere EXATAMENTE ${quantidadeIdeias} ideias de vídeo para o seguinte cliente:
 - Marca: ${client.brandName}
 - Nicho: ${client.niche || 'geral'} / Subnicho: ${client.subniche || 'geral'}
@@ -5174,7 +5209,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
 - Temas: ${themesText}
 - Formatos: ${formatsText}
 - Ângulos editoriais: ${anglesText}
-
+${campaignLine}
 REGRA OBRIGATÓRIA: Gere EXATAMENTE ${quantidadeIdeias} ideias. O array "ideas" deve conter exatamente ${quantidadeIdeias} objetos. Não gere a menos, nem a mais.
 
 Retorne APENAS JSON válido, sem markdown, no formato exato:
@@ -5716,6 +5751,39 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* ── Campaign Context ── */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                        Tema Específico ou Campanha (Opcional)
+                      </label>
+                      <button
+                        onClick={handleImportMeeting}
+                        disabled={isImportingMeeting}
+                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-50"
+                      >
+                        {isImportingMeeting
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <FileText className="w-3.5 h-3.5" />
+                        }
+                        Importar última reunião
+                      </button>
+                    </div>
+                    {importMeetingToast && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium animate-in fade-in duration-200">
+                        <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        Resumo da última reunião importado com sucesso.
+                      </div>
+                    )}
+                    <textarea
+                      value={campaignContext}
+                      onChange={e => setCampaignContext(e.target.value)}
+                      placeholder="Ex: Foco no lançamento da Black Friday, destacando a oferta X..."
+                      rows={3}
+                      className="w-full text-sm px-3 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all resize-none"
+                    />
                   </div>
 
                   <button
