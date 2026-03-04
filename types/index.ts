@@ -79,6 +79,17 @@ export interface StudioProfile {
   };
 }
 
+export interface BrandBrain {
+  coreTransformation:    string;
+  audiencePainsDesires:  string;
+  uniqueMechanism:       string;
+  commonObjections:      string;
+  brandVoice:            string;
+  keywordsRules:         string;
+  visualStyle:           string;
+  inspirationBrands:     string;
+}
+
 export interface Client {
   id: string;
   // Identidade
@@ -94,6 +105,8 @@ export interface Client {
   visualStyle: string;
   defaultCta: string;
   createdAt: number;
+  // Cérebro da Marca
+  brandBrain?: BrandBrain;
 }
 
 export interface MeetingNextStep {

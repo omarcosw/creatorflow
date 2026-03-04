@@ -61,10 +61,13 @@ import {
   Menu,
   Pin,
   AlignLeft,
+  Brain,
+  Save,
+  Square,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
-import { Client, HDD, Recording, AgentId, Meeting, MeetingNextStep, Invoice } from '@/types';
+import { Client, BrandBrain, HDD, Recording, AgentId, Meeting, MeetingNextStep, Invoice } from '@/types';
 import { sendMessageToAgent } from '@/lib/api';
 import ClientMonthlyReport from './ClientMonthlyReport';
 
@@ -80,7 +83,7 @@ interface ClientDashboardProps {
 // ─────────────────────────────────────────────
 // Tab definition
 // ─────────────────────────────────────────────
-type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas' | 'reunioes' | 'financeiro';
+type TabId = 'visao_geral' | 'ideias' | 'roteiros' | 'kanban' | 'agenda' | 'acervo' | 'entregas' | 'reunioes' | 'financeiro' | 'cerebro_da_marca';
 
 interface Tab {
   id: TabId;
@@ -97,7 +100,8 @@ const TABS: Tab[] = [
   { id: 'acervo',      label: 'Acervo e HDs',           icon: HardDrive       },
   { id: 'entregas',    label: 'Entregas & Aprovações',  icon: UploadCloud     },
   { id: 'reunioes',    label: 'Reuniões',               icon: Users           },
-  { id: 'financeiro',  label: 'Financeiro & Métricas',  icon: TrendingUp      },
+  { id: 'financeiro',      label: 'Financeiro & Métricas',  icon: TrendingUp  },
+  { id: 'cerebro_da_marca', label: 'Cérebro da Marca',      icon: Brain       },
 ];
 
 // ─────────────────────────────────────────────
@@ -4068,6 +4072,193 @@ const INVOICE_STATUS_STYLES: Record<Invoice['status'], { label: string; badge: s
   atrasado: { label: 'Atrasado',  badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50' },
 };
 
+// ─────────────────────────────────────────────
+// ClientBrandBrainTab — Cérebro da Marca
+// ─────────────────────────────────────────────
+
+const BRAND_BRAIN_FIELDS: { key: keyof BrandBrain; label: string; placeholder: string }[] = [
+  { key: 'coreTransformation',   label: 'A Grande Transformação',        placeholder: 'Qual transformação profunda o cliente entrega? Ex: de confuso a autoridade reconhecida...' },
+  { key: 'audiencePainsDesires', label: 'Dores e Desejos Profundos',     placeholder: 'O que mantém seu público acordado à noite? O que eles sonham em alcançar...' },
+  { key: 'uniqueMechanism',      label: 'Mecanismo Único',               placeholder: 'Qual é o método, processo ou abordagem exclusiva que só esta marca usa...' },
+  { key: 'commonObjections',     label: 'Principais Objeções de Compra', placeholder: 'Por que as pessoas hesitam em comprar? Preço, tempo, dúvida sobre resultado...' },
+  { key: 'brandVoice',           label: 'Tom de Voz',                    placeholder: 'Como a marca fala? Direto, empático, provocador, inspiracional...' },
+  { key: 'keywordsRules',        label: 'Regras de Vocabulário',         placeholder: 'Palavras que DEVE usar. Palavras que NUNCA deve usar. Expressões da marca...' },
+  { key: 'visualStyle',          label: 'Estilo Visual',                 placeholder: 'Paleta de cores, tipografia, sensação estética, referências visuais...' },
+  { key: 'inspirationBrands',    label: 'Marcas de Inspiração',          placeholder: 'Quais marcas (nacionais ou internacionais) inspiram a comunicação deste cliente...' },
+];
+
+const EMPTY_BRAIN: BrandBrain = {
+  coreTransformation: '', audiencePainsDesires: '', uniqueMechanism: '',
+  commonObjections: '', brandVoice: '', keywordsRules: '', visualStyle: '', inspirationBrands: '',
+};
+
+const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
+  const STORAGE_KEY = `creator_flow_brand_brain_${client.id}`;
+
+  const [brain, setBrain] = useState<BrandBrain>(() => {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) return { ...EMPTY_BRAIN, ...JSON.parse(s) };
+    } catch { /* ignore */ }
+    return { ...EMPTY_BRAIN };
+  });
+
+  const [activeField, setActiveField] = useState<keyof BrandBrain | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const updateField = (key: keyof BrandBrain, value: string) => {
+    setBrain(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(brain)); } catch { /* ignore */ }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const startRecording = (key: keyof BrandBrain) => {
+    const SR = typeof window !== 'undefined'
+      ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+      : null;
+
+    if (!SR) {
+      alert('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.');
+      return;
+    }
+
+    if (activeField === key) {
+      setActiveField(null);
+      return;
+    }
+
+    setActiveField(key);
+
+    const recognition = new SR();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results as any[])
+        .map((r: any) => r[0].transcript)
+        .join(' ');
+      setBrain(prev => ({
+        ...prev,
+        [key]: (prev[key] ? prev[key] + ' ' : '') + transcript,
+      }));
+    };
+
+    recognition.onerror = () => setActiveField(null);
+    recognition.onend = () => setActiveField(null);
+
+    recognition.start();
+
+    // store ref so user can cancel by clicking again
+    (window as any).__brainRecognition = recognition;
+  };
+
+  const stopRecording = () => {
+    try { (window as any).__brainRecognition?.stop(); } catch { /* ignore */ }
+    setActiveField(null);
+  };
+
+  const handleMicClick = (key: keyof BrandBrain) => {
+    if (activeField === key) {
+      stopRecording();
+    } else {
+      if (activeField) stopRecording();
+      startRecording(key);
+    }
+  };
+
+  return (
+    <div className="animate-in fade-in duration-200 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <Brain className="w-5 h-5 text-indigo-400" />
+            Cérebro da Marca
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">Base de conhecimento estratégico de {client.brandName}</p>
+        </div>
+        <button
+          onClick={handleSave}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            saved
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+          }`}
+        >
+          <Save className="w-4 h-4" />
+          {saved ? 'Inteligência Salva!' : 'Salvar Inteligência da Marca'}
+        </button>
+      </div>
+
+      {/* Voice hint */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
+        <Mic className="w-3.5 h-3.5 flex-shrink-0" />
+        Clique no microfone ao lado de cada campo para ditar por voz. Clique novamente para parar.
+      </div>
+
+      {/* Fields grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {BRAND_BRAIN_FIELDS.map(({ key, label, placeholder }) => {
+          const isRecording = activeField === key;
+          return (
+            <div key={key} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-wide">{label}</label>
+                <button
+                  onClick={() => handleMicClick(key)}
+                  title={isRecording ? 'Parar gravação' : 'Gravar por voz'}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    isRecording
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                      : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {isRecording ? (
+                    <><Square className="w-3 h-3" /> Parar</>
+                  ) : (
+                    <><Mic className="w-3 h-3" /> Voz</>
+                  )}
+                </button>
+              </div>
+              <textarea
+                value={brain[key]}
+                onChange={e => updateField(key, e.target.value)}
+                placeholder={placeholder}
+                rows={4}
+                className={`w-full text-sm px-3 py-2.5 rounded-xl bg-gray-800 border text-gray-100 placeholder:text-gray-600 focus:outline-none focus:ring-2 transition-all resize-none ${
+                  isRecording
+                    ? 'border-red-500/50 focus:ring-red-500/30 bg-red-950/10'
+                    : 'border-gray-700 focus:ring-indigo-500/30 focus:border-indigo-500/50'
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Bottom save button */}
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            saved
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+          }`}
+        >
+          <Save className="w-4 h-4" />
+          {saved ? 'Inteligência Salva!' : 'Salvar Inteligência da Marca'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const INPUT_CLS = 'w-full text-sm px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all';
 
 const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
@@ -5185,7 +5376,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {TABS.map((tab, i) => {
             const isActive = activeTab === tab.id;
             /* separator before secondary tabs */
-            const showSep = i === 5; // before 'acervo'
+            const showSep = i === 5 || i === 9; // before 'acervo' and before 'cerebro_da_marca'
             return (
               <React.Fragment key={tab.id}>
                 {showSep && (
@@ -5788,6 +5979,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
             <div className="animate-in fade-in duration-200">
               <ClientFinanceiroTab client={client} />
             </div>
+          )}
+
+          {/* ══ TAB: Cérebro da Marca ══ */}
+          {activeTab === 'cerebro_da_marca' && (
+            <ClientBrandBrainTab client={client} />
           )}
 
           </div>
