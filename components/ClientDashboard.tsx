@@ -5615,17 +5615,20 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     </div>
                   )}
 
-                  <button
-                    onClick={handleSuggestThemes}
-                    disabled={isSuggestingThemes}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-sm font-bold disabled:opacity-60"
-                  >
-                    {isSuggestingThemes ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Sugerindo temas…</>
-                    ) : (
-                      <><Sparkles className="w-4 h-4" /> Sugerir Temas com IA</>
-                    )}
-                  </button>
+                  <div className="flex w-full items-center justify-between">
+                    <button
+                      onClick={handleSuggestThemes}
+                      disabled={isSuggestingThemes}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-sm font-bold disabled:opacity-60"
+                    >
+                      {isSuggestingThemes ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Sugerindo temas…</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> Sugerir Temas com IA</>
+                      )}
+                    </button>
+                    <BrandBrainBadge clientId={client.id} />
+                  </div>
 
                   {suggestedThemes.length > 0 && (
                     <div className="space-y-4 animate-in fade-in duration-300">
@@ -5728,8 +5731,6 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       ))}
                     </div>
                   </div>
-
-                  <BrandBrainBadge clientId={client.id} />
 
                   <button
                     onClick={handleGenerate}
