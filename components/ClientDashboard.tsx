@@ -5092,11 +5092,8 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [ideasView, setIdeasView]                   = useState<'generator' | 'banco'>('generator');
   const { data: savedIdeas, setData: setSavedIdeas } = useClientData<IdeaCard[]>(client.id, 'saved_ideas', []);
   const [savedIdeaToast, setSavedIdeaToast]         = useState(false);
-  const [campaignContext, setCampaignContext]        = useState('');
-  const [importMeetingToast, setImportMeetingToast] = useState(false);
-  const [importMeetingError, setImportMeetingError] = useState('');
-  const [isImportingMeeting, setIsImportingMeeting] = useState(false);
-  const [lastImportedText, setLastImportedText]     = useState('');
+  const [selectedMeetingId, setSelectedMeetingId]   = useState('');
+  const { data: availableMeetings }                  = useClientData<Meeting[]>(client.id, 'meetings', []);
 
   const addTheme = (value: string) => {
     const t = value.trim();
@@ -5114,103 +5111,26 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const removeTheme = (theme: string) =>
     setThemes(prev => prev.filter(t => t !== theme));
 
-  const handleImportMeeting = async () => {
-    setIsImportingMeeting(true);
-    setImportMeetingToast(false);
-    setImportMeetingError('');
-
-    const showError = (msg: string) => {
-      setImportMeetingError(msg);
-      setTimeout(() => setImportMeetingError(''), 4000);
-    };
-
-    try {
-      // 1. Try API first
-      let meetings: Meeting[] = [];
-      try {
-        const apiResult = await fetchClientData<Meeting[]>(client.id, 'meetings');
-        if (Array.isArray(apiResult) && apiResult.length > 0) meetings = apiResult;
-      } catch { /* fall through to localStorage */ }
-
-      // 2. localStorage fallback — try multiple key patterns
-      if (meetings.length === 0 && typeof window !== 'undefined') {
-        const lsKeys = [
-          `creator_flow_meetings_${client.id}`,
-          `creator_flow_reunioes_${client.id}`,
-          `creator_flow_client_${client.id}_meetings`,
-        ];
-        for (const key of lsKeys) {
-          try {
-            const raw = localStorage.getItem(key);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (Array.isArray(parsed) && parsed.length > 0) { meetings = parsed; break; }
-            }
-          } catch { /* try next key */ }
-        }
-      }
-
-      if (meetings.length === 0) {
-        showError('Nenhuma reunião encontrada para este cliente.');
-        return;
-      }
-
-      // Sort newest first: by createdAt (number) or date (string)
-      const sorted = [...meetings].sort((a, b) => {
-        if (a.createdAt && b.createdAt) return b.createdAt - a.createdAt;
-        return (b.date || '').localeCompare(a.date || '');
-      });
-      const latest = sorted[0] as unknown as Record<string, unknown>;
-
-      // 3. Aggressive field extraction with fallbacks
-      const extractedSummary: string =
-        (latest.executiveSummary as string) ||
-        (latest.summary as string)          ||
-        (latest.transcription as string)    ||
-        (latest.rawTranscript as string)    ||
-        (latest.notes as string)            ||
-        (latest.content as string)          ||
-        (latest.description as string)      ||
-        '';
-
-      const extractedDecisions: string[] =
-        Array.isArray(latest.decisions) ? (latest.decisions as string[]) : [];
-      const extractedNextSteps: MeetingNextStep[] =
-        Array.isArray(latest.nextSteps) ? (latest.nextSteps as MeetingNextStep[]) : [];
-
-      const hasContent = extractedSummary || extractedDecisions.length > 0 || extractedNextSteps.length > 0;
-      if (!hasContent) {
-        showError('A última reunião não possui resumo salvo.');
-        return;
-      }
-
-      const lines: string[] = [];
-      if (latest.title) lines.push(`Reunião: ${latest.title as string}`);
-      if (latest.date)  lines.push(`Data: ${latest.date as string}`);
-      if (extractedSummary)             lines.push(`Resumo: ${extractedSummary}`);
-      if (extractedDecisions.length)    lines.push(`Decisões: ${extractedDecisions.join('; ')}`);
-      if (extractedNextSteps.length) {
-        lines.push(`Próximos passos: ${extractedNextSteps.map(s => s.text).join('; ')}`);
-      }
-
-      const importedText = lines.join('\n');
-      setCampaignContext(importedText);
-      setLastImportedText(importedText);
-      setImportMeetingToast(true);
-      setTimeout(() => setImportMeetingToast(false), 3000);
-    } catch {
-      showError('Erro ao importar reunião. Tente novamente.');
-    } finally {
-      setIsImportingMeeting(false);
-    }
-  };
-
   const handleSuggestThemes = async () => {
     if (isSuggestingThemes) return;
     setIsSuggestingThemes(true);
     try {
-      const campaignLine = campaignContext.trim()
-        ? `\nALERTA DE CAMPANHA ATIVA: Além do DNA da marca, ESTA geração de temas deve focar EXCLUSIVAMENTE neste briefing/direcionamento específico: ${campaignContext.trim()}`
+      const selectedMeeting = availableMeetings.find(m => m.id === selectedMeetingId);
+      const meetingContent = selectedMeeting
+        ? [
+            selectedMeeting.title  ? `Reunião: ${selectedMeeting.title}`  : '',
+            selectedMeeting.date   ? `Data: ${selectedMeeting.date}`      : '',
+            selectedMeeting.executiveSummary ? `Resumo: ${selectedMeeting.executiveSummary}` : '',
+            (selectedMeeting.decisions?.length ?? 0) > 0
+              ? `Decisões: ${selectedMeeting.decisions!.join('; ')}`
+              : '',
+            (selectedMeeting.nextSteps?.length ?? 0) > 0
+              ? `Próximos passos: ${selectedMeeting.nextSteps!.map(s => s.text).join('; ')}`
+              : '',
+          ].filter(Boolean).join('\n')
+        : '';
+      const campaignLine = meetingContent
+        ? `\nALERTA DE CAMPANHA ATIVA: Além do DNA da marca, ESTA geração de temas deve focar EXCLUSIVAMENTE neste briefing/direcionamento específico: ${meetingContent}`
         : '';
       const prompt = `Atue como estrategista de conteúdo digital. O cliente é do nicho "${client.niche || 'geral'}", subnicho "${client.subniche || 'geral'}", público-alvo: "${client.idealClient || 'geral'}".${campaignLine} Sugira 12 temas de vídeos MUITO ESPECÍFICOS e práticos para este nicho. Divida em 3 categorias. Retorne APENAS JSON válido, sem markdown, sem explicações, no formato exato: {"groups":[{"label":"Alta Demanda","emoji":"🔥","themes":["tema1","tema2","tema3","tema4"]},{"label":"Educacional","emoji":"📚","themes":["tema5","tema6","tema7","tema8"]},{"label":"Autoridade","emoji":"🏆","themes":["tema9","tema10","tema11","tema12"]}]}`;
       const result = await sendMessageToAgent(
@@ -5262,8 +5182,22 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
       const formatsText = selectedFormats.length > 0 ? selectedFormats.join(', ') : 'qualquer formato';
       const anglesText  = selectedAngles.length > 0 ? selectedAngles.join(', ') : 'qualquer ângulo';
 
-      const campaignLine = campaignContext.trim()
-        ? `\nALERTA DE CAMPANHA ATIVA: Além do DNA da marca, ESTA geração de ideias deve focar EXCLUSIVAMENTE neste briefing/direcionamento específico: ${campaignContext.trim()}\n`
+      const selectedMeeting = availableMeetings.find(m => m.id === selectedMeetingId);
+      const meetingContent = selectedMeeting
+        ? [
+            selectedMeeting.title  ? `Reunião: ${selectedMeeting.title}`  : '',
+            selectedMeeting.date   ? `Data: ${selectedMeeting.date}`      : '',
+            selectedMeeting.executiveSummary ? `Resumo: ${selectedMeeting.executiveSummary}` : '',
+            (selectedMeeting.decisions?.length ?? 0) > 0
+              ? `Decisões: ${selectedMeeting.decisions!.join('; ')}`
+              : '',
+            (selectedMeeting.nextSteps?.length ?? 0) > 0
+              ? `Próximos passos: ${selectedMeeting.nextSteps!.map(s => s.text).join('; ')}`
+              : '',
+          ].filter(Boolean).join('\n')
+        : '';
+      const campaignLine = meetingContent
+        ? `\nALERTA DE CAMPANHA ATIVA: Além do DNA da marca, ESTA geração de ideias deve focar EXCLUSIVAMENTE neste briefing/direcionamento específico: ${meetingContent}\n`
         : '';
 
       const prompt = `Gere EXATAMENTE ${quantidadeIdeias} ideias de vídeo para o seguinte cliente:
@@ -5821,46 +5755,33 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     </div>
                   </div>
 
-                  {/* ── Campaign Context ── */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-                        Tema Específico ou Campanha (Opcional)
-                      </label>
-                      <button
-                        onClick={handleImportMeeting}
-                        disabled={isImportingMeeting || (!!lastImportedText && campaignContext === lastImportedText)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  {/* ── Meeting / Campaign Link ── */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 block">
+                      Vincular a uma Reuniao/Campanha (Opcional)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedMeetingId}
+                        onChange={e => setSelectedMeetingId(e.target.value)}
+                        className="w-full appearance-none text-sm px-3 py-2.5 pr-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all cursor-pointer"
                       >
-                        {isImportingMeeting
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <FileText className="w-3.5 h-3.5" />
+                        <option value="">Selecione uma reuniao...</option>
+                        {availableMeetings
+                          .slice()
+                          .sort((a, b) => {
+                            if (a.createdAt && b.createdAt) return b.createdAt - a.createdAt;
+                            return (b.date || '').localeCompare(a.date || '');
+                          })
+                          .map(m => (
+                            <option key={m.id} value={m.id}>
+                              {m.title}{m.date ? ` — ${m.date}` : ''}
+                            </option>
+                          ))
                         }
-                        {(!!lastImportedText && campaignContext === lastImportedText)
-                          ? 'Reunião importada'
-                          : 'Importar última reunião'
-                        }
-                      </button>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     </div>
-                    {importMeetingToast && (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium animate-in fade-in duration-200">
-                        <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                        Resumo importado com sucesso.
-                      </div>
-                    )}
-                    {importMeetingError && (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium animate-in fade-in duration-200">
-                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                        {importMeetingError}
-                      </div>
-                    )}
-                    <textarea
-                      value={campaignContext}
-                      onChange={e => setCampaignContext(e.target.value)}
-                      placeholder="Ex: Foco no lançamento da Black Friday, destacando a oferta X..."
-                      rows={3}
-                      className="w-full text-sm px-3 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all resize-none"
-                    />
                   </div>
 
                   <button
