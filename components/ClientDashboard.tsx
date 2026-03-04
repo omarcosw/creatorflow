@@ -5303,7 +5303,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [ideas, setIdeas]                           = useState<IdeaCard[]>([]);
   const [isGenerating, setIsGenerating]             = useState(false);
   const [copiedId, setCopiedId]                     = useState<string | null>(null);
-  const [quantidadeIdeias, setQuantidadeIdeias]     = useState(5);
+  const [quantidadeIdeias, setQuantidadeIdeias]     = useState(3);
   const [ideasView, setIdeasView]                   = useState<'generator' | 'banco'>('generator');
   const { data: savedIdeas, setData: setSavedIdeas } = useClientData<IdeaCard[]>(client.id, 'saved_ideas', []);
   const [savedIdeaToast, setSavedIdeaToast]         = useState(false);
@@ -5951,10 +5951,10 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   {/* Quantidade de Ideias */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3 block">
-                      📊 Quantidade de Ideias
+                      Quantidade de Ideias
                     </label>
                     <div className="flex gap-2">
-                      {[3, 5, 10, 15].map(n => (
+                      {[1, 3, 5].map(n => (
                         <button
                           key={n}
                           onClick={() => setQuantidadeIdeias(n)}
