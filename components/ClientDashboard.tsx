@@ -5094,7 +5094,9 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [savedIdeaToast, setSavedIdeaToast]         = useState(false);
   const [campaignContext, setCampaignContext]        = useState('');
   const [importMeetingToast, setImportMeetingToast] = useState(false);
+  const [importMeetingError, setImportMeetingError] = useState('');
   const [isImportingMeeting, setIsImportingMeeting] = useState(false);
+  const [lastImportedText, setLastImportedText]     = useState('');
 
   const addTheme = (value: string) => {
     const t = value.trim();
@@ -5114,24 +5116,90 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
 
   const handleImportMeeting = async () => {
     setIsImportingMeeting(true);
+    setImportMeetingToast(false);
+    setImportMeetingError('');
+
+    const showError = (msg: string) => {
+      setImportMeetingError(msg);
+      setTimeout(() => setImportMeetingError(''), 4000);
+    };
+
     try {
-      const meetings = await fetchClientData<Meeting[]>(client.id, 'meetings');
-      if (!meetings || meetings.length === 0) return;
-      const latest = meetings[0]; // stored newest-first
-      const lines: string[] = [];
-      if (latest.title) lines.push(`Reunião: ${latest.title}`);
-      if (latest.date) lines.push(`Data: ${latest.date}`);
-      if (latest.executiveSummary) lines.push(`Resumo: ${latest.executiveSummary}`);
-      if (latest.decisions?.length) lines.push(`Decisões: ${latest.decisions.join('; ')}`);
-      if (latest.nextSteps?.length) {
-        const steps = latest.nextSteps.map(s => s.text).join('; ');
-        lines.push(`Próximos passos: ${steps}`);
+      // 1. Try API first
+      let meetings: Meeting[] = [];
+      try {
+        const apiResult = await fetchClientData<Meeting[]>(client.id, 'meetings');
+        if (Array.isArray(apiResult) && apiResult.length > 0) meetings = apiResult;
+      } catch { /* fall through to localStorage */ }
+
+      // 2. localStorage fallback — try multiple key patterns
+      if (meetings.length === 0 && typeof window !== 'undefined') {
+        const lsKeys = [
+          `creator_flow_meetings_${client.id}`,
+          `creator_flow_reunioes_${client.id}`,
+          `creator_flow_client_${client.id}_meetings`,
+        ];
+        for (const key of lsKeys) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed) && parsed.length > 0) { meetings = parsed; break; }
+            }
+          } catch { /* try next key */ }
+        }
       }
-      setCampaignContext(lines.join('\n'));
+
+      if (meetings.length === 0) {
+        showError('Nenhuma reunião encontrada para este cliente.');
+        return;
+      }
+
+      // Sort newest first: by createdAt (number) or date (string)
+      const sorted = [...meetings].sort((a, b) => {
+        if (a.createdAt && b.createdAt) return b.createdAt - a.createdAt;
+        return (b.date || '').localeCompare(a.date || '');
+      });
+      const latest = sorted[0] as unknown as Record<string, unknown>;
+
+      // 3. Aggressive field extraction with fallbacks
+      const extractedSummary: string =
+        (latest.executiveSummary as string) ||
+        (latest.summary as string)          ||
+        (latest.transcription as string)    ||
+        (latest.rawTranscript as string)    ||
+        (latest.notes as string)            ||
+        (latest.content as string)          ||
+        (latest.description as string)      ||
+        '';
+
+      const extractedDecisions: string[] =
+        Array.isArray(latest.decisions) ? (latest.decisions as string[]) : [];
+      const extractedNextSteps: MeetingNextStep[] =
+        Array.isArray(latest.nextSteps) ? (latest.nextSteps as MeetingNextStep[]) : [];
+
+      const hasContent = extractedSummary || extractedDecisions.length > 0 || extractedNextSteps.length > 0;
+      if (!hasContent) {
+        showError('A última reunião não possui resumo salvo.');
+        return;
+      }
+
+      const lines: string[] = [];
+      if (latest.title) lines.push(`Reunião: ${latest.title as string}`);
+      if (latest.date)  lines.push(`Data: ${latest.date as string}`);
+      if (extractedSummary)             lines.push(`Resumo: ${extractedSummary}`);
+      if (extractedDecisions.length)    lines.push(`Decisões: ${extractedDecisions.join('; ')}`);
+      if (extractedNextSteps.length) {
+        lines.push(`Próximos passos: ${extractedNextSteps.map(s => s.text).join('; ')}`);
+      }
+
+      const importedText = lines.join('\n');
+      setCampaignContext(importedText);
+      setLastImportedText(importedText);
       setImportMeetingToast(true);
       setTimeout(() => setImportMeetingToast(false), 3000);
     } catch {
-      // silently ignore
+      showError('Erro ao importar reunião. Tente novamente.');
     } finally {
       setIsImportingMeeting(false);
     }
@@ -5761,20 +5829,29 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       </label>
                       <button
                         onClick={handleImportMeeting}
-                        disabled={isImportingMeeting}
-                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-50"
+                        disabled={isImportingMeeting || (!!lastImportedText && campaignContext === lastImportedText)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {isImportingMeeting
                           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           : <FileText className="w-3.5 h-3.5" />
                         }
-                        Importar última reunião
+                        {(!!lastImportedText && campaignContext === lastImportedText)
+                          ? 'Reunião importada'
+                          : 'Importar última reunião'
+                        }
                       </button>
                     </div>
                     {importMeetingToast && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium animate-in fade-in duration-200">
                         <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                        Resumo da última reunião importado com sucesso.
+                        Resumo importado com sucesso.
+                      </div>
+                    )}
+                    {importMeetingError && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium animate-in fade-in duration-200">
+                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                        {importMeetingError}
                       </div>
                     )}
                     <textarea
