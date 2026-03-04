@@ -4270,20 +4270,6 @@ const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
         })}
       </div>
 
-      {/* Bottom save button */}
-      <div className="flex justify-end pt-2">
-        <button
-          onClick={handleSave}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            saved
-              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-              : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-          }`}
-        >
-          <Save className="w-4 h-4" />
-          {saved ? 'Inteligência Salva!' : 'Salvar Inteligência da Marca'}
-        </button>
-      </div>
     </div>
   );
 };
