@@ -1261,12 +1261,11 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
           </div>
           <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="h-full overflow-x-auto">
-              <div className="flex gap-3 h-full" style={{ width: 'max-content', minWidth: '100%' }}>
+            <div className="flex overflow-x-auto overflow-y-hidden w-full h-full pb-4 gap-4 items-start">
                 {columns.map(col => {
                   const isLastCol = col.id === 'finalizado';
                   return (
-                    <div key={col.id} className="w-56 flex-shrink-0 flex flex-col h-full">
+                    <div key={col.id} className="w-64 flex-shrink-0 flex flex-col max-h-full">
 
                       {/* Column header */}
                       <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0 gap-1">
@@ -1459,7 +1458,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                 {/* ── Add column ── */}
                 {columns.length < MAX_COLUMNS && (
                   addingCol ? (
-                    <div className="w-56 flex-shrink-0 flex flex-col gap-2 self-start pt-0.5">
+                    <div className="w-64 flex-shrink-0 flex flex-col gap-2 self-start pt-0.5">
                       <input
                         autoFocus
                         value={newColTitle}
@@ -1495,7 +1494,6 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                     </button>
                   )
                 )}
-              </div>
             </div>
           </DragDropContext>
           </div>{/* end flex-1 min-h-0 */}
@@ -6191,7 +6189,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
           {/* ══ TAB: Workflow ══ */}
           {activeTab === 'kanban' && (
-            <div className="animate-in fade-in duration-200">
+            <div className="animate-in fade-in duration-200 flex flex-col flex-1 min-h-0">
               <ClientWorkflowTab client={client} />
             </div>
           )}
