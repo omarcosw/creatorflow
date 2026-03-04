@@ -14,7 +14,7 @@ import CreatorStockView from '@/components/CreatorStockView';
 import ExecutiveAssistantView from '@/components/ExecutiveAssistantView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, ChevronDown, PenTool, Briefcase, Library } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -228,10 +228,12 @@ export default function DashboardPage() {
   const [usageData, setUsageData] = useState<{ plan: string; features: Record<string, { used: number; limit: number; remaining: number; percentage: number }> } | null>(null);
   const [showUsage, setShowUsage] = useState(false);
   const [userPlan, setUserPlan] = useState('');
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const plan = localStorage.getItem('cf_plan') || '';
     setUserPlan(plan);
+    setUserName(localStorage.getItem('cf_name') || '');
     const token = localStorage.getItem('cf_token');
     if (token) {
       fetch('/api/usage', { headers: { Authorization: `Bearer ${token}` } })
@@ -834,369 +836,170 @@ export default function DashboardPage() {
             </div>
           </main>
       ) : (
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative z-10">
-          <div className="flex flex-wrap items-center justify-end mb-6 gap-3">
-             <button
-                onClick={() => setIsStudioModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-violet-200 dark:border-violet-900/40 bg-violet-50 dark:bg-violet-900/10 text-violet-600 dark:text-violet-400 text-xs font-bold uppercase tracking-wide hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-all"
-             >
-                <Clapperboard className="w-4 h-4" />
-                <span className="hidden sm:inline">Meu Estúdio</span>
-             </button>
-             <button
-                onClick={handleShare}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wide hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-             >
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Compartilhar</span>
-             </button>
-             <button 
-                onClick={() => setIsReferralModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wide hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-all"
-             >
-                <Gift className="w-4 h-4" />
-                <span className="hidden sm:inline">Indique e Ganhe</span>
-             </button>
-             <button onClick={toggleTheme} className="p-2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-             </button>
-             <button
-                onClick={() => { localStorage.removeItem('cf_token'); localStorage.removeItem('cf_email'); localStorage.removeItem('cf_name'); localStorage.removeItem('cf_plan'); router.push('/login'); }}
-                className="p-2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                title="Sair"
-             >
-                <LogOut className="w-5 h-5" />
-             </button>
-          </div>
-
+        <main className="min-h-screen bg-[#050505] text-white relative overflow-x-hidden">
           {/* Inter Tight font */}
           <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');`}</style>
 
-          {/* ── Centralized content ── */}
-          <div className="flex flex-col items-center max-w-5xl mx-auto w-full gap-8 pb-20">
+          {/* Purple radial glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-purple-600/15 blur-[120px] rounded-full pointer-events-none" />
+
+          {/* ── Header ── */}
+          <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/20 backdrop-blur-md">
+            {/* Left: avatar + name */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-gray-200 select-none">
+                  {userName ? userName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'CF'}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-gray-300 hidden sm:block">{userName || 'Criador'}</span>
+            </div>
+            {/* Right: actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsStudioModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-800/50 bg-violet-900/20 text-violet-300 text-xs font-bold hover:bg-violet-900/30 transition-all"
+              >
+                <Clapperboard className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Meu Estúdio</span>
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-300 text-xs font-bold hover:bg-white/10 transition-all"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Compartilhar</span>
+              </button>
+              <button
+                onClick={() => setIsReferralModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/50 bg-amber-900/10 text-amber-400 text-xs font-bold hover:bg-amber-900/20 transition-all"
+              >
+                <Gift className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Indique e Ganhe</span>
+              </button>
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-gray-200 hover:bg-white/10 transition-all"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => { localStorage.removeItem('cf_token'); localStorage.removeItem('cf_email'); localStorage.removeItem('cf_name'); localStorage.removeItem('cf_plan'); router.push('/login'); }}
+                className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-red-400 hover:bg-red-900/10 transition-all"
+                title="Sair"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+
+          {/* ── Main content ── */}
+          <div className="relative z-10 flex flex-col items-center max-w-6xl mx-auto px-6 pt-16 pb-24 w-full">
 
             {/* Hero */}
-            <div className="w-full text-center pt-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 text-xs font-bold uppercase tracking-widest mb-5 border border-emerald-500/20">
-                <Sparkles className="w-3 h-3" />
-                Suite Profissional 2026
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white mb-4 font-display">
-                CreatorFlow AI
-              </h1>
-              <p
-                className="text-lg text-zinc-600 dark:text-zinc-300 max-w-2xl mx-auto"
-                style={{ fontFamily: "'Inter Tight', sans-serif" }}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="CreatorFlow" className="h-16 mb-8 object-contain" />
+            <h1
+              className="text-2xl md:text-3xl font-medium text-gray-100 mb-8 text-center max-w-xl"
+              style={{ fontFamily: "'Inter Tight', sans-serif" }}
+            >
+              Seu painel criativo para planejar, produzir e publicar.
+            </h1>
+
+            <div className="flex flex-row gap-4 mb-16">
+              <button
+                onClick={() => handleAgentClick(AgentId.SCRIPT_GENERATOR)}
+                className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:bg-gray-100 transition-colors"
               >
-                Seu painel criativo para planejar, produzir e publicar com agilidade. Escolha um fluxo e comece em segundos.
-              </p>
-            </div>
-
-            {/* Search bar */}
-            <div className="w-full max-w-2xl relative">
-              <input
-                value={agentQuery}
-                onChange={(e) => setAgentQuery(e.target.value)}
-                placeholder="Buscar agentes, tarefas ou ferramentas..."
-                className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/80 px-4 py-3.5 pr-12 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 shadow-sm focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-              />
-              {agentQuery && (
-                <button
-                  onClick={() => setAgentQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Quick actions */}
-            <div className="flex flex-wrap gap-3 justify-center">
-              {userPlan === 'solo' ? (
-                <div className="relative">
-                  <div className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200/60 dark:border-zinc-800/40 bg-zinc-100/50 dark:bg-zinc-900/30 text-zinc-400 text-sm font-bold opacity-60 cursor-not-allowed">
-                    <Users className="w-4 h-4" />
-                    Hub de Clientes
-                  </div>
-                  <div className="absolute -top-2 -right-2 flex items-center gap-1 rounded-full bg-zinc-900/80 dark:bg-zinc-100/90 px-2 py-0.5 shadow">
-                    <Lock className="w-2.5 h-2.5 text-white dark:text-zinc-900" />
-                    <span className="text-[9px] font-bold text-white dark:text-zinc-900">Maker+</span>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsClientesHubOpen(true)}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  Hub de Clientes
-                  <span className="text-xs text-emerald-500/70">({clients.length})</span>
-                </button>
-              )}
+                Gerar roteiro
+              </button>
               <button
                 onClick={() => setIsProductionHubOpen(true)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 transition-all shadow-sm"
+                className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition-colors"
               >
-                <PenTool className="w-4 h-4" />
-                Central de Criação
+                Abrir central de criação
               </button>
             </div>
 
-            {/* Production alerts */}
-            {pendingRecordings.length > 0 && (
-              <section className="w-full animate-in fade-in slide-in-from-top-3 duration-500">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <h2 className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                      Alertas de Produção
-                    </h2>
-                    <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-black bg-amber-500 text-white rounded-full">
-                      {pendingRecordings.length}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setIsArquivosHubOpen(true)}
-                    className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
-                  >
-                    Ver Acervo <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-                  {pendingRecordings.map(rec => (
-                    <div
-                      key={rec.id}
-                      className="snap-start flex-shrink-0 w-72 sm:w-80 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 p-4 shadow-sm shadow-amber-100 dark:shadow-amber-950/20"
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-9 h-9 flex items-center justify-center bg-amber-100 dark:bg-amber-900/40 rounded-xl flex-shrink-0 text-lg">
-                          ⚠️
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          {rec.clientName ? (
-                            <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-0.5 truncate">
-                              {rec.clientName}
-                            </p>
-                          ) : (
-                            <p className="text-[10px] font-black uppercase tracking-wider text-amber-600/60 dark:text-amber-600 mb-0.5">
-                              Sem cliente vinculado
-                            </p>
-                          )}
-                          <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight truncate">
-                            {rec.title}
-                          </p>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            📅 {fmtAlertDate(rec.recordedAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="border-t border-amber-200 dark:border-amber-800/40 mb-3" />
-                      {rec.pendingTakesDescription ? (
-                        <p className="text-xs italic text-amber-900 dark:text-amber-200 leading-relaxed line-clamp-3">
-                          &ldquo;{rec.pendingTakesDescription}&rdquo;
-                        </p>
-                      ) : (
-                        <p className="text-xs text-amber-700/60 dark:text-amber-500 italic">
-                          Nenhum detalhe registrado.
-                        </p>
-                      )}
-                      <div className="mt-3 flex items-center gap-2">
-                        <button
-                          onClick={() => handleResolveAlert(rec.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm shadow-emerald-500/20 active:scale-95"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          Marcar como Gravado
-                        </button>
-                        <button
-                          onClick={() => setIsArquivosHubOpen(true)}
-                          className="p-2 rounded-xl border border-amber-200 dark:border-amber-800/50 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                          title="Ver no Acervo"
-                        >
-                          <Archive className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
             {/* Módulos Principais */}
-            <div className="w-full">
-              <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 mb-6">Módulos Principais</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <button
-                  onClick={() => setIsProductionHubOpen(true)}
-                  className="group relative flex flex-col p-8 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/5 border border-emerald-500/20 dark:border-emerald-500/20 rounded-3xl hover:border-emerald-400/50 dark:hover:border-emerald-400/40 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 text-left hover:scale-[1.02]"
-                >
-                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <PenTool className="w-10 h-10 text-emerald-500 dark:text-emerald-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Central de Criação</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 flex-1">Roteiros, iluminação, edição, storyboard, banco de imagens e lista de gravação em um único hub.</p>
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                    Acessar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </button>
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
-                <button
-                  onClick={() => setIsAssistenteExecutivoOpen(true)}
-                  className="group relative flex flex-col p-8 bg-gradient-to-br from-indigo-500/10 to-violet-500/5 dark:from-indigo-500/10 dark:to-violet-500/5 border border-indigo-500/20 dark:border-indigo-500/20 rounded-3xl hover:border-indigo-400/50 dark:hover:border-indigo-400/40 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 text-left hover:scale-[1.02]"
-                >
-                  <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Briefcase className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Assistente Executivo</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 flex-1">Logística de produção, calculadora de custos e precificação para profissionalizar seu negócio criativo.</p>
-                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-sm">
-                    Acessar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setIsCreatorStockOpen(true)}
-                  className="group relative flex flex-col p-8 bg-gradient-to-br from-violet-500/10 to-purple-500/5 dark:from-violet-500/10 dark:to-purple-500/5 border border-violet-500/20 dark:border-violet-500/20 rounded-3xl hover:border-violet-400/50 dark:hover:border-violet-400/40 hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300 text-left hover:scale-[1.02]"
-                >
-                  <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Library className="w-10 h-10 text-violet-500 dark:text-violet-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Creator Stock</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 flex-1">Sound design, SFX e biblioteca sonora cinematográfica para elevar a qualidade do seu conteúdo.</p>
-                  <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400 font-bold text-sm">
-                    Acessar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Operacional */}
-            <div className="w-full">
-              <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Operacional</h2>
-              {userPlan === 'solo' ? (
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex items-center gap-5 flex-1 p-5 bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/40 rounded-2xl opacity-60 cursor-not-allowed">
-                    <div className="absolute inset-0 flex items-center justify-center z-10">
-                      <div className="flex items-center gap-2 rounded-full bg-zinc-900/80 dark:bg-zinc-100/90 px-4 py-2 shadow-lg">
-                        <Lock className="w-3.5 h-3.5 text-white dark:text-zinc-900" />
-                        <span className="text-xs font-bold text-white dark:text-zinc-900">Plano Maker ou superior</span>
-                      </div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/50 text-violet-600 dark:text-violet-400 flex-shrink-0">
-                      <Archive className="w-7 h-7" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5">Hub de Arquivos</h3>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Gerencie HDs e registre ingests com o Quiz de Backup.</p>
-                    </div>
-                  </div>
-                  <div className="relative flex items-center gap-5 flex-1 p-5 bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/40 rounded-2xl opacity-50 cursor-not-allowed">
-                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5">
-                      <span className="text-[9px] font-black text-white uppercase tracking-wide">Em breve</span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 flex-shrink-0">
-                      <BarChart3 className="w-7 h-7" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5">Auxiliar Financeiro</h3>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Controle de receitas, despesas e precificação de serviços criativos.</p>
-                    </div>
-                  </div>
+              {/* Central de Criação */}
+              <button
+                onClick={() => setIsProductionHubOpen(true)}
+                className="group bg-gradient-to-b from-emerald-900/20 to-transparent border border-emerald-900/50 hover:border-emerald-500/50 rounded-2xl p-6 flex flex-col items-start text-left transition-all duration-300 hover:bg-emerald-900/10"
+              >
+                <div className="p-2.5 rounded-xl bg-emerald-900/30 border border-emerald-800/50 mb-4">
+                  <PenTool className="w-5 h-5 text-emerald-400" />
                 </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={() => setIsArquivosHubOpen(true)}
-                    className="group relative flex items-center gap-5 flex-1 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all duration-300 text-left shadow-sm hover:shadow-xl hover:scale-[1.01]"
-                  >
-                    <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/50 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                      <Archive className="w-7 h-7" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5 group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
-                        Hub de Arquivos
-                      </h3>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Gerencie HDs e registre ingests com o Quiz de Backup.
-                      </p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
-                        <span>{hdds.length} HD{hdds.length !== 1 ? 's' : ''}</span>
-                        <span>&middot;</span>
-                        <span>{recordings.length} ingest{recordings.length !== 1 ? 's' : ''}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-violet-500 dark:group-hover:text-violet-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
-                  </button>
-                  <div className="relative flex items-center gap-5 flex-1 p-5 bg-zinc-100/50 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/40 rounded-2xl opacity-50 cursor-not-allowed">
-                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5">
-                      <span className="text-[9px] font-black text-white uppercase tracking-wide">Em breve</span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 flex-shrink-0">
-                      <BarChart3 className="w-7 h-7" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-0.5">Auxiliar Financeiro</h3>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Controle de receitas, despesas e precificação de serviços criativos.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                <h3 className="text-base font-bold text-white mb-1.5">Central de Criação</h3>
+                <p className="text-sm text-gray-400 leading-relaxed mb-4">Roteiros, storyboards, ideias e todo o seu arsenal criativo em um só lugar.</p>
+                <span className="mt-auto flex items-center gap-1.5 text-emerald-400 text-xs font-bold group-hover:gap-2.5 transition-all">
+                  Acessar <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </button>
 
-            {/* Ferramentas Extras */}
-            <div className="w-full">
-              <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Ferramentas Extras</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {visibleExtraAgentIds.length === 0 ? (
-                  <div className="col-span-full rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    Nenhuma ferramenta extra encontrada. Ajuste sua busca acima.
-                  </div>
-                ) : (
-                  visibleExtraAgentIds.map(id => {
-                    const agent = AGENTS[id];
-                    const Icon = agent.icon;
-                    return (
-                      <button key={agent.id} onClick={() => handleAgentClick(agent.id)} className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-emerald-400/70 dark:hover:border-emerald-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all duration-200 text-left group hover:scale-[1.01]">
-                        <div className={`p-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 group-hover:scale-105 transition-transform ${agent.color}`}><Icon className="w-5 h-5" /></div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm group-hover:text-emerald-500 dark:group-hover:text-emerald-400 truncate">{agent.title}</h3>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-500 truncate">{agent.description}</p>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
+              {/* Assistente Executivo */}
+              <button
+                onClick={() => setIsAssistenteExecutivoOpen(true)}
+                className="group bg-gradient-to-b from-blue-900/20 to-transparent border border-blue-900/50 hover:border-blue-500/50 rounded-2xl p-6 flex flex-col items-start text-left transition-all duration-300 hover:bg-blue-900/10"
+              >
+                <div className="p-2.5 rounded-xl bg-blue-900/30 border border-blue-800/50 mb-4">
+                  <Briefcase className="w-5 h-5 text-blue-400" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">Assistente Executivo</h3>
+                <p className="text-sm text-gray-400 leading-relaxed mb-4">Gerencie clientes, contratos, financeiro e toda a operação do seu negócio criativo.</p>
+                <span className="mt-auto flex items-center gap-1.5 text-blue-400 text-xs font-bold group-hover:gap-2.5 transition-all">
+                  Acessar <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </button>
+
+              {/* Creator Stock */}
+              <button
+                onClick={() => setIsCreatorStockOpen(true)}
+                className="group bg-gradient-to-b from-purple-900/20 to-transparent border border-purple-900/50 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col items-start text-left transition-all duration-300 hover:bg-purple-900/10"
+              >
+                <div className="p-2.5 rounded-xl bg-purple-900/30 border border-purple-800/50 mb-4">
+                  <Library className="w-5 h-5 text-purple-400" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">Creator Stock</h3>
+                <p className="text-sm text-gray-400 leading-relaxed mb-4">Banco de referências visuais, sons e elementos para turbinar sua produção.</p>
+                <span className="mt-auto flex items-center gap-1.5 text-purple-400 text-xs font-bold group-hover:gap-2.5 transition-all">
+                  Acessar <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </button>
             </div>
 
             {/* Usage Panel */}
             {usageData && (
-              <div className="w-full">
+              <div className="w-full bg-[#0a0a0a] border border-white/5 rounded-2xl p-6">
                 <button
                   onClick={() => setShowUsage(!showUsage)}
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mb-3"
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-gray-300 transition-colors mb-4 w-full text-left"
                 >
-                  <BarChart3 className="w-4 h-4" />
+                  <BarChart2 className="w-4 h-4" />
                   Uso do Plano ({usageData.plan === 'solo' ? 'Start' : usageData.plan === 'maker' ? 'Maker' : usageData.plan === 'studio' ? 'Studio' : 'Agency'})
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showUsage ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showUsage ? 'rotate-180' : ''}`} />
                 </button>
                 {showUsage && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {Object.entries(usageData.features).map(([key, data]) => {
                       const labels: Record<string, string> = { script_generator: 'Roteiros', proposals: 'Propostas', image_analysis: 'Imagens', storyboard: 'Storyboards' };
-                      const pct = data.percentage;
+                      const pct = (data as { used: number; limit: number; percentage: number }).percentage;
+                      const used = (data as { used: number; limit: number; percentage: number }).used;
+                      const limit = (data as { used: number; limit: number; percentage: number }).limit;
                       const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
-                      const textColor = pct >= 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
+                      const textColor = pct >= 90 ? 'text-red-400' : pct >= 70 ? 'text-amber-400' : 'text-emerald-400';
                       return (
-                        <div key={key} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 p-4">
+                        <div key={key} className="rounded-xl border border-white/5 bg-white/[0.03] p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{labels[key] || key}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{labels[key] || key}</span>
                             <span className={`text-[10px] font-bold ${textColor}`}>{pct}%</span>
                           </div>
-                          <p className="text-lg font-bold text-zinc-900 dark:text-white font-display mb-2">
-                            {data.used.toLocaleString('pt-BR')} <span className="text-xs font-normal text-zinc-400">/ {data.limit.toLocaleString('pt-BR')}</span>
+                          <p className="text-lg font-bold text-white mb-2">
+                            {used.toLocaleString('pt-BR')} <span className="text-xs font-normal text-gray-500">/ {limit.toLocaleString('pt-BR')}</span>
                           </p>
-                          <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                          <div className="h-1.5 rounded-full bg-gray-800 overflow-hidden">
                             <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
                           </div>
                         </div>
@@ -1206,22 +1009,18 @@ export default function DashboardPage() {
                 )}
               </div>
             )}
-
-            {/* Footer - INTOCÁVEL */}
-            <footer className="mt-20 border-t border-zinc-200 dark:border-zinc-900 pt-10 pb-6 text-center w-full">
-              <p className="text-zinc-400 dark:text-zinc-600 text-xs uppercase tracking-widest font-bold mb-4">CreatorFlow AI v1.1 - Feito para Criadores</p>
-              <button
-                onClick={() => setIsSupportModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all"
-              >
-                🐞 Reportar Bug ou Sugerir Melhoria
-              </button>
-            </footer>
           </div>
+
+          {/* Fixed feedback button */}
+          <button
+            onClick={() => setIsSupportModalOpen(true)}
+            className="fixed bottom-6 right-6 z-50 px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-400 hover:text-gray-200 transition-all shadow-lg"
+          >
+            🐞 Reportar bug ou sugerir melhoria
+          </button>
         </main>
       )}
     </div>
     </AuthGuard>
   );
 }
-
