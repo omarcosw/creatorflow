@@ -241,7 +241,7 @@ function addSecurityHeaders(response: NextResponse, request: NextRequest): NextR
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://images.unsplash.com https://cdn.pixabay.com https://upload.wikimedia.org",
       "media-src 'self' blob:",
-      "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
+      "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://generativelanguage.googleapis.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

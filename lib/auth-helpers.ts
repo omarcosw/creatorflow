@@ -57,3 +57,26 @@ export async function authenticateAndCheckCRM(req: NextRequest): Promise<AuthRes
 export function isAuthenticated(result: AuthResult): result is { userId: string; plan: PlanKey } {
   return !(result instanceof NextResponse);
 }
+
+/**
+ * Simple auth: extracts userId from Bearer token without CRM plan check.
+ * Useful for generic user data endpoints.
+ */
+export async function authenticateUser(req: NextRequest): Promise<{ userId: string } | NextResponse> {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+    return { userId: decoded.userId };
+  } catch (error) {
+    if (error instanceof JsonWebTokenError || error instanceof TokenExpiredError) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+    console.error('Auth helper error:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}

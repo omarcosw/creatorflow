@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useClientData } from '@/lib/hooks/useClientData';
+import { useUserData } from '@/lib/hooks/useUserData';
 import { fetchClientData, saveClientData } from '@/lib/clients-api';
 import {
   ArrowLeft,
@@ -898,13 +899,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   const [editingCard, setEditingCard]       = useState<{ card: KanbanCard; colId: string } | null>(null);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
 
-  const ARCHIVE_KEY = `creator_flow_archive_${client.id}`;
-  const [archivedCards, setArchivedCards] = useState<KanbanCard[]>(() => {
-    try {
-      const s = localStorage.getItem(`creator_flow_archive_${client.id}`);
-      return s ? JSON.parse(s) : [];
-    } catch { return []; }
-  });
+  const { data: archivedCards, setData: setArchivedCards } = useClientData<KanbanCard[]>(client.id, 'archive', []);
 
   // ── Date helpers (computed each render) ──────────────────
   const todayStr    = getTodayStr();
@@ -919,12 +914,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   const overdueCount  = activeCards.filter(c => c.dueDate < todayStr).length;
   const dueSoonCount  = activeCards.filter(c => c.dueDate >= todayStr && c.dueDate <= tomorrowStr).length;
 
-  // Kanban persistence handled by useClientData hook
-
-  // ── Persist archived cards ────────────────────────────────
-  useEffect(() => {
-    try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archivedCards)); } catch { /* ignore */ }
-  }, [archivedCards, ARCHIVE_KEY]);
+  // Kanban + archive persistence handled by useClientData hook
 
   // ── To-Do handlers ────────────────────────────────────────
   const addTodo = () => {
@@ -1883,21 +1873,9 @@ const ACERVO_DEVICE_LABELS: Record<string, string> = {
 
 
 const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => void }> = ({ client, onNavigateToArquivos }) => {
-  // ── Read global recordings from localStorage ──────────────
-  const [allRecordings] = useState<Recording[]>(() => {
-    try {
-      const stored = localStorage.getItem('creator_flow_recordings');
-      return stored ? (JSON.parse(stored) as Recording[]) : [];
-    } catch { return []; }
-  });
-
-  // ── Read global HDDs from localStorage ────────────────────
-  const [allHdds] = useState<HDD[]>(() => {
-    try {
-      const stored = localStorage.getItem('creator_flow_hdds');
-      return stored ? (JSON.parse(stored) as HDD[]) : [];
-    } catch { return []; }
-  });
+  // ── Read global recordings and HDDs from API ──────────────
+  const { data: allRecordings } = useUserData<Recording[]>('recordings', []);
+  const { data: allHdds } = useUserData<HDD[]>('hdds', []);
 
   const displayItems = allRecordings.filter(r => r.clientId === client.id);
 
@@ -2164,19 +2142,16 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   const [expandedFolders, setExpandedFolders]     = useState<Set<string>>(new Set());
   const [generatingStoryboard, setGeneratingStoryboard] = useState<string | null>(null);
   const [pinnedToast, setPinnedToast]             = useState(false);
-  const [storyboardUsed, setStoryboardUsed]       = useState<number>(() => {
-    try {
-      const s = localStorage.getItem(`creator_flow_storyboard_${client.id}`);
-      return s ? parseInt(s, 10) : 0;
-    } catch { return 0; }
-  });
+  const { data: storyboardData, setData: setStoryboardData } = useClientData<{ count: number }>(client.id, 'storyboard_usage', { count: 0 });
+  const storyboardUsed = storyboardData.count;
+  const setStoryboardUsed = (v: number | ((prev: number) => number)) => {
+    setStoryboardData(prev => ({
+      count: typeof v === 'function' ? v(prev.count) : v,
+    }));
+  };
   const STORYBOARD_LIMIT = 15;
 
   // Roteiros persistence handled by useClientData hook
-
-  useEffect(() => {
-    localStorage.setItem(`creator_flow_storyboard_${client.id}`, String(storyboardUsed));
-  }, [storyboardUsed, client.id]);
 
   // ── Deep helpers ─────────────────────────────────────────────
   const findPkgDeep = (pkgs: ScriptPackage[], id: string): ScriptPackage | null => {

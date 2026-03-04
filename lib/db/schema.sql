@@ -75,3 +75,17 @@ CREATE TABLE IF NOT EXISTS client_data (
 CREATE INDEX IF NOT EXISTS idx_client_data_client ON client_data(client_id);
 CREATE INDEX IF NOT EXISTS idx_client_data_user ON client_data(user_id);
 CREATE INDEX IF NOT EXISTS idx_client_data_type ON client_data(client_id, data_type);
+
+-- User data table (JSONB storage for per-user features: executive_projects, freelancers, recordings, hdds, etc.)
+CREATE TABLE IF NOT EXISTS user_data (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  data_type VARCHAR(50) NOT NULL,
+  data JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, data_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_data_user ON user_data(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_data_type ON user_data(user_id, data_type);

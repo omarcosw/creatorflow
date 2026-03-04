@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useUserData } from '@/lib/hooks/useUserData';
 import {
   ArrowLeft,
   Plus,
@@ -25,8 +26,6 @@ import ExecutiveDocuments from '@/components/ExecutiveDocuments';
 import ExecutiveFinancialControl from '@/components/ExecutiveFinancialControl';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'executive_projects';
 
 const DEFAULT_CATEGORY_NAMES = [
   'Direção', 'Produção', 'Câmera', 'Luz e Maquinária', 'Arte', 'Pós-Produção',
@@ -85,32 +84,15 @@ const STATUS_CONFIG: Record<
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadProjects(): ExecutiveProject[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const s = localStorage.getItem(STORAGE_KEY);
-    if (!s) return [];
-    const raw = JSON.parse(s) as ExecutiveProject[];
-    // Migration: ensure every project has all required arrays
-    return raw.map(p => ({
-      ...p,
-      budgetCategories: p.budgetCategories ?? createDefaultBudgetCategories(),
-      teamMembers:      p.teamMembers      ?? [],
-      milestones:       p.milestones       ?? [],
-      documents:        p.documents        ?? [],
-      transactions:     p.transactions     ?? [],
-    }));
-  } catch {
-    return [];
-  }
-}
-
-function saveProjects(projects: ExecutiveProject[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-  } catch {
-    /* ignore */
-  }
+function migrateProject(p: ExecutiveProject): ExecutiveProject {
+  return {
+    ...p,
+    budgetCategories: p.budgetCategories ?? createDefaultBudgetCategories(),
+    teamMembers:      p.teamMembers      ?? [],
+    milestones:       p.milestones       ?? [],
+    documents:        p.documents        ?? [],
+    transactions:     p.transactions     ?? [],
+  };
 }
 
 function formatDate(dateStr: string): string {
@@ -254,15 +236,13 @@ interface ExecutiveAssistantViewProps {
 export default function ExecutiveAssistantView({ onBack }: ExecutiveAssistantViewProps) {
   const [view, setView]                     = useState<'lobby' | 'project'>('lobby');
   const [selectedProject, setSelectedProject] = useState<ExecutiveProject | null>(null);
-  const [projects, setProjects]             = useState<ExecutiveProject[]>(loadProjects);
+  const { data: rawProjects, setData: setRawProjects } = useUserData<ExecutiveProject[]>('executive_projects', []);
+  const projects = useMemo(() => rawProjects.map(migrateProject), [rawProjects]);
+  const setProjects = setRawProjects;
   const [showModal, setShowModal]           = useState(false);
   const [activeModule, setActiveModule]     = useState<ModuleId>('monitoramento');
   const [sidebarOpen, setSidebarOpen]       = useState(false);
   const [viewRole, setViewRole]             = useState<'admin' | 'member'>('admin');
-
-  useEffect(() => {
-    saveProjects(projects);
-  }, [projects]);
 
   const handleSaveProject = useCallback((project: ExecutiveProject) => {
     setProjects(prev => [project, ...prev]);

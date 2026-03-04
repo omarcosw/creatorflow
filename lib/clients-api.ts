@@ -72,6 +72,29 @@ export async function saveClientData(clientId: string, dataType: string, data: u
   }
 }
 
+// ── User-level data (not per-client) ──────────────────────────
+
+export async function fetchUserData<T>(dataType: string): Promise<T | null> {
+  const res = await fetch(`/api/user-data/${dataType}`, { headers: headers() });
+  if (!res.ok) return null;
+  const result = await res.json();
+  return result.data as T | null;
+}
+
+export async function saveUserData(dataType: string, data: unknown): Promise<void> {
+  const res = await fetch(`/api/user-data/${dataType}`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ data }),
+  });
+  if (!res.ok) {
+    const result = await res.json().catch(() => ({}));
+    throw new Error(result.error || 'Erro ao salvar dados');
+  }
+}
+
+// ── Migration ────────────────────────────────────────────────
+
 interface MigrationClient extends Client {
   subData?: Record<string, unknown>;
 }

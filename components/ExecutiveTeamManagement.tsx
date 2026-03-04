@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { useUserData } from '@/lib/hooks/useUserData';
 import {
   UserPlus,
   X,
@@ -16,25 +17,7 @@ import type { ExecutiveProject, TeamMember, Freelancer } from '@/types';
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
-const FREELANCERS_KEY = 'freelancers_db';
-
-function loadFreelancers(): Freelancer[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const s = localStorage.getItem(FREELANCERS_KEY);
-    return s ? (JSON.parse(s) as Freelancer[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFreelancers(list: Freelancer[]): void {
-  try {
-    localStorage.setItem(FREELANCERS_KEY, JSON.stringify(list));
-  } catch {
-    /* ignore */
-  }
-}
+// Freelancers storage migrated to useUserData hook (PostgreSQL)
 
 function formatCurrency(v: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -51,7 +34,7 @@ interface ScaleModalProps {
 
 function ScaleModal({ onClose, onAdd }: ScaleModalProps) {
   const [view, setView]             = useState<ModalView>('select');
-  const [freelancers, setFreelancers] = useState<Freelancer[]>(loadFreelancers);
+  const { data: freelancers, setData: setFreelancers } = useUserData<Freelancer[]>('freelancers', []);
   const [search, setSearch]         = useState('');
   const [selected, setSelected]     = useState<Freelancer | null>(null);
 
@@ -95,7 +78,6 @@ function ScaleModal({ onClose, onAdd }: ScaleModalProps) {
     };
     const updated = [...freelancers, fl];
     setFreelancers(updated);
-    saveFreelancers(updated);
     goToConfigure(fl);
   };
 

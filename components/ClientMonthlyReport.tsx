@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText, Printer, X, Award, TrendingUp, CheckCircle,
   Star, Zap, BarChart3, Sparkles,
 } from 'lucide-react';
 import { Client } from '@/types';
+import { fetchClientData } from '@/lib/clients-api';
 
 // ─────────────────────────────────────────────
 // Local data types (isolated from internal types)
@@ -17,117 +18,139 @@ interface _FollowerRec { month: string; count: number; }
 interface _KanbanCard  { dueDate?: string; }
 interface _KanbanCol   { id: string; cards: _KanbanCard[]; }
 
+interface ReportData {
+  monthLabel: string;
+  totalScripts: number;
+  approvedDeliverables: number;
+  approvedScripts: number;
+  avgRating: number | null;
+  highlights: { title: string; rating: number; type: 'entrega' | 'roteiro' }[];
+  followerGrowth: { current: number; previous: number; pct: number | null } | null;
+  onTimePct: number;
+}
+
+const EMPTY_REPORT: ReportData = {
+  monthLabel: '', totalScripts: 0, approvedDeliverables: 0, approvedScripts: 0,
+  avgRating: null, highlights: [], followerGrowth: null, onTimePct: 100,
+};
+
 // ─────────────────────────────────────────────
-// Data aggregation
+// Data aggregation (async — reads from API)
 // ─────────────────────────────────────────────
-function readReportData(client: Client) {
-  const today    = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+function useReportData(client: Client): { data: ReportData; loading: boolean } {
+  const [data, setData] = useState<ReportData>(EMPTY_REPORT);
+  const [loading, setLoading] = useState(true);
 
-  const MONTHS_PT = [
-    'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
-  ];
-  const monthLabel = `${MONTHS_PT[today.getMonth()]} ${today.getFullYear()}`;
+  useEffect(() => {
+    let cancelled = false;
 
-  // ── Scripts ──────────────────────────────────────────────────────
-  let totalScripts    = 0;
-  let approvedScripts = 0;
-  const ratedScripts: { title: string; rating: number }[] = [];
+    const compute = async () => {
+      const today    = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const MONTHS_PT = [
+        'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
+      ];
+      const monthLabel = `${MONTHS_PT[today.getMonth()]} ${today.getFullYear()}`;
 
-  try {
-    const s = localStorage.getItem(`creator_flow_roteiros_${client.id}`);
-    if (s) {
-      const pkgs: _RPkg[] = JSON.parse(s);
-      for (const pkg of pkgs) {
-        for (const sc of pkg.scripts) {
-          totalScripts++;
-          if (sc.portalStatus === 'aprovado_cliente') {
-            approvedScripts++;
-            if (sc.rating && sc.rating > 0) {
-              ratedScripts.push({ title: sc.title || pkg.packageName || 'Roteiro', rating: sc.rating });
+      let totalScripts = 0, approvedScripts = 0;
+      const ratedScripts: { title: string; rating: number }[] = [];
+      let approvedDeliverables = 0;
+      const ratedDeliverables: { title: string; rating: number }[] = [];
+
+      // Fetch all data in parallel
+      const [pkgs, delivs, metricsRaw, cols] = await Promise.all([
+        fetchClientData<_RPkg[]>(client.id, 'roteiros').catch(() => [] as _RPkg[]),
+        fetchClientData<_Deliverable[]>(client.id, 'entregas').catch(() => [] as _Deliverable[]),
+        fetchClientData<{ followerHistory: _FollowerRec[] }>(client.id, 'metrics').catch(() => null),
+        fetchClientData<_KanbanCol[]>(client.id, 'kanban').catch(() => [] as _KanbanCol[]),
+      ]);
+
+      // Scripts
+      if (Array.isArray(pkgs)) {
+        for (const pkg of pkgs) {
+          for (const sc of (pkg.scripts || [])) {
+            totalScripts++;
+            if (sc.portalStatus === 'aprovado_cliente') {
+              approvedScripts++;
+              if (sc.rating && sc.rating > 0) {
+                ratedScripts.push({ title: sc.title || pkg.packageName || 'Roteiro', rating: sc.rating });
+              }
             }
           }
         }
       }
-    }
-  } catch { /* ignore */ }
 
-  // ── Entregas ─────────────────────────────────────────────────────
-  let approvedDeliverables = 0;
-  const ratedDeliverables: { title: string; rating: number }[] = [];
-
-  try {
-    const s = localStorage.getItem(`creator_flow_entregas_${client.id}`);
-    if (s) {
-      const delivs: _Deliverable[] = JSON.parse(s);
-      for (const d of delivs) {
-        if (d.status === 'aprovado') {
-          approvedDeliverables++;
-          if (d.rating && d.rating > 0) {
-            ratedDeliverables.push({ title: d.title, rating: d.rating });
+      // Entregas
+      if (Array.isArray(delivs)) {
+        for (const d of delivs) {
+          if (d.status === 'aprovado') {
+            approvedDeliverables++;
+            if (d.rating && d.rating > 0) {
+              ratedDeliverables.push({ title: d.title, rating: d.rating });
+            }
           }
         }
       }
-    }
-  } catch { /* ignore */ }
 
-  // ── Average rating ───────────────────────────────────────────────
-  const allRatings = [
-    ...ratedScripts.map(s => s.rating),
-    ...ratedDeliverables.map(d => d.rating),
-  ];
-  const avgRating = allRatings.length > 0
-    ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length
-    : null;
+      // Average rating
+      const allRatings = [
+        ...ratedScripts.map(s => s.rating),
+        ...ratedDeliverables.map(d => d.rating),
+      ];
+      const avgRating = allRatings.length > 0
+        ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length
+        : null;
 
-  // ── Top highlights ───────────────────────────────────────────────
-  const highlights = [
-    ...ratedDeliverables.map(d => ({ title: d.title, rating: d.rating, type: 'entrega' as const })),
-    ...ratedScripts.map(s => ({ title: s.title, rating: s.rating, type: 'roteiro' as const })),
-  ].sort((a, b) => b.rating - a.rating).slice(0, 3);
+      // Highlights
+      const highlights = [
+        ...ratedDeliverables.map(d => ({ title: d.title, rating: d.rating, type: 'entrega' as const })),
+        ...ratedScripts.map(s => ({ title: s.title, rating: s.rating, type: 'roteiro' as const })),
+      ].sort((a, b) => b.rating - a.rating).slice(0, 3);
 
-  // ── Follower growth ──────────────────────────────────────────────
-  let followerGrowth: { current: number; previous: number; pct: number | null } | null = null;
-  try {
-    const s = localStorage.getItem(`creator_flow_metrics_${client.id}`);
-    if (s) {
-      const parsed = JSON.parse(s) as { followerHistory: _FollowerRec[] };
-      const hist = (parsed.followerHistory || []).slice().sort((a, b) => a.month.localeCompare(b.month));
-      if (hist.length >= 2) {
-        const last = hist[hist.length - 1];
-        const prev = hist[hist.length - 2];
-        const pct  = prev.count > 0 ? ((last.count - prev.count) / prev.count) * 100 : null;
-        followerGrowth = { current: last.count, previous: prev.count, pct };
-      } else if (hist.length === 1) {
-        followerGrowth = { current: hist[0].count, previous: 0, pct: null };
+      // Follower growth
+      let followerGrowth: ReportData['followerGrowth'] = null;
+      if (metricsRaw) {
+        const hist = (metricsRaw.followerHistory || []).slice().sort((a, b) => a.month.localeCompare(b.month));
+        if (hist.length >= 2) {
+          const last = hist[hist.length - 1];
+          const prev = hist[hist.length - 2];
+          const pct  = prev.count > 0 ? ((last.count - prev.count) / prev.count) * 100 : null;
+          followerGrowth = { current: last.count, previous: prev.count, pct };
+        } else if (hist.length === 1) {
+          followerGrowth = { current: hist[0].count, previous: 0, pct: null };
+        }
       }
-    }
-  } catch { /* ignore */ }
 
-  // ── On-time consistency from kanban ─────────────────────────────
-  let totalWithDue = 0, overdueCount = 0;
-  try {
-    const s = localStorage.getItem(`creator_flow_kanban_${client.id}`);
-    if (s) {
-      const cols: _KanbanCol[] = JSON.parse(s);
-      for (const col of cols) {
-        if (col.id === 'finalizado') continue;
-        for (const card of col.cards) {
-          if (card.dueDate) {
-            totalWithDue++;
-            if (card.dueDate < todayStr) overdueCount++;
+      // On-time from kanban
+      let totalWithDue = 0, overdueCount = 0;
+      if (Array.isArray(cols)) {
+        for (const col of cols) {
+          if (col.id === 'finalizado') continue;
+          for (const card of (col.cards || [])) {
+            if (card.dueDate) {
+              totalWithDue++;
+              if (card.dueDate < todayStr) overdueCount++;
+            }
           }
         }
       }
-    }
-  } catch { /* ignore */ }
 
-  const onTimePct = totalWithDue > 0
-    ? Math.round(((totalWithDue - overdueCount) / totalWithDue) * 100)
-    : 100;
+      const onTimePct = totalWithDue > 0
+        ? Math.round(((totalWithDue - overdueCount) / totalWithDue) * 100)
+        : 100;
 
-  return { monthLabel, totalScripts, approvedDeliverables, approvedScripts, avgRating, highlights, followerGrowth, onTimePct };
+      if (!cancelled) {
+        setData({ monthLabel, totalScripts, approvedDeliverables, approvedScripts, avgRating, highlights, followerGrowth, onTimePct });
+        setLoading(false);
+      }
+    };
+
+    compute();
+    return () => { cancelled = true; };
+  }, [client.id]);
+
+  return { data, loading };
 }
 
 // ─────────────────────────────────────────────
@@ -153,7 +176,7 @@ interface ClientMonthlyReportProps {
 }
 
 const ClientMonthlyReport: React.FC<ClientMonthlyReportProps> = ({ client, onClose }) => {
-  const d = useMemo(() => readReportData(client), [client]);
+  const { data: d, loading } = useReportData(client);
 
   const handlePrint = () => window.print();
 
@@ -170,6 +193,17 @@ const ClientMonthlyReport: React.FC<ClientMonthlyReportProps> = ({ client, onClo
     }
     return `Este é o início da parceria com ${client.brandName}. Os próximos 30 dias serão fundamentais para estabelecer a cadência de produção, alinhar expectativas e criar os primeiros conteúdos que vão definir a identidade audiovisual do cliente.`;
   })();
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[200] bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Gerando relatório...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
