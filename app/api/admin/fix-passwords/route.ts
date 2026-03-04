@@ -7,7 +7,8 @@ import { query } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const { secret } = await req.json();
-    if (secret !== 'CrF1ow2026xPr0dK9m') {
+    const adminSecret = process.env.ADMIN_SECRET || 'CrF1ow2026xPr0dK9m';
+    if (!secret || secret !== adminSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

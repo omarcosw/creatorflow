@@ -13,3 +13,4 @@ yarn-error.log*
 *.tsbuildinfo
 health.log
 cleanup.log
+scripts/
