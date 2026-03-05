@@ -10,6 +10,7 @@ import {
   User,
   Undo2,
   CalendarDays,
+  Building2,
 } from 'lucide-react';
 import { useIara } from '@/components/IaraContext';
 
@@ -24,12 +25,26 @@ interface ActionData {
 interface Message {
   id: string;
   role: 'user' | 'iara';
-  type: 'text' | 'action';
+  type: 'text' | 'action' | 'client_selection';
   content: string;
   actionData?: ActionData;
 }
 
+interface PendingTask {
+  rawText: string;
+  day: string;
+  time: string;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const MOCK_CLIENTS = [
+  'TechCorp',
+  'Agência XYZ',
+  'Red Bull Brasil',
+  'Studio Noir',
+  'Sem cliente',
+];
 
 const ACTION_KEYWORDS = [
   'agendar', 'agend', 'gravação', 'gravacao', 'gravar',
@@ -82,13 +97,16 @@ function isActionMessage(text: string): boolean {
   return ACTION_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-function buildActionData(text: string): ActionData {
+function buildActionData(text: string, clientName?: string): ActionData {
   const { day, time, context } = extractDateInfo(text);
   const dayStr = day ? `Dia ${day}` : 'Data a confirmar';
   const timeStr = time ? ` às ${time}` : '';
+  const subtitle = clientName && clientName !== 'Sem cliente'
+    ? `Gravação — ${clientName}`
+    : `Gravação — ${context}`;
   return {
     title: 'Evento adicionado ao calendário',
-    subtitle: `Gravação — ${context}`,
+    subtitle,
     details: `${dayStr}${timeStr}`,
   };
 }
@@ -170,9 +188,45 @@ function ActionCard({ data, onUndo }: { data: ActionData; onUndo: () => void }) 
   );
 }
 
+// ─── Client Selection Chips ───────────────────────────────────────────────────
+
+function ClientSelectionChips({
+  onSelect,
+  disabled,
+}: {
+  onSelect: (client: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {MOCK_CLIENTS.map((client) => (
+        <button
+          key={client}
+          onClick={() => onSelect(client)}
+          disabled={disabled}
+          className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-sm text-gray-300 hover:text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Building2 className="w-3 h-3 text-gray-500" />
+          {client}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, onUndo }: { msg: Message; onUndo: (id: string) => void }) {
+function MessageBubble({
+  msg,
+  onUndo,
+  onSelectClient,
+  clientSelectionDone,
+}: {
+  msg: Message;
+  onUndo: (id: string) => void;
+  onSelectClient: (client: string) => void;
+  clientSelectionDone: boolean;
+}) {
   const isUser = msg.role === 'user';
 
   return (
@@ -188,9 +242,14 @@ function MessageBubble({ msg, onUndo }: { msg: Message; onUndo: (id: string) => 
         </div>
       )}
 
-      <div className={`max-w-[80%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`max-w-[85%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
         {msg.type === 'action' && msg.actionData ? (
           <ActionCard data={msg.actionData} onUndo={() => onUndo(msg.id)} />
+        ) : msg.type === 'client_selection' ? (
+          <div className="rounded-2xl rounded-bl-sm bg-white/5 border border-white/8 px-3.5 py-3">
+            <p className="text-sm text-gray-300 leading-relaxed">{msg.content}</p>
+            <ClientSelectionChips onSelect={onSelectClient} disabled={clientSelectionDone} />
+          </div>
         ) : (
           <div
             className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
@@ -231,6 +290,9 @@ export default function IaraDrawer() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [pendingTask, setPendingTask] = useState<PendingTask | null>(null);
+  // Track which client_selection messages have been answered (to disable chips)
+  const [answeredSelections, setAnsweredSelections] = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -258,6 +320,41 @@ export default function IaraDrawer() {
     setMessages((prev) => prev.filter((m) => m.id !== id));
   };
 
+  // Called when user clicks a client chip
+  const handleSelectClient = (clientName: string) => {
+    if (!pendingTask) return;
+
+    // Find the last client_selection message and mark it as answered
+    setMessages((prev) => {
+      const lastSelectionId = [...prev].reverse().find((m) => m.type === 'client_selection')?.id;
+      if (lastSelectionId) {
+        setAnsweredSelections((s) => new Set(s).add(lastSelectionId));
+      }
+      return prev;
+    });
+
+    // Add user message with client name
+    const userMsg: Message = { id: uid(), role: 'user', type: 'text', content: clientName };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsTyping(true);
+
+    const task = pendingTask;
+    setPendingTask(null);
+
+    const delay = 700 + Math.random() * 400;
+    setTimeout(() => {
+      setIsTyping(false);
+      const actionMsg: Message = {
+        id: uid(),
+        role: 'iara',
+        type: 'action',
+        content: '',
+        actionData: buildActionData(task.rawText, clientName),
+      };
+      setMessages((prev) => [...prev, actionMsg]);
+    }, delay);
+  };
+
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
 
@@ -269,10 +366,27 @@ export default function IaraDrawer() {
     const delay = 800 + Math.random() * 600;
     setTimeout(() => {
       setIsTyping(false);
-      const iaraMsg: Message = isActionMessage(text)
-        ? { id: uid(), role: 'iara', type: 'action', content: '', actionData: buildActionData(text) }
-        : { id: uid(), role: 'iara', type: 'text', content: randomFallback() };
-      setMessages((prev) => [...prev, iaraMsg]);
+
+      if (isActionMessage(text)) {
+        // Step 1: ask for client instead of confirming immediately
+        const { day, time } = extractDateInfo(text);
+        setPendingTask({ rawText: text.trim(), day, time });
+        const selectionMsg: Message = {
+          id: uid(),
+          role: 'iara',
+          type: 'client_selection',
+          content: 'Perfeito! Para qual cliente do seu Hub devo atribuir essa tarefa?',
+        };
+        setMessages((prev) => [...prev, selectionMsg]);
+      } else {
+        const iaraMsg: Message = {
+          id: uid(),
+          role: 'iara',
+          type: 'text',
+          content: randomFallback(),
+        };
+        setMessages((prev) => [...prev, iaraMsg]);
+      }
     }, delay);
   };
 
@@ -338,7 +452,13 @@ export default function IaraDrawer() {
         {/* ── Messages ── */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} msg={msg} onUndo={handleUndo} />
+            <MessageBubble
+              key={msg.id}
+              msg={msg}
+              onUndo={handleUndo}
+              onSelectClient={handleSelectClient}
+              clientSelectionDone={answeredSelections.has(msg.id)}
+            />
           ))}
           {isTyping && <TypingIndicator />}
           <div ref={bottomRef} />
