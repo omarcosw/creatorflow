@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   X,
   Send,
@@ -125,11 +126,17 @@ const INITIAL_MESSAGES: Message[] = [
 
 function ActionCard({ data, onUndo }: { data: ActionData; onUndo: () => void }) {
   const { close } = useIara();
+  const router = useRouter();
   const [undone, setUndone] = useState(false);
 
   const handleUndo = () => {
     setUndone(true);
     onUndo();
+  };
+
+  const handleViewAgenda = () => {
+    close();
+    router.push('/dashboard');
   };
 
   if (undone) {
@@ -169,7 +176,7 @@ function ActionCard({ data, onUndo }: { data: ActionData; onUndo: () => void }) 
           Desfazer
         </button>
         <button
-          onClick={close}
+          onClick={handleViewAgenda}
           className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-900/40 bg-emerald-900/10 hover:bg-emerald-900/20 transition-all font-medium"
         >
           <CalendarDays className="w-3 h-3" />
@@ -426,18 +433,12 @@ export default function IaraDrawer() {
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          onClick={close}
-        />
-      )}
-
-      {/* Drawer */}
+      {/* Floating Widget */}
       <aside
-        className={`fixed top-0 right-0 h-screen w-full sm:w-96 bg-[#050505]/95 backdrop-blur-xl border-l border-white/10 z-50 flex flex-col transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed bottom-6 right-6 w-[calc(100vw-3rem)] sm:w-[400px] h-[60vh] min-h-[420px] max-h-[620px] bg-[#050505] border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50 flex flex-col overflow-hidden transition-all duration-300 ease-out ${
+          isOpen
+            ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
         }`}
       >
         {/* ── Header ── */}
