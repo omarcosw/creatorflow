@@ -15,7 +15,7 @@ import CreatorStockView from '@/components/CreatorStockView';
 import ExecutiveAssistantView from '@/components/ExecutiveAssistantView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator, User } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator, User } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -231,7 +231,6 @@ export default function DashboardPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [agentQuery, setAgentQuery] = useState('');
   const [usageData, setUsageData] = useState<{ plan: string; features: Record<string, { used: number; limit: number; remaining: number; percentage: number }> } | null>(null);
-  const [showUsage, setShowUsage] = useState(false);
   const [userPlan, setUserPlan] = useState('');
   const [userName, setUserName] = useState('');
 
@@ -1172,8 +1171,42 @@ export default function DashboardPage() {
               </div>
             </div>
 
+          {/* Usage Panel */}
+            {usageData && (
+              <div className="w-full bg-[#0a0a0a] border border-white/5 rounded-2xl p-6">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 mb-4">
+                  <BarChart2 className="w-4 h-4" />
+                  Uso do Plano ({usageData.plan === 'solo' ? 'Start' : usageData.plan === 'maker' ? 'Maker' : usageData.plan === 'studio' ? 'Studio' : 'Agency'})
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Object.entries(usageData.features).map(([key, data]) => {
+                    const labels: Record<string, string> = { script_generator: 'Roteiros', proposals: 'Propostas', image_analysis: 'Imagens', storyboard: 'Storyboards' };
+                    const pct = (data as { used: number; limit: number; percentage: number }).percentage;
+                    const used = (data as { used: number; limit: number; percentage: number }).used;
+                    const limit = (data as { used: number; limit: number; percentage: number }).limit;
+                    const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
+                    const textColor = pct >= 90 ? 'text-red-400' : pct >= 70 ? 'text-amber-400' : 'text-emerald-400';
+                    return (
+                      <div key={key} className="rounded-xl border border-white/5 bg-white/[0.03] p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{labels[key] || key}</span>
+                          <span className={`text-[10px] font-bold ${textColor}`}>{pct}%</span>
+                        </div>
+                        <p className="text-lg font-bold text-white mb-2">
+                          {used.toLocaleString('pt-BR')} <span className="text-xs font-normal text-gray-500">/ {limit.toLocaleString('pt-BR')}</span>
+                        </p>
+                        <div className="h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                          <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Report Bug — rodapé */}
-            <div className="w-full flex justify-center mt-12 pb-8">
+            <div className="w-full flex justify-center mt-8 pb-8">
               <button
                 onClick={() => setIsSupportModalOpen(true)}
                 className="px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-400 hover:text-gray-200 transition-all shadow-lg"
@@ -1181,46 +1214,6 @@ export default function DashboardPage() {
                 🐞 Reportar bug ou sugerir melhoria
               </button>
             </div>
-
-          {/* Usage Panel */}
-            {usageData && (
-              <div className="w-full bg-[#0a0a0a] border border-white/5 rounded-2xl p-6">
-                <button
-                  onClick={() => setShowUsage(!showUsage)}
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-gray-300 transition-colors mb-4 w-full text-left"
-                >
-                  <BarChart2 className="w-4 h-4" />
-                  Uso do Plano ({usageData.plan === 'solo' ? 'Start' : usageData.plan === 'maker' ? 'Maker' : usageData.plan === 'studio' ? 'Studio' : 'Agency'})
-                  <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showUsage ? 'rotate-180' : ''}`} />
-                </button>
-                {showUsage && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.entries(usageData.features).map(([key, data]) => {
-                      const labels: Record<string, string> = { script_generator: 'Roteiros', proposals: 'Propostas', image_analysis: 'Imagens', storyboard: 'Storyboards' };
-                      const pct = (data as { used: number; limit: number; percentage: number }).percentage;
-                      const used = (data as { used: number; limit: number; percentage: number }).used;
-                      const limit = (data as { used: number; limit: number; percentage: number }).limit;
-                      const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
-                      const textColor = pct >= 90 ? 'text-red-400' : pct >= 70 ? 'text-amber-400' : 'text-emerald-400';
-                      return (
-                        <div key={key} className="rounded-xl border border-white/5 bg-white/[0.03] p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{labels[key] || key}</span>
-                            <span className={`text-[10px] font-bold ${textColor}`}>{pct}%</span>
-                          </div>
-                          <p className="text-lg font-bold text-white mb-2">
-                            {used.toLocaleString('pt-BR')} <span className="text-xs font-normal text-gray-500">/ {limit.toLocaleString('pt-BR')}</span>
-                          </p>
-                          <div className="h-1.5 rounded-full bg-gray-800 overflow-hidden">
-                            <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
         </main>
