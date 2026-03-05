@@ -47,9 +47,10 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            <Link href="/" className="cursor-pointer transition-opacity hover:opacity-80">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="Creator Flow" className="h-8 w-auto object-contain" />
-            </a>
+            </Link>
           </div>
 
           {/* Desktop nav */}

@@ -882,8 +882,10 @@ export default function DashboardPage() {
           <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/20 backdrop-blur-md">
             {/* Left: logo + avatar + name */}
             <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Creator Flow" className="h-8 md:h-10 w-auto object-contain drop-shadow-md" />
+              <a href="/dashboard" className="cursor-pointer transition-opacity hover:opacity-80">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Creator Flow" className="h-8 md:h-10 w-auto object-contain drop-shadow-md" />
+              </a>
               <div className="w-9 h-9 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center flex-shrink-0">
                 <span className="text-xs font-bold text-gray-200 select-none">
                   {userName ? userName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'CF'}

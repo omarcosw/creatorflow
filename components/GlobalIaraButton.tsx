@@ -1,10 +1,15 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { useIara } from '@/components/IaraContext';
 
 export default function GlobalIaraButton() {
   const { open } = useIara();
+  const pathname = usePathname();
+  const isHomePage = pathname === '/dashboard' || pathname === '/dashboard/';
+
+  if (isHomePage) return null;
 
   return (
     <button
