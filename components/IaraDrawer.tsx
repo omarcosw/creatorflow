@@ -440,9 +440,10 @@ export default function IaraDrawer() {
         <button
           onClick={open}
           aria-label="Abrir IARA"
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md shadow-2xl flex items-center justify-center z-40 transition-all duration-200 hover:scale-105 active:scale-95"
+          className="fixed bottom-6 right-6 flex items-center gap-2 bg-[#1A1A1A]/90 hover:bg-[#2A2A2A] border border-white/10 text-white px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-md transition-all cursor-pointer z-40"
         >
-          <Sparkles className="w-5 h-5 text-violet-400" />
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          <span className="text-sm font-medium">IARA</span>
         </button>
       )}
 
