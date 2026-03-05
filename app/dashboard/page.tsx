@@ -14,7 +14,7 @@ import CreatorStockView from '@/components/CreatorStockView';
 import ExecutiveAssistantView from '@/components/ExecutiveAssistantView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator, User } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -1063,6 +1063,37 @@ export default function DashboardPage() {
                     <p className="text-xs text-gray-500 leading-relaxed">Controle de receitas, despesas e precificação.</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Equipe & Conta */}
+            <div className="w-full mb-12">
+              <h2 className="text-xs font-bold tracking-wider text-gray-500 mb-4 uppercase">Equipe & Conta</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => router.push('/dashboard/team')}
+                  className="group bg-[#0a0a0a] border border-white/5 hover:border-emerald-900/50 rounded-2xl p-5 flex items-start gap-4 text-left transition-all duration-300"
+                >
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-900/40 flex-shrink-0 group-hover:bg-emerald-500/15 transition-colors">
+                    <Users className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white mb-1">Diretório da Equipe</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">Visualize e contate os membros da sua equipe via WhatsApp.</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/profile')}
+                  className="group bg-[#0a0a0a] border border-white/5 hover:border-white/15 rounded-2xl p-5 flex items-start gap-4 text-left transition-all duration-300"
+                >
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 group-hover:bg-white/10 transition-colors">
+                    <User className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white mb-1">Minha Conta</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">Edite seu perfil, cargo e informações de contato.</p>
+                  </div>
+                </button>
               </div>
             </div>
 
