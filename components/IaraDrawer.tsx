@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   X,
   Send,
@@ -314,9 +314,7 @@ function TypingIndicator() {
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 
 export default function IaraDrawer() {
-  const { isOpen, open, close, clients } = useIara();
-  const pathname = usePathname();
-  const isHomePage = pathname === '/dashboard';
+  const { isOpen, close, clients } = useIara();
   const clientNames = clients.map((c) => c.brandName).filter(Boolean);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
@@ -435,18 +433,6 @@ export default function IaraDrawer() {
 
   return (
     <>
-      {/* FAB — visible only on inner pages when widget is closed */}
-      {!isHomePage && !isOpen && (
-        <button
-          onClick={open}
-          aria-label="Abrir IARA"
-          className="fixed bottom-6 right-6 flex items-center gap-2 bg-[#1A1A1A]/90 hover:bg-[#2A2A2A] border border-white/10 text-white px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-md transition-all cursor-pointer z-40"
-        >
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span className="text-sm font-medium">IARA</span>
-        </button>
-      )}
-
       {/* Floating Widget */}
       <aside
         className={`fixed bottom-6 right-6 w-[calc(100vw-3rem)] sm:w-[400px] h-[60vh] min-h-[420px] max-h-[620px] bg-[#050505] border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50 flex flex-col overflow-hidden transition-all duration-300 ease-out ${
