@@ -963,6 +963,29 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* IARA — Destaque */}
+            <button
+              onClick={() => router.push('/dashboard/iara')}
+              className="w-full group relative bg-gradient-to-r from-violet-900/20 via-purple-900/10 to-transparent border border-violet-900/50 hover:border-violet-600/50 rounded-2xl p-5 flex items-center gap-5 text-left transition-all duration-300 mb-8 overflow-hidden"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-violet-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="p-3 rounded-xl bg-violet-900/40 border border-violet-800/40 flex-shrink-0 group-hover:bg-violet-900/60 transition-colors">
+                <Sparkles className="w-5 h-5 text-violet-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-base font-bold text-white">IARA</span>
+                  <span className="text-[9px] font-black bg-violet-500/20 border border-violet-500/30 text-violet-300 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    AI
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Agente autônoma. Agende gravações e execute tarefas com linguagem natural.
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors ml-auto flex-shrink-0" />
+            </button>
+
             {/* Módulos Principais */}
             <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
