@@ -5,6 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
 import { AgentId, ChatSession, InstagramProfile, ShotList, BrandKit, HDD, Recording, StudioProfile, Client } from '@/types';
+import { useIara } from '@/components/IaraContext';
 import { fetchClients, createClient, deleteClientAPI, migrateFromLocalStorage } from '@/lib/clients-api';
 import AgentView from '@/components/AgentView';
 import ShotListManager from '@/components/ShotListManager';
@@ -186,6 +187,7 @@ const ReferralModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { open: openIara } = useIara();
   const [activeAgentId, setActiveAgentId] = useState<AgentId | null>(null);
   const [isLightingHubOpen, setIsLightingHubOpen] = useState(false);
   const [isProductionHubOpen, setIsProductionHubOpen] = useState(false);
@@ -965,7 +967,7 @@ export default function DashboardPage() {
 
             {/* IARA — Destaque */}
             <button
-              onClick={() => router.push('/dashboard/iara')}
+              onClick={openIara}
               className="w-full group relative bg-gradient-to-r from-violet-900/20 via-purple-900/10 to-transparent border border-violet-900/50 hover:border-violet-600/50 rounded-2xl p-5 flex items-center gap-5 text-left transition-all duration-300 mb-8 overflow-hidden"
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-violet-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
