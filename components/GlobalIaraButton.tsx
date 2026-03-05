@@ -9,7 +9,17 @@ export default function GlobalIaraButton() {
   const pathname = usePathname();
   const isHomePage = pathname === '/dashboard' || pathname === '/dashboard/';
 
-  if (isHomePage) return null;
+  if (isHomePage) {
+    return (
+      <button
+        onClick={open}
+        aria-label="Abrir IARA"
+        className="fixed bottom-6 right-6 flex items-center justify-center w-11 h-11 bg-[#1A1A1A]/90 hover:bg-[#2A2A2A] border border-white/10 text-purple-400 rounded-xl shadow-2xl backdrop-blur-md transition-all cursor-pointer z-[99999]"
+      >
+        <Sparkles className="w-5 h-5" />
+      </button>
+    );
+  }
 
   return (
     <button

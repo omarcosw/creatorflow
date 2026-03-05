@@ -1172,7 +1172,17 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Usage Panel */}
+            {/* Report Bug — rodapé */}
+            <div className="w-full flex justify-center mt-12 pb-8">
+              <button
+                onClick={() => setIsSupportModalOpen(true)}
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-400 hover:text-gray-200 transition-all shadow-lg"
+              >
+                🐞 Reportar bug ou sugerir melhoria
+              </button>
+            </div>
+
+          {/* Usage Panel */}
             {usageData && (
               <div className="w-full bg-[#0a0a0a] border border-white/5 rounded-2xl p-6">
                 <button
@@ -1213,13 +1223,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Fixed feedback button */}
-          <button
-            onClick={() => setIsSupportModalOpen(true)}
-            className="fixed bottom-6 right-6 z-50 px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-full text-xs font-medium text-gray-400 hover:text-gray-200 transition-all shadow-lg"
-          >
-            🐞 Reportar bug ou sugerir melhoria
-          </button>
         </main>
       )}
     </div>
