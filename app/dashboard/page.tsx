@@ -206,6 +206,9 @@ export default function DashboardPage() {
   // Payment success toast
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
+  // Share link copied toast
+  const [showLinkCopied, setShowLinkCopied] = useState(false);
+
   useEffect(() => {
     if (window.location.search.includes('success=true')) {
       setShowPaymentSuccess(true);
@@ -509,18 +512,13 @@ export default function DashboardPage() {
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: 'CreatorFlow AI',
-      text: 'Confira este dashboard de produtividade para criadores de conteúdo!',
-      url: window.location.href,
-    };
     try {
-      if (navigator.share) await navigator.share(shareData);
-      else {
-        await navigator.clipboard.writeText(window.location.href);
-        alert('Link copiado!');
-      }
-    } catch (err) { console.error(err); }
+      await navigator.clipboard.writeText(window.location.href);
+      setShowLinkCopied(true);
+      setTimeout(() => setShowLinkCopied(false), 2500);
+    } catch {
+      // fallback silencioso
+    }
   };
 
   const handleAgentClick = (id: AgentId) => {
@@ -661,6 +659,15 @@ export default function DashboardPage() {
             <button onClick={() => setShowPaymentSuccess(false)} className="ml-4 text-white/40 hover:text-white">
               <X className="h-4 w-4" />
             </button>
+          </div>
+        </div>
+      )}
+      {/* Link copied toast */}
+      {showLinkCopied && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/10 backdrop-blur-lg px-6 py-3 shadow-2xl">
+            <Check className="h-4 w-4 text-violet-400" />
+            <p className="text-sm font-medium text-white">Link copiado!</p>
           </div>
         </div>
       )}

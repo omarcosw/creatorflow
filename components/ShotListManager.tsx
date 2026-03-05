@@ -24,16 +24,22 @@ const ShotListManager: React.FC<ShotListManagerProps> = ({ shotLists, onSaveList
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [listNameError, setListNameError] = useState('');
 
   // States for adding a new shot (Fixing button interaction)
   const [isAddingShot, setIsAddingShot] = useState(false);
   const [newShotScene, setNewShotScene] = useState('');
   const [newShotDesc, setNewShotDesc] = useState('');
+  const [shotSceneError, setShotSceneError] = useState('');
 
   const activeList = shotLists.find(l => l.id === activeListId);
 
   const createList = () => {
-    if (!newListName.trim()) return;
+    if (!newListName.trim()) {
+      setListNameError('Digite um título para continuar.');
+      return;
+    }
+    setListNameError('');
     const newList: ShotList = {
       id: crypto.randomUUID(),
       title: newListName,
@@ -42,6 +48,7 @@ const ShotListManager: React.FC<ShotListManagerProps> = ({ shotLists, onSaveList
     };
     onSaveList(newList);
     setNewListName('');
+    setListNameError('');
     setIsAddingList(false);
     setActiveListId(newList.id);
   };
@@ -62,7 +69,11 @@ const ShotListManager: React.FC<ShotListManagerProps> = ({ shotLists, onSaveList
   };
 
   const confirmAddShot = () => {
-    if (!activeList || !newShotScene.trim()) return;
+    if (!activeList || !newShotScene.trim()) {
+      setShotSceneError('Digite o nome da cena para continuar.');
+      return;
+    }
+    setShotSceneError('');
 
     const newItem: ShotItem = {
       id: crypto.randomUUID(),
@@ -71,6 +82,7 @@ const ShotListManager: React.FC<ShotListManagerProps> = ({ shotLists, onSaveList
       isCompleted: false
     };
     onSaveList({ ...activeList, items: [...activeList.items, newItem] });
+    setShotSceneError('');
     setIsAddingShot(false);
   };
 
@@ -160,16 +172,21 @@ const ShotListManager: React.FC<ShotListManagerProps> = ({ shotLists, onSaveList
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Cena / Shot</label>
-                            <input 
+                            <label htmlFor="shot-scene-input" className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Cena / Shot</label>
+                            <input
+                              id="shot-scene-input"
+                              aria-label="Nome da cena ou shot"
+                              aria-required="true"
+                              aria-invalid={!!shotSceneError}
                               autoFocus
-                              type="text" 
+                              type="text"
                               value={newShotScene}
-                              onChange={(e) => setNewShotScene(e.target.value)}
+                              onChange={(e) => { setNewShotScene(e.target.value); if (shotSceneError) setShotSceneError(''); }}
                               onKeyDown={(e) => e.key === 'Enter' && confirmAddShot()}
                               placeholder="Ex: Close na xícara de café"
-                              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                              className={`w-full bg-zinc-50 dark:bg-zinc-950 border rounded-xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500 ${shotSceneError ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'}`}
                             />
+                            {shotSceneError && <p className="text-xs text-red-500 mt-1.5">{shotSceneError}</p>}
                         </div>
                         <div>
                             <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Descrição Visual (Opcional)</label>
@@ -268,16 +285,21 @@ const ShotListManager: React.FC<ShotListManagerProps> = ({ shotLists, onSaveList
                   <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-6">Novo Vídeo para Gravar</h3>
                   <div className="space-y-4">
                       <div>
-                          <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Título do Projeto</label>
-                          <input 
+                          <label htmlFor="list-title-input" className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Título do Projeto</label>
+                          <input
+                            id="list-title-input"
+                            aria-label="Título do projeto"
+                            aria-required="true"
+                            aria-invalid={!!listNameError}
                             autoFocus
-                            type="text" 
+                            type="text"
                             value={newListName}
-                            onChange={(e) => setNewListName(e.target.value)}
+                            onChange={(e) => { setNewListName(e.target.value); if (listNameError) setListNameError(''); }}
                             onKeyDown={(e) => e.key === 'Enter' && createList()}
                             placeholder="Ex: Reels Café #01"
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                            className={`w-full bg-zinc-50 dark:bg-zinc-950 border rounded-xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500 ${listNameError ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'}`}
                           />
+                          {listNameError && <p className="text-xs text-red-500 mt-1.5">{listNameError}</p>}
                       </div>
                       <div className="flex gap-3">
                           <button onClick={() => setIsAddingList(false)} className="flex-1 px-4 py-3 text-zinc-500 font-bold text-sm">Cancelar</button>

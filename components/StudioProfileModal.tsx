@@ -203,10 +203,12 @@ const StudioProfileModal: React.FC<StudioProfileModalProps> = ({
           {activeTab === 'identity' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">
+                <label htmlFor="studio-name-input" className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">
                   Nome da Produtora / Creator
                 </label>
                 <input
+                  id="studio-name-input"
+                  aria-label="Nome da produtora ou creator"
                   autoFocus
                   type="text"
                   value={draft.name}

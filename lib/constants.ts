@@ -75,7 +75,7 @@ const SCRIPT_GENERATOR: AgentConfig = {
     title: "Gerador de Roteiros",
     description: "Criação de roteiros visuais em tabela para facilitar sua gravação.",
     icon: FileText,
-    color: "text-slate-500",
+    color: "text-indigo-500",
     placeholder: "Ex: Quero fazer um vídeo sobre café especial...",
     initialMessage: "Olá! Para escrevermos um roteiro que realmente funcione, não quero apenas 'jogar palavras'.\n\nMe conte sua ideia básica (ex: 'Vídeo sobre Café') e eu farei algumas perguntas estratégicas sobre seu público, formato e objetivo antes de começarmos. Vamos lá?",
     systemInstruction: `Você é um **Script Doctor e Roteirista Sênior** de agências publicitárias.
@@ -978,7 +978,7 @@ AO FINAL, INFORME QUE O USUÁRIO PODE GERAR UMA LISTA DE GRAVAÇÃO NO BOTÃO AB
     icon: ImageIcon,
     color: "text-cyan-600 dark:text-cyan-400",
     placeholder: "Cole seu roteiro ou descreva sua ideia...",
-    initialMessage: "🎞️ **Olá! Eu sou seu Pesquisador de B-Rolls.**\nCole seu roteiro ou descreva sua ideia abaixo, e eu vou te dar a lista exata de termos para pesquisar no YouTube, Artlist ou Envato.\n\n**Dica Pro:** Eu gero os termos em **Inglês**, pois é assim que os bancos de imagens encontram os melhores resultados mundiais.\n\n👇 *Cole seu texto aqui:*",
+    initialMessage: "🎞️ **Olá! Eu sou seu Pesquisador de B-Rolls.**\nCole seu roteiro ou descreva sua ideia abaixo, e eu vou te dar a lista exata de termos para pesquisar no YouTube, Artlist ou Envato.\n\n**Dica Pro:** Eu gero os termos em **Inglês**, pois é assim que os bancos de imagens encontram os melhores resultados mundiais.\n\n👇 Cole seu texto aqui:",
     systemInstruction: `**IDENTIDADE E FUNÇÃO**
 Você é o **Visual Hunter AI**, um especialista em pesquisa de B-Rolls e Stock Footage.
 Sua missão: Ler o roteiro/ideia do usuário e traduzi-lo em **Termos de Busca Otimizados (Keywords)** para encontrar as melhores cenas em bancos de imagem.
@@ -1027,7 +1027,7 @@ Para o melhor resultado, me diga:
 4.  **A Iluminação:** Luz do sol, neon, dramática?
 5.  **O Formato:** Horizontal (YouTube) ou Vertical (Reels)?
 
-👇 *Descreva sua ideia abaixo e eu crio o prompt técnico para você!*`,
+👇 Descreva sua ideia abaixo e eu crio o prompt técnico para você!`,
     systemInstruction: `**IDENTIDADE E FUNÇÃO**
 Você é o **VisionaryAI**, um especialista em Engenharia de Prompt e Direção de Arte.
 **IMPORTANTE:** Você **NÃO** gera imagens. Sua função é EXCLUSIVAMENTE escrever **textos (prompts)** otimizados para que o usuário os copie e utilize em ferramentas externas de IA (como Midjourney, DALL-E 3, Stable Diffusion, Leonardo AI).
