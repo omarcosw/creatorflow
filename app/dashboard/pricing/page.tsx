@@ -137,7 +137,7 @@ export default function PricingAssistantPage() {
   // ── Step validation ──────────────────────────────────────────────────────
 
   const canAdvance = () => {
-    if (step === 1) return state.projectName.trim() !== '' && state.projectType !== '';
+    if (step === 1) return state.projectType !== '';
     return true;
   };
 
@@ -485,7 +485,11 @@ export default function PricingAssistantPage() {
                     <button
                       onClick={() => setStep(s => s + 1)}
                       disabled={!canAdvance()}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all ${
+                        canAdvance()
+                          ? 'bg-violet-600 hover:bg-violet-700 text-white'
+                          : 'bg-white/10 text-gray-500 cursor-not-allowed'
+                      }`}
                     >
                       {step === 4 ? 'Calcular Orçamento' : 'Próximo Passo'}
                       <ChevronRight className="w-4 h-4" />
