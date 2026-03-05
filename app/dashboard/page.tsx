@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
@@ -373,9 +373,11 @@ export default function DashboardPage() {
   }, [studioProfile]);
 
   // Sync clients to IaraContext so IaraDrawer can list them in multi-step flow
+  // setIaraClients is a stable useState setter — intentionally omitted from deps
   useEffect(() => {
     setIaraClients(clients);
-  }, [clients, setIaraClients]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients]);
 
   // Clients are persisted via API — no localStorage sync needed
 
@@ -471,12 +473,17 @@ export default function DashboardPage() {
   };
 
   // Reload clients from API (source of truth)
+  const isFetchingClientsRef = useRef(false);
   const reloadClients = useCallback(async () => {
+    if (isFetchingClientsRef.current) return; // prevent concurrent calls
+    isFetchingClientsRef.current = true;
     try {
       const apiClients = await fetchClients();
       setClients(apiClients);
     } catch (err) {
       console.error('Failed to reload clients:', err);
+    } finally {
+      isFetchingClientsRef.current = false;
     }
   }, []);
 
