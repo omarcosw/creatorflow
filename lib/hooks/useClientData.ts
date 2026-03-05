@@ -3,9 +3,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchClientData, saveClientData } from '@/lib/clients-api';
 
+// Global save queue — ensures unmount flushes complete before the next mount fetch
+const pendingSaves = new Map<string, Promise<void>>();
+
+function getSaveKey(clientId: string, dataType: string) {
+  return `${clientId}:${dataType}`;
+}
+
 /**
  * Hook to load and persist per-client sub-data (kanban, agenda, etc.) via API.
  * Replaces direct localStorage read/write with debounced API calls.
+ *
+ * Fixes:
+ * - Waits for any pending save to complete before fetching on mount
+ * - Properly handles empty arrays as valid data (not treated as "no data")
+ * - Synchronous flush on unmount tracked globally to prevent race conditions
  */
 export function useClientData<T>(
   clientId: string,
@@ -20,28 +32,40 @@ export function useClientData<T>(
   const [loading, setLoading] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDataRef = useRef<T>(fallback);
+  const hasSavedRef = useRef(false);
 
-  // Load data on mount
+  // Load data on mount — wait for any pending save first
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
 
-    fetchClientData<T>(clientId, dataType)
-      .then((result) => {
+    const key = getSaveKey(clientId, dataType);
+
+    const load = async () => {
+      // Wait for any pending save from a previous unmount
+      const pending = pendingSaves.get(key);
+      if (pending) {
+        await pending;
+        pendingSaves.delete(key);
+      }
+
+      try {
+        const result = await fetchClientData<T>(clientId, dataType);
         if (!cancelled) {
-          // Only use API result if it has meaningful data
-          const hasData = Array.isArray(result) ? result.length > 0 : result !== null && result !== undefined;
-          if (hasData) {
+          // Accept any non-null/undefined result, including empty arrays
+          if (result !== null && result !== undefined) {
             setDataState(result);
             latestDataRef.current = result;
           }
           setLoading(false);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error(`useClientData(${dataType}) load error:`, err);
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    load();
 
     return () => { cancelled = true; };
   }, [clientId, dataType]);
@@ -55,12 +79,21 @@ export function useClientData<T>(
           : newDataOrFn;
 
         latestDataRef.current = newData;
+        hasSavedRef.current = true;
 
         // Debounce API write
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
-          saveClientData(clientId, dataType, latestDataRef.current).catch((err) => {
+          const key = getSaveKey(clientId, dataType);
+          const savePromise = saveClientData(clientId, dataType, latestDataRef.current).catch((err) => {
             console.error(`useClientData(${dataType}) save error:`, err);
+          });
+          pendingSaves.set(key, savePromise);
+          savePromise.then(() => {
+            // Only delete if this is still the active save
+            if (pendingSaves.get(key) === savePromise) {
+              pendingSaves.delete(key);
+            }
           });
         }, 300);
 
@@ -75,8 +108,17 @@ export function useClientData<T>(
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
-        // Flush the latest data on unmount
-        saveClientData(clientId, dataType, latestDataRef.current).catch(() => {});
+        // Only flush if data was actually modified
+        if (hasSavedRef.current) {
+          const key = getSaveKey(clientId, dataType);
+          const savePromise = saveClientData(clientId, dataType, latestDataRef.current).catch(() => {});
+          pendingSaves.set(key, savePromise);
+          savePromise.then(() => {
+            if (pendingSaves.get(key) === savePromise) {
+              pendingSaves.delete(key);
+            }
+          });
+        }
       }
     };
   }, [clientId, dataType]);

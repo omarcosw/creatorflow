@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
@@ -464,11 +464,30 @@ export default function DashboardPage() {
     setRecordings(prev => prev.filter(r => r.id !== id));
   };
 
+  // Reload clients from API (source of truth)
+  const reloadClients = useCallback(async () => {
+    try {
+      const apiClients = await fetchClients();
+      setClients(apiClients);
+    } catch (err) {
+      console.error('Failed to reload clients:', err);
+    }
+  }, []);
+
+  // Poll clients every 30s to keep multi-user sessions in sync
+  useEffect(() => {
+    const plan = localStorage.getItem('cf_plan') || '';
+    if (!plan || plan === 'solo') return;
+
+    const interval = setInterval(reloadClients, 30000);
+    return () => clearInterval(interval);
+  }, [reloadClients]);
+
   const handleSaveClient = async (client: Client) => {
     // Optimistic update
     setClients(prev => [client, ...prev]);
     try {
-      const saved = await createClient({
+      await createClient({
         brandName: client.brandName,
         niche: client.niche,
         subniche: client.subniche,
@@ -479,8 +498,8 @@ export default function DashboardPage() {
         visualStyle: client.visualStyle,
         defaultCta: client.defaultCta,
       });
-      // Replace optimistic entry with server-returned one (has server-generated ID)
-      setClients(prev => prev.map(c => c.id === client.id ? saved : c));
+      // Reload from server to get the canonical state (solves multi-user conflicts)
+      await reloadClients();
     } catch (err) {
       console.error('Failed to save client:', err);
       // Revert optimistic update
@@ -494,6 +513,8 @@ export default function DashboardPage() {
     setClients(prev => prev.filter(c => c.id !== id));
     try {
       await deleteClientAPI(id);
+      // Reload from server to stay in sync
+      await reloadClients();
     } catch (err) {
       console.error('Failed to delete client:', err);
       // Revert on failure
