@@ -18,6 +18,25 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // ── DEV BYPASS: passe livre total em desenvolvimento ──────────────────
+    if (process.env.NODE_ENV === 'development') {
+      // Garante que as chaves necessárias para o dashboard existam
+      if (!localStorage.getItem('cf_token')) {
+        localStorage.setItem('cf_token', 'dev-token-bypass');
+      }
+      if (!localStorage.getItem('cf_name')) {
+        localStorage.setItem('cf_name', 'Dev User');
+      }
+      if (!localStorage.getItem('cf_email')) {
+        localStorage.setItem('cf_email', 'dev@creatorflow.local');
+      }
+      // Plano máximo para ter acesso a todos os recursos
+      localStorage.setItem('cf_plan', 'agency');
+      setChecked(true);
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const token = localStorage.getItem('cf_token');
     if (!token) {
       router.replace('/login');
