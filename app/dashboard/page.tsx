@@ -187,7 +187,7 @@ const ReferralModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { open: openIara } = useIara();
+  const { open: openIara, setClients: setIaraClients } = useIara();
   const [activeAgentId, setActiveAgentId] = useState<AgentId | null>(null);
   const [isLightingHubOpen, setIsLightingHubOpen] = useState(false);
   const [isProductionHubOpen, setIsProductionHubOpen] = useState(false);
@@ -372,6 +372,11 @@ export default function DashboardPage() {
   useEffect(() => {
     localStorage.setItem(STUDIO_KEY, JSON.stringify(studioProfile));
   }, [studioProfile]);
+
+  // Sync clients to IaraContext so IaraDrawer can list them in multi-step flow
+  useEffect(() => {
+    setIaraClients(clients);
+  }, [clients, setIaraClients]);
 
   // Clients are persisted via API — no localStorage sync needed
 

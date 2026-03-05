@@ -38,14 +38,6 @@ interface PendingTask {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MOCK_CLIENTS = [
-  'TechCorp',
-  'Agência XYZ',
-  'Red Bull Brasil',
-  'Studio Noir',
-  'Sem cliente',
-];
-
 const ACTION_KEYWORDS = [
   'agendar', 'agend', 'gravação', 'gravacao', 'gravar',
   'adicionar', 'adiciona', 'marcar', 'marca',
@@ -191,25 +183,52 @@ function ActionCard({ data, onUndo }: { data: ActionData; onUndo: () => void }) 
 // ─── Client Selection Chips ───────────────────────────────────────────────────
 
 function ClientSelectionChips({
+  clientNames,
   onSelect,
   disabled,
 }: {
+  clientNames: string[];
   onSelect: (client: string) => void;
   disabled: boolean;
 }) {
-  return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {MOCK_CLIENTS.map((client) => (
+  if (clientNames.length === 0) {
+    return (
+      <div className="mt-3 space-y-3">
+        <p className="text-xs text-gray-500 leading-relaxed">
+          Você ainda não tem clientes cadastrados no Hub. Deseja criar a tarefa sem cliente por enquanto?
+        </p>
         <button
-          key={client}
-          onClick={() => onSelect(client)}
+          onClick={() => onSelect('Sem cliente')}
           disabled={disabled}
           className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-sm text-gray-300 hover:text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Building2 className="w-3 h-3 text-gray-500" />
-          {client}
+          Criar sem Cliente
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {clientNames.map((name) => (
+        <button
+          key={name}
+          onClick={() => onSelect(name)}
+          disabled={disabled}
+          className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-sm text-gray-300 hover:text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Building2 className="w-3 h-3 text-gray-500" />
+          {name}
         </button>
       ))}
+      <button
+        onClick={() => onSelect('Sem cliente')}
+        disabled={disabled}
+        className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Sem cliente
+      </button>
     </div>
   );
 }
@@ -221,11 +240,13 @@ function MessageBubble({
   onUndo,
   onSelectClient,
   clientSelectionDone,
+  clientNames,
 }: {
   msg: Message;
   onUndo: (id: string) => void;
   onSelectClient: (client: string) => void;
   clientSelectionDone: boolean;
+  clientNames: string[];
 }) {
   const isUser = msg.role === 'user';
 
@@ -248,7 +269,7 @@ function MessageBubble({
         ) : msg.type === 'client_selection' ? (
           <div className="rounded-2xl rounded-bl-sm bg-white/5 border border-white/8 px-3.5 py-3">
             <p className="text-sm text-gray-300 leading-relaxed">{msg.content}</p>
-            <ClientSelectionChips onSelect={onSelectClient} disabled={clientSelectionDone} />
+            <ClientSelectionChips clientNames={clientNames} onSelect={onSelectClient} disabled={clientSelectionDone} />
           </div>
         ) : (
           <div
@@ -286,7 +307,8 @@ function TypingIndicator() {
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 
 export default function IaraDrawer() {
-  const { isOpen, close } = useIara();
+  const { isOpen, close, clients } = useIara();
+  const clientNames = clients.map((c) => c.brandName).filter(Boolean);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -458,6 +480,7 @@ export default function IaraDrawer() {
               onUndo={handleUndo}
               onSelectClient={handleSelectClient}
               clientSelectionDone={answeredSelections.has(msg.id)}
+              clientNames={clientNames}
             />
           ))}
           {isTyping && <TypingIndicator />}
