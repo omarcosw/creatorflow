@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import DashboardShell from '@/components/DashboardShell';
+import { IaraProvider } from '@/components/IaraContext';
+import GlobalIaraButton from '@/components/GlobalIaraButton';
+import IaraDrawer from '@/components/IaraDrawer';
 
 export const metadata: Metadata = {
   title: 'Dashboard — CreatorFlow AI',
@@ -11,5 +13,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <IaraProvider>
+      {children}
+      <GlobalIaraButton />
+      <IaraDrawer />
+    </IaraProvider>
+  );
 }
