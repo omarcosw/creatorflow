@@ -124,6 +124,7 @@ function ActionCard({
   data: ActionData;
   onUndo: () => void;
 }) {
+  const router = useRouter();
   const [undone, setUndone] = useState(false);
 
   const handleUndo = () => {
@@ -172,7 +173,10 @@ function ActionCard({
           <Undo2 className="w-3 h-3" />
           Desfazer
         </button>
-        <button className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-900/40 bg-emerald-900/10 hover:bg-emerald-900/20 transition-all font-medium">
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-900/40 bg-emerald-900/10 hover:bg-emerald-900/20 transition-all font-medium"
+        >
           <CalendarDays className="w-3 h-3" />
           Ver na Agenda
         </button>
@@ -258,8 +262,7 @@ export default function IaraPage() {
   }, [messages, isTyping]);
 
   const handleUndo = (id: string) => {
-    // The ActionCard handles its own visual state; here we just log if needed
-    void id;
+    setMessages((prev) => prev.filter((m) => m.id !== id));
   };
 
   const sendMessage = (text: string) => {
