@@ -14,7 +14,7 @@ import CreatorStockView from '@/components/CreatorStockView';
 import ExecutiveAssistantView from '@/components/ExecutiveAssistantView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, ChevronDown, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -1026,7 +1026,7 @@ export default function DashboardPage() {
             {/* Gestão & CRM */}
             <div className="w-full mb-12">
               <h2 className="text-xs font-bold tracking-wider text-gray-500 mb-4 uppercase">Gestão & CRM</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <button
                   onClick={() => setIsArquivosHubOpen(true)}
                   className="group bg-[#0a0a0a] border border-white/5 hover:border-white/20 rounded-2xl p-5 flex items-start gap-4 text-left transition-all duration-300"
@@ -1037,6 +1037,18 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-white mb-1">Hub de Arquivos</h3>
                     <p className="text-xs text-gray-500 leading-relaxed">Gerencie HDs e registre ingests como Backup.</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/pricing')}
+                  className="group bg-[#0a0a0a] border border-white/5 hover:border-violet-900/50 rounded-2xl p-5 flex items-start gap-4 text-left transition-all duration-300"
+                >
+                  <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-900/40 flex-shrink-0 group-hover:bg-violet-500/15 transition-colors">
+                    <Calculator className="w-5 h-5 text-violet-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white mb-1">Assistente de Precificação</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">Calcule orçamentos e defina sua margem de lucro em poucos passos.</p>
                   </div>
                 </button>
                 <div className="relative bg-[#0a0a0a] border border-white/5 rounded-2xl p-5 flex items-start gap-4 opacity-60 pointer-events-none">
