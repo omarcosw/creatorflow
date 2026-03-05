@@ -46,20 +46,10 @@ export default function Navbar() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-12">
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <a href="#" className="flex items-center gap-1.5" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-              <span className="font-display text-2xl font-extrabold bg-gradient-to-r from-[#8B5CF6] to-[#C026D3] bg-clip-text text-transparent">
-                W
-              </span>
-              <span className="font-display text-sm font-bold tracking-[0.08em] text-white">
-                FLOW
-              </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <img src="/logo.png" alt="Creator Flow" className="h-8 w-auto object-contain" />
             </a>
-            <button
-              onClick={() => handleNavClick('#sobre')}
-              className="hidden md:inline-flex items-center rounded-full border border-[#8B5CF6]/50 px-4 py-1.5 text-[12px] font-medium uppercase tracking-[0.06em] text-white/80 transition-colors hover:border-[#8B5CF6] hover:text-white"
-            >
-              Conheça-nos
-            </button>
           </div>
 
           {/* Desktop nav */}
