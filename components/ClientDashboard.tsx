@@ -1070,6 +1070,14 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
     setNewColTitle('');
   };
 
+  const moveColumn = (index: number, direction: 'left' | 'right') => {
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= columns.length) return;
+    const next = [...columns];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    setColumns(next);
+  };
+
   const deleteColumn = (colId: string) => {
     const col = columns.find(c => c.id === colId);
     if (!col) return;
@@ -1292,7 +1300,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
           <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex overflow-x-auto overflow-y-hidden w-full h-full min-h-[70vh] pb-4 gap-4 items-stretch">
-                {columns.map(col => {
+                {columns.map((col, colIndex) => {
                   const isLastCol = col.id === 'finalizado';
                   return (
                     <div key={col.id} className="w-64 flex-shrink-0 flex flex-col h-full">
@@ -1349,6 +1357,22 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                 title="Excluir coluna"
                               >
                                 <Trash2 className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => moveColumn(colIndex, 'left')}
+                                disabled={colIndex === 0}
+                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                title="Mover coluna para a esquerda"
+                              >
+                                <ChevronLeft className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => moveColumn(colIndex, 'right')}
+                                disabled={colIndex === columns.length - 1}
+                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                title="Mover coluna para a direita"
+                              >
+                                <ChevronRight className="w-3 h-3" />
                               </button>
                             </>
                           )}
