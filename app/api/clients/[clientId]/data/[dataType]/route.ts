@@ -3,8 +3,9 @@ import { query } from '@/lib/db';
 import { authenticateAndCheckCRM, isAuthenticated } from '@/lib/auth-helpers';
 
 const VALID_DATA_TYPES = new Set([
-  'kanban', 'agenda', 'roteiros', 'entregas',
-  'meetings', 'invoices', 'metrics', 'saved_ideas',
+  'kanban', 'archive', 'agenda', 'roteiros', 'storyboard_usage',
+  'entregas', 'meetings', 'invoices', 'metrics',
+  'generated_ideas', 'saved_ideas',
 ]);
 
 // GET /api/clients/:clientId/data/:dataType
@@ -18,7 +19,8 @@ export async function GET(
   const { clientId, dataType } = await params;
 
   if (!VALID_DATA_TYPES.has(dataType)) {
-    return NextResponse.json({ error: 'Tipo de dado inválido' }, { status: 400 });
+    console.error(`[AUDITORIA HUB] GET /api/clients/${clientId}/data/${dataType}: tipo inválido solicitado`);
+    return NextResponse.json({ error: `Tipo de dado inválido: "${dataType}"` }, { status: 400 });
   }
 
   try {
@@ -39,8 +41,9 @@ export async function GET(
     const data = result.rows.length > 0 ? result.rows[0].data : [];
     return NextResponse.json({ data });
   } catch (error) {
-    console.error(`GET /api/clients/${clientId}/data/${dataType} error:`, error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`[AUDITORIA HUB] GET /api/clients/${clientId}/data/${dataType} FALHOU:`, detail, error);
+    return NextResponse.json({ error: `Erro ao carregar ${dataType}: ${detail}` }, { status: 500 });
   }
 }
 
@@ -55,7 +58,8 @@ export async function PUT(
   const { clientId, dataType } = await params;
 
   if (!VALID_DATA_TYPES.has(dataType)) {
-    return NextResponse.json({ error: 'Tipo de dado inválido' }, { status: 400 });
+    console.error(`[AUDITORIA HUB] PUT /api/clients/${clientId}/data/${dataType}: tipo inválido — dado DESCARTADO`);
+    return NextResponse.json({ error: `Tipo de dado inválido: "${dataType}"` }, { status: 400 });
   }
 
   try {
@@ -72,6 +76,7 @@ export async function PUT(
     const { data } = body;
 
     if (data === undefined) {
+      console.error(`[AUDITORIA HUB] PUT /api/clients/${clientId}/data/${dataType}: campo "data" ausente no payload`);
       return NextResponse.json({ error: 'Campo "data" é obrigatório' }, { status: 400 });
     }
 
@@ -85,7 +90,8 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`PUT /api/clients/${clientId}/data/${dataType} error:`, error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`[AUDITORIA HUB] PUT /api/clients/${clientId}/data/${dataType} FALHOU — dado NÃO SALVO:`, detail, error);
+    return NextResponse.json({ error: `Erro ao salvar ${dataType}: ${detail}` }, { status: 500 });
   }
 }

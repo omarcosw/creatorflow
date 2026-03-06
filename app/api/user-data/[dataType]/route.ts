@@ -15,8 +15,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ data
     );
     return NextResponse.json({ data: result.rows[0]?.data ?? null });
   } catch (error) {
-    console.error('GET user-data error:', error);
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`[AUDITORIA HUB] GET /api/user-data/${dataType} FALHOU:`, detail, error);
+    return NextResponse.json({ error: `Erro ao carregar ${dataType}: ${detail}` }, { status: 500 });
   }
 }
 
@@ -29,6 +30,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ data
   try {
     const { data } = await req.json();
 
+    if (data === undefined) {
+      console.error(`[AUDITORIA HUB] PUT /api/user-data/${dataType}: campo "data" ausente no payload`);
+      return NextResponse.json({ error: 'Campo "data" é obrigatório' }, { status: 400 });
+    }
+
     await query(
       `INSERT INTO user_data (user_id, data_type, data, updated_at)
        VALUES ($1, $2, $3::jsonb, NOW())
@@ -39,7 +45,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ data
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('PUT user-data error:', error);
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`[AUDITORIA HUB] PUT /api/user-data/${dataType} FALHOU — dado NÃO SALVO:`, detail, error);
+    return NextResponse.json({ error: `Erro ao salvar ${dataType}: ${detail}` }, { status: 500 });
   }
 }

@@ -66,8 +66,9 @@ export async function PUT(
 
     return NextResponse.json({ client });
   } catch (error) {
-    console.error('PUT /api/clients/:id error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`[AUDITORIA HUB] PUT /api/clients/${clientId} FALHOU:`, detail, error);
+    return NextResponse.json({ error: `Erro ao atualizar cliente: ${detail}` }, { status: 500 });
   }
 }
 
@@ -93,7 +94,8 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE /api/clients/:id error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`[AUDITORIA HUB] DELETE /api/clients/${clientId} FALHOU:`, detail, error);
+    return NextResponse.json({ error: `Erro ao excluir cliente: ${detail}` }, { status: 500 });
   }
 }
