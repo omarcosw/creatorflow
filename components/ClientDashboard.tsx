@@ -1087,6 +1087,18 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
     setColumns(next);
   };
 
+  const handleRestoreDefaults = () => {
+    const defaultIds = KANBAN_INITIAL_COLUMNS.map(c => c.id);
+    const currentById = new Map(columns.map(c => [c.id, c]));
+    // Default columns in order — keep existing cards, create empty if missing
+    const merged = KANBAN_INITIAL_COLUMNS.map(def => currentById.get(def.id) ?? { ...def, cards: [] });
+    // Custom columns not part of defaults — preserve at the end
+    const custom = columns.filter(c => !defaultIds.includes(c.id));
+    setColumns([...merged, ...custom]);
+    setWorkflowToast('Colunas padrão restauradas com sucesso!');
+    setTimeout(() => setWorkflowToast(''), 4000);
+  };
+
   const deleteColumn = (colId: string) => {
     const col = columns.find(c => c.id === colId);
     if (!col) return;
@@ -1291,8 +1303,16 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
         {/* ── Kanban Board ── */}
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col gap-2">
-          {/* Archive button */}
-          <div className="flex items-center justify-end flex-shrink-0">
+          {/* Archive + Restore defaults buttons */}
+          <div className="flex items-center justify-end gap-2 flex-shrink-0">
+            <button
+              onClick={handleRestoreDefaults}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+              title="Restaura as colunas padrão na ordem correta sem apagar dados"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Restaurar Padrões
+            </button>
             <button
               onClick={() => setShowArchiveModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
