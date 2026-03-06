@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
+import HourlyRateCalculator from '@/components/HourlyRateCalculator';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ const MARGIN_OPTIONS = [
 export default function PricingAssistantPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   const [state, setState] = useState<QuizState>({
     projectName: '',
@@ -266,9 +268,19 @@ export default function PricingAssistantPage() {
   const renderStep4 = () => (
     <div className="space-y-8">
       <div>
-        <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 block">
-          Custo da sua hora de trabalho
-        </label>
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+            Custo da sua hora de trabalho
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsCalculatorOpen(true)}
+            className="flex items-center gap-1.5 text-[11px] text-violet-400 hover:text-violet-300 transition-colors"
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            Não sabe? Calcule aqui
+          </button>
+        </div>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">R$</span>
           <input
@@ -406,6 +418,12 @@ export default function PricingAssistantPage() {
 
   return (
     <AuthGuard>
+      {isCalculatorOpen && (
+        <HourlyRateCalculator
+          onApply={rate => update({ hourlyRate: rate })}
+          onClose={() => setIsCalculatorOpen(false)}
+        />
+      )}
       <div className="min-h-screen bg-[#050505] text-white">
         {/* Glow */}
         <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-violet-600/10 blur-[100px] rounded-full" />
