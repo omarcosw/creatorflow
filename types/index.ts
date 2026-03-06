@@ -141,6 +141,8 @@ export interface HDD {
   id: string;
   name: string;
   addedAt: number;
+  isArchived?: boolean;
+  archivedAt?: string; // ISO timestamp
 }
 
 export interface Recording {

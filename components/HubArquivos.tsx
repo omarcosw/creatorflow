@@ -26,6 +26,7 @@ import {
   FolderPlus,
   History,
   RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
 import { Client, HDD, Recording, StudioProfile } from '@/types';
 
@@ -39,6 +40,7 @@ interface HubArquivosProps {
   clients: Client[];
   onSaveHDD: (hdd: HDD) => void;
   onDeleteHDD: (id: string) => void;
+  onRestoreHDD: (id: string) => void;
   onSaveRecording: (recording: Recording) => void;
   onDeleteRecording: (id: string) => void;
   onBack: () => void;
@@ -131,10 +133,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   clients,
   onSaveHDD,
   onDeleteHDD,
+  onRestoreHDD,
   onSaveRecording,
   onDeleteRecording,
   onBack,
 }) => {
+  const HDD_ARCHIVE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+  const [showHDDArchiveModal, setShowHDDArchiveModal] = useState(false);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [quizForm, setQuizForm] = useState<QuizForm>(INITIAL_FORM);
@@ -318,7 +323,10 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
     );
   };
 
-  const isEmpty = recordings.length === 0 && hdds.length === 0;
+  const activeHdds = hdds.filter(h => !h.isArchived);
+  const archivedHdds = hdds.filter(h => h.isArchived && h.archivedAt &&
+    Date.now() - new Date(h.archivedAt).getTime() <= HDD_ARCHIVE_RETENTION_MS);
+  const isEmpty = recordings.length === 0 && activeHdds.length === 0;
 
   const filteredRecordings = [...recordings].reverse().filter(rec => {
     if (!searchQuery.trim()) return true;
@@ -348,6 +356,67 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
 
+      {/* ── HDD Archive Modal ── */}
+      {showHDDArchiveModal && (
+        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Archive className="w-4 h-4 text-violet-500" />
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">HDs Arquivados</h2>
+                  <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                    Itens na lixeira são excluídos permanentemente após 15 dias.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowHDDArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {archivedHdds.length === 0 ? (
+                <div className="py-12 flex flex-col items-center text-center">
+                  <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                  <p className="text-sm text-zinc-500">Nenhum HD arquivado.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {archivedHdds.map(hdd => {
+                    const archivedDate = hdd.archivedAt ? new Date(hdd.archivedAt) : null;
+                    const daysLeft = archivedDate
+                      ? Math.ceil((HDD_ARCHIVE_RETENTION_MS - (Date.now() - archivedDate.getTime())) / (24 * 60 * 60 * 1000))
+                      : null;
+                    const usedIn = recordings.filter(r => r.hddIds.includes(hdd.id)).length;
+                    return (
+                      <div key={hdd.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                        <div className="text-xl flex-shrink-0">💾</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{hdd.name}</p>
+                          <p className="text-xs text-zinc-400 mt-0.5">{usedIn} ingest{usedIn !== 1 ? 's' : ''}</p>
+                          {archivedDate && (
+                            <p className={`text-[10px] mt-0.5 font-bold ${daysLeft !== null && daysLeft <= 3 ? 'text-red-400' : 'text-zinc-400'}`}>
+                              Arquivado em {archivedDate.toLocaleDateString('pt-BR')} · {daysLeft}d restante{daysLeft !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => { onRestoreHDD(hdd.id); }}
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Restaurar
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══ Header ══ */}
       <header className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
@@ -367,8 +436,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   Gestor de Acervo e HDs
                 </h1>
                 <p className="text-xs text-zinc-400 hidden sm:block">
-                  {recordings.length} {recordings.length === 1 ? 'ingest' : 'ingests'} &middot; {hdds.length}{' '}
-                  {hdds.length === 1 ? 'HD' : 'HDs'}
+                  {recordings.length} {recordings.length === 1 ? 'ingest' : 'ingests'} &middot; {activeHdds.length}{' '}
+                  {activeHdds.length === 1 ? 'HD' : 'HDs'}
                 </p>
               </div>
             </div>
@@ -421,15 +490,27 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 <HardDrive className="w-4 h-4 text-violet-500" />
                 <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Meus HDs</h2>
               </div>
-              <button
-                onClick={() => setIsAddHDDOpen(true)}
-                className="flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline"
-              >
-                <Plus className="w-3.5 h-3.5" /> Adicionar HD
-              </button>
+              <div className="flex items-center gap-2">
+                {archivedHdds.length > 0 && (
+                  <button
+                    onClick={() => setShowHDDArchiveModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                  >
+                    <Archive className="w-3 h-3" />
+                    Ver Arquivados
+                    <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">{archivedHdds.length}</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsAddHDDOpen(true)}
+                  className="flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Adicionar HD
+                </button>
+              </div>
             </div>
 
-            {hdds.length === 0 ? (
+            {activeHdds.length === 0 ? (
               <button
                 onClick={() => setIsAddHDDOpen(true)}
                 className="w-full flex items-center justify-center gap-3 p-5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-500 transition-all group"
@@ -439,7 +520,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               </button>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {hdds.map(hdd => {
+                {activeHdds.map(hdd => {
                   const usedIn = recordings.filter(r => r.hddIds.includes(hdd.id)).length;
                   return (
                     <div key={hdd.id} className="group flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-800 transition-all">
@@ -1297,7 +1378,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               {/* ─── Passo 3: HDs ─── */}
               {quizMode === 'novo' && currentStep === 3 && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
-                  {hdds.length === 0 ? (
+                  {activeHdds.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
                       <div className="text-4xl mb-3">💾</div>
                       <p className="text-sm text-zinc-500 mb-4">Nenhum HD cadastrado ainda.</p>
@@ -1312,7 +1393,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <div className="space-y-2">
                       <p className="text-xs text-zinc-400 mb-3">Marque todos os HDs onde o material foi salvo (backup múltiplo):</p>
                       <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                        {hdds.map(hdd => {
+                        {activeHdds.map(hdd => {
                           const sel = quizForm.selectedHddIds.includes(hdd.id);
                           return (
                             <button

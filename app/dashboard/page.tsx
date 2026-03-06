@@ -289,7 +289,15 @@ export default function DashboardPage() {
       try { setBrandKits(JSON.parse(savedBrandKits)); } catch (e) { console.error(e); }
     }
     if (savedHdds) {
-      try { setHdds(JSON.parse(savedHdds)); } catch (e) { console.error(e); }
+      try {
+        const parsed = JSON.parse(savedHdds);
+        const now = Date.now();
+        const RETENTION = 15 * 24 * 60 * 60 * 1000;
+        // Lazy cleanup: purge HDDs archived more than 15 days ago
+        setHdds(parsed.filter((h: { isArchived?: boolean; archivedAt?: string }) =>
+          !h.isArchived || !h.archivedAt || now - new Date(h.archivedAt).getTime() <= RETENTION
+        ));
+      } catch (e) { console.error(e); }
     }
     if (savedRecordings) {
       try { setRecordings(JSON.parse(savedRecordings)); } catch (e) { console.error(e); }
@@ -457,7 +465,11 @@ export default function DashboardPage() {
   };
 
   const handleDeleteHDD = (id: string) => {
-    setHdds(prev => prev.filter(h => h.id !== id));
+    setHdds(prev => prev.map(h => h.id === id ? { ...h, isArchived: true, archivedAt: new Date().toISOString() } : h));
+  };
+
+  const handleRestoreHDD = (id: string) => {
+    setHdds(prev => prev.map(h => h.id === id ? { ...h, isArchived: false, archivedAt: undefined } : h));
   };
 
   const handleSaveRecording = (recording: Recording) => {
@@ -844,6 +856,7 @@ export default function DashboardPage() {
           clients={clients}
           onSaveHDD={handleSaveHDD}
           onDeleteHDD={handleDeleteHDD}
+          onRestoreHDD={handleRestoreHDD}
           onSaveRecording={handleSaveRecording}
           onDeleteRecording={handleDeleteRecording}
           onBack={handleBack}
