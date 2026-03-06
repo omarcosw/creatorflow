@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useClientData } from '@/lib/hooks/useClientData';
 import { useUserData } from '@/lib/hooks/useUserData';
 import { fetchClientData, saveClientData } from '@/lib/clients-api';
@@ -1070,6 +1070,8 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
     setRenamingColId(null);
   };
 
+  const kanbanScrollRef = useRef<HTMLDivElement>(null);
+
   const addColumn = (title: string) => {
     const trimmed = title.trim();
     if (!trimmed) return;
@@ -1079,6 +1081,17 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
     ]);
     setAddingCol(false);
     setNewColTitle('');
+  };
+
+  const handleAddColumnFromHeader = () => {
+    if (columns.filter(c => !c.isArchived).length >= MAX_COLUMNS) return;
+    const newId = crypto.randomUUID();
+    setColumns(prev => [...prev, { id: newId, emoji: '', title: 'Nova Coluna', cards: [] }]);
+    setRenamingColId(newId);
+    setRenamingTitle('Nova Coluna');
+    setTimeout(() => {
+      kanbanScrollRef.current?.scrollTo({ left: kanbanScrollRef.current.scrollWidth, behavior: 'smooth' });
+    }, 50);
   };
 
   const moveColumn = (colId: string, direction: 'left' | 'right') => {
@@ -1345,6 +1358,15 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col gap-2">
           {/* Kanban top controls */}
           <div className="flex items-center justify-end gap-2 flex-shrink-0">
+            {columns.filter(c => !c.isArchived).length < MAX_COLUMNS && (
+              <button
+                onClick={handleAddColumnFromHeader}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white transition-all shadow-sm shadow-violet-500/20"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Nova Coluna
+              </button>
+            )}
             {(() => {
               const totalArchived = archivedCards.length + columns.filter(c => c.isArchived).length;
               return (
@@ -1365,7 +1387,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
           </div>
           <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex overflow-x-auto overflow-y-hidden w-full h-full min-h-[70vh] pb-4 gap-4 items-stretch">
+            <div ref={kanbanScrollRef} className="flex overflow-x-auto overflow-y-hidden w-full h-full min-h-[70vh] pb-4 gap-4 items-stretch">
                 {columns.filter(c => !c.isArchived).map((col, colIndex, visArr) => {
                   const isLastCol = col.id === 'finalizado';
                   return (
