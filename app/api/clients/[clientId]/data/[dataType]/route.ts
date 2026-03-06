@@ -80,12 +80,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Campo "data" é obrigatório' }, { status: 400 });
     }
 
+    const serialized = JSON.stringify(data);
+    const preview = serialized.length > 300 ? serialized.slice(0, 300) + '…' : serialized;
+    console.log(`[AUDITORIA PUT] ${clientId}/${dataType} — payload length: ${serialized.length}, preview: ${preview}`);
+
     await query(
       `INSERT INTO client_data (client_id, user_id, data_type, data)
        VALUES ($1, $2, $3, $4::jsonb)
        ON CONFLICT (client_id, data_type)
        DO UPDATE SET data = $4::jsonb, updated_at = NOW()`,
-      [clientId, auth.userId, dataType, JSON.stringify(data)]
+      [clientId, auth.userId, dataType, serialized]
     );
 
     return NextResponse.json({ success: true });
