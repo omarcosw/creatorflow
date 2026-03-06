@@ -33,8 +33,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ clients });
   } catch (error) {
-    console.error('GET /api/clients error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('ERRO AO LISTAR CLIENTES:', detail, error);
+    return NextResponse.json({ error: `Erro ao listar clientes: ${detail}` }, { status: 500 });
   }
 }
 
@@ -43,14 +44,20 @@ export async function POST(req: NextRequest) {
   const auth = await authenticateAndCheckCRM(req);
   if (!isAuthenticated(auth)) return auth;
 
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
-    const { brandName, niche, subniche, idealClient, mainPains, mainDesires, voiceTone, visualStyle, defaultCta } = body;
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Corpo da requisição inválido (JSON malformado)' }, { status: 400 });
+  }
 
-    if (!brandName || !brandName.trim()) {
-      return NextResponse.json({ error: 'Nome da marca é obrigatório' }, { status: 400 });
-    }
+  const { brandName, niche, subniche, idealClient, mainPains, mainDesires, voiceTone, visualStyle, defaultCta } = body as Record<string, string>;
 
+  if (!brandName || !brandName.trim()) {
+    return NextResponse.json({ error: 'Nome da marca é obrigatório' }, { status: 400 });
+  }
+
+  try {
     const result = await query(
       `INSERT INTO clients (user_id, brand_name, niche, subniche, ideal_client, main_pains, main_desires, voice_tone, visual_style, default_cta)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -86,7 +93,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ client }, { status: 201 });
   } catch (error) {
-    console.error('POST /api/clients error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('ERRO AO CRIAR CLIENTE:', detail, error);
+    return NextResponse.json(
+      { error: `Erro ao salvar cliente: ${detail}` },
+      { status: 500 }
+    );
   }
 }

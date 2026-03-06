@@ -514,7 +514,9 @@ export default function DashboardPage() {
       // Reload from server to get the canonical state (solves multi-user conflicts)
       await reloadClients();
     } catch (err) {
-      console.error('Failed to save client:', err);
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      console.error('Falha ao salvar cliente:', msg);
+      alert(`Não foi possível salvar o cliente.\n\n${msg}\n\nVerifique os logs do servidor.`);
       // Revert optimistic update
       setClients(prev => prev.filter(c => c.id !== client.id));
     }
