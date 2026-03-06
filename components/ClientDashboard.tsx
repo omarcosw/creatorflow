@@ -245,6 +245,7 @@ interface KanbanColumn {
   emoji: string;
   title: string;
   cards: KanbanCard[];
+  isArchived?: boolean;
 }
 
 const KANBAN_PRIORITIES: KanbanPriority[] = ['Urgente', 'Alta', 'Normal', 'Baixa'];
@@ -933,6 +934,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   const [addingToCol, setAddingToCol]           = useState<string | null>(null);
   const [editingCard, setEditingCard]           = useState<{ card: KanbanCard; colId: string } | null>(null);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showColumnArchiveModal, setShowColumnArchiveModal] = useState(false);
   const [renamingColId, setRenamingColId]       = useState<string | null>(null);
   const [renamingTitle, setRenamingTitle]       = useState('');
   const [addingCol, setAddingCol]               = useState(false);
@@ -1079,48 +1081,27 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
     setNewColTitle('');
   };
 
-  const moveColumn = (index: number, direction: 'left' | 'right') => {
-    const targetIndex = direction === 'left' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= columns.length) return;
+  const moveColumn = (colId: string, direction: 'left' | 'right') => {
+    const visible = columns.filter(c => !c.isArchived);
+    const visIdx = visible.findIndex(c => c.id === colId);
+    if (visIdx === -1) return;
+    const targetVisIdx = direction === 'left' ? visIdx - 1 : visIdx + 1;
+    if (targetVisIdx < 0 || targetVisIdx >= visible.length) return;
+    const realA = columns.findIndex(c => c.id === visible[visIdx].id);
+    const realB = columns.findIndex(c => c.id === visible[targetVisIdx].id);
     const next = [...columns];
-    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    [next[realA], next[realB]] = [next[realB], next[realA]];
     setColumns(next);
-  };
-
-  const handleRestoreDefaults = () => {
-    // Never rebuild from scratch — only INSERT missing defaults into the existing array.
-    // Match by title (case-insensitive) so renamed columns are still recognised.
-    // Existing columns and their cards are never removed or zeroed.
-    const result = [...columns];
-    let insertIdx = 0;
-
-    for (const def of KANBAN_INITIAL_COLUMNS) {
-      const defTitle = def.title.toLowerCase().trim();
-      const existingIdx = result.findIndex(c => c.title.toLowerCase().trim() === defTitle);
-
-      if (existingIdx >= 0) {
-        // Column already exists — advance past it so next inserts land after it
-        insertIdx = existingIdx + 1;
-      } else {
-        // Column missing — insert a fresh empty one at current position
-        result.splice(insertIdx, 0, { ...def, id: crypto.randomUUID(), cards: [] });
-        insertIdx++;
-      }
-    }
-
-    setColumns(result);
-    setWorkflowToast('Colunas padrão restauradas com sucesso!');
-    setTimeout(() => setWorkflowToast(''), 4000);
   };
 
   const deleteColumn = (colId: string) => {
     const col = columns.find(c => c.id === colId);
     if (!col) return;
     const msg = col.cards.length > 0
-      ? 'Esta coluna contém tarefas. Deseja realmente excluí-la junto com todas as tarefas dentro dela?'
-      : 'Tem certeza que deseja excluir esta coluna?';
+      ? `Arquivar a coluna "${col.title}"? Ela e suas ${col.cards.length} tarefa(s) serão movidas para o arquivo e poderão ser restauradas depois.`
+      : `Arquivar a coluna "${col.title}"?`;
     if (!window.confirm(msg)) return;
-    setColumns(prev => prev.filter(c => c.id !== colId));
+    setColumns(prev => prev.map(c => c.id === colId ? { ...c, isArchived: true } : c));
   };
 
   // ─────────────────────────────────────────────────────────
@@ -1164,6 +1145,51 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                       </div>
                       <button
                         onClick={() => restoreCard(card)}
+                        className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                      >
+                        <RotateCcw className="w-3 h-3" /> Restaurar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Column Archive Modal ── */}
+      {showColumnArchiveModal && (
+        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Folder className="w-4 h-4 text-violet-500" />
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">Colunas Arquivadas</h2>
+                  <p className="text-xs text-zinc-400 mt-0.5">Restaure colunas para que voltem ao board</p>
+                </div>
+              </div>
+              <button onClick={() => setShowColumnArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {columns.filter(c => c.isArchived).length === 0 ? (
+                <div className="py-12 flex flex-col items-center text-center">
+                  <Folder className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                  <p className="text-sm text-zinc-500">Nenhuma coluna arquivada.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {columns.filter(c => c.isArchived).map(col => (
+                    <div key={col.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{col.title}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">{col.cards.length} tarefa{col.cards.length !== 1 ? 's' : ''}</p>
+                      </div>
+                      <button
+                        onClick={() => setColumns(prev => prev.map(c => c.id === col.id ? { ...c, isArchived: false } : c))}
                         className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
                       >
                         <RotateCcw className="w-3 h-3" /> Restaurar
@@ -1317,16 +1343,21 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
         {/* ── Kanban Board ── */}
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col gap-2">
-          {/* Archive + Restore defaults buttons */}
+          {/* Kanban top controls */}
           <div className="flex items-center justify-end gap-2 flex-shrink-0">
-            <button
-              onClick={handleRestoreDefaults}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
-              title="Restaura as colunas padrão na ordem correta sem apagar dados"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Restaurar Padrões
-            </button>
+            {(() => { const archivedCols = columns.filter(c => c.isArchived); return archivedCols.length > 0 && (
+              <button
+                onClick={() => setShowColumnArchiveModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                title="Ver colunas arquivadas e restaurar"
+              >
+                <Folder className="w-3.5 h-3.5" />
+                Colunas Arquivadas
+                <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] font-black">
+                  {archivedCols.length}
+                </span>
+              </button>
+            ); })()}
             <button
               onClick={() => setShowArchiveModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
@@ -1343,7 +1374,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
           <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex overflow-x-auto overflow-y-hidden w-full h-full min-h-[70vh] pb-4 gap-4 items-stretch">
-                {columns.map((col, colIndex) => {
+                {columns.filter(c => !c.isArchived).map((col, colIndex, visArr) => {
                   const isLastCol = col.id === 'finalizado';
                   return (
                     <div key={col.id} className="w-64 flex-shrink-0 flex flex-col h-full">
@@ -1402,7 +1433,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                 <Trash2 className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => moveColumn(colIndex, 'left')}
+                                onClick={() => moveColumn(col.id, 'left')}
                                 disabled={colIndex === 0}
                                 className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
                                 title="Mover coluna para a esquerda"
@@ -1410,8 +1441,8 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                 <ChevronLeft className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => moveColumn(colIndex, 'right')}
-                                disabled={colIndex === columns.length - 1}
+                                onClick={() => moveColumn(col.id, 'right')}
+                                disabled={colIndex === visArr.length - 1}
                                 className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
                                 title="Mover coluna para a direita"
                               >
@@ -1563,7 +1594,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                 })}
 
                 {/* ── Add column ── */}
-                {columns.length < MAX_COLUMNS && (
+                {columns.filter(c => !c.isArchived).length < MAX_COLUMNS && (
                   addingCol ? (
                     <div className="w-64 flex-shrink-0 flex flex-col gap-2 self-start pt-0.5">
                       <input
