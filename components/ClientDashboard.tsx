@@ -4746,7 +4746,7 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
     if (!newCount || isNaN(count) || count < 0) return;
     setMetrics(prev => ({
       followerHistory: [
-        ...prev.followerHistory.filter(r => r.month !== newMonth),
+        ...(prev.followerHistory || []).filter(r => r.month !== newMonth),
         { month: newMonth, count },
       ],
     }));
@@ -4757,11 +4757,11 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
 
   const removeFollowerRecord = (month: string) => {
     setMetrics(prev => ({
-      followerHistory: prev.followerHistory.filter(r => r.month !== month),
+      followerHistory: (prev.followerHistory || []).filter(r => r.month !== month),
     }));
   };
 
-  const sortedHistory = [...metrics.followerHistory].sort(
+  const sortedHistory = [...(metrics?.followerHistory || [])].sort(
     (a, b) => FOLLOWER_MONTH_OPTIONS.indexOf(a.month) - FOLLOWER_MONTH_OPTIONS.indexOf(b.month),
   );
   const maxCount  = sortedHistory.length ? Math.max(...sortedHistory.map(r => r.count)) : 0;
