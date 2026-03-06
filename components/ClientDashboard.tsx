@@ -2500,17 +2500,23 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   // ── Storyboard generation ─────────────────────────────────────
   const generateStoryboard = async (pkgId: string, script: ScriptDocument) => {
     if (storyboardUsed >= STORYBOARD_LIMIT || generatingStoryboard) return;
-    const structuredScenes = script.scenes.filter(sc => !sc.type || sc.type === 'scene');
+    const structuredScenes = script.scenes.filter(sc => !sc.type || sc.type === 'scene' || sc.type === 'free_text');
     if (structuredScenes.length === 0) return;
     setGeneratingStoryboard(script.id);
     await new Promise<void>(r => setTimeout(r, 1800));
     let added = 0;
-    const updatedScenes = script.scenes.map(sc => {
-      if (sc.type === 'free_text' || sc.storyboardUrl) return sc;
+    const updatedScenes = await Promise.all(script.scenes.map(async (sc) => {
+      if (sc.storyboardUrl) return sc;
       added++;
       const num = structuredScenes.findIndex(s => s.id === sc.id) + 1;
-      return { ...sc, storyboardUrl: `https://placehold.co/400x225/1e1b4b/a78bfa?text=Cena+${num}` };
-    });
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+        const prompt = `Storyboard cinematográfico cena ${num}: ${sc.visual || ''}. ${sc.audio ? 'Audio: ' + sc.audio : ''}. Ilustração profissional 16:9.`;
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})});
+        const d = await res.json();
+        const p = d.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+        const storyboardUrl = p ? `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` : `https://placehold.co/400x225/1e1b4b/a78bfa?text=Erro+${num}`;
+        return { ...sc, storyboardUrl };
+      }));
     setStoryboardUsed(prev => Math.min(prev + added, STORYBOARD_LIMIT));
     updateScript(pkgId, { ...script, scenes: updatedScenes });
     setGeneratingStoryboard(null);
@@ -2822,7 +2828,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                         <BrandBrainBadge clientId={client.id} />
                         <button
                           onClick={e => { e.stopPropagation(); generateStoryboard(selectedPkg.id, script); }}
-                          disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard || script.scenes.filter(sc => !sc.type || sc.type === 'scene').length === 0}
+                          disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black transition-all ${
                             storyboardUsed >= STORYBOARD_LIMIT
                               ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
@@ -5302,6 +5308,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const [selectedAngles, setSelectedAngles]         = useState<string[]>([]);
   const { data: ideas, setData: setIdeas }           = useClientData<IdeaCard[]>(client.id, 'generated_ideas', []);
   const [isGenerating, setIsGenerating]             = useState(false);
+  const [generateError, setGenerateError]           = useState<string | null>(null);
   const [copiedId, setCopiedId]                     = useState<string | null>(null);
   const [quantidadeIdeias, setQuantidadeIdeias]     = useState(3);
   const [ideasView, setIdeasView]                   = useState<'generator' | 'banco'>('generator');
@@ -5392,6 +5399,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ client, onBack, onNav
   const handleGenerate = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
+    setGenerateError(null);
     try {
       const themesText  = themes.length > 0 ? themes.join(', ') : 'temas gerais do nicho';
       const formatsText = selectedFormats.length > 0 ? selectedFormats.join(', ') : 'qualquer formato';
@@ -5440,6 +5448,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
         `Você é um estrategista de conteúdo digital e roteirista especializado em vídeos virais para redes sociais. Quando solicitado, retorne APENAS JSON válido, sem markdown, sem blocos de código, sem explicações. REGRA ABSOLUTA: o array "ideas" deve ter EXATAMENTE o número de itens solicitado pelo usuário — nem mais, nem menos.`,
       );
 
+      if (result.limitReached) {
+        setGenerateError(`Limite de ideias atingido. ${result.limitReached.message}`);
+        return;
+      }
+
       const jsonMatch = result.text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -5463,10 +5476,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           return;
         }
       }
-      throw new Error('Resposta inválida da IA');
+      setGenerateError('A IA não retornou ideias válidas. Tente novamente.');
     } catch {
-      // Fallback to mock on error
-      setIdeas(buildMockIdeas(client));
+      setGenerateError('Erro ao conectar com a IA. Verifique sua conexão e tente novamente.');
     } finally {
       setIsGenerating(false);
     }
@@ -6013,6 +6025,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   {isGenerating && (
                     <p className="text-xs text-zinc-400 text-center animate-pulse -mt-2">
                       Cruzando o briefing com os ângulos selecionados…
+                    </p>
+                  )}
+                  {generateError && (
+                    <p className="text-xs text-red-400 text-center bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 -mt-2">
+                      ⚠️ {generateError}
                     </p>
                   )}
                 </div>
