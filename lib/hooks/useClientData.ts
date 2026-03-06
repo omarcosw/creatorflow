@@ -59,11 +59,12 @@ export function useClientData<T>(
         if (!cancelled) {
           // Accept any non-null/undefined result, including empty arrays
           if (result !== null && result !== undefined) {
-            setDataState(result);
-            // Only update ref if the user hasn't made changes yet.
-            // If hasSavedRef is true, the debounce holds the user's latest
-            // data and we must not overwrite it with the (now stale) fetch result.
+            // If the user has already made changes (hasSavedRef = true), the
+            // fetch result is stale relative to the user's optimistic update.
+            // Updating state or ref here would erase the user's change from
+            // both the UI and the pending debounced save.
             if (!hasSavedRef.current) {
+              setDataState(result);
               latestDataRef.current = result;
             }
           }

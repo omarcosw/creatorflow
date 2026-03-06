@@ -44,10 +44,10 @@ export function useUserData<T>(
       try {
         const result = await fetchUserData<T>(dataType);
         if (!cancelled && result !== null && result !== undefined) {
-          setDataState(result);
-          // Only update ref if the user hasn't made changes yet —
-          // prevents fetch from overwriting a pending debounced save.
+          // If the user has already made changes, don't let the fetch
+          // overwrite either the UI state or the pending debounced save ref.
           if (!hasSavedRef.current) {
+            setDataState(result);
             latestDataRef.current = result;
           }
         }
