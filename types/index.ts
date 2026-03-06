@@ -125,6 +125,8 @@ export interface Meeting {
   decisions: string[];
   nextSteps: MeetingNextStep[];
   createdAt: number;
+  isArchived?: boolean;
+  archivedAt?: string;     // ISO timestamp
 }
 
 export interface Invoice {

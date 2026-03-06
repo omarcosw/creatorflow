@@ -5021,11 +5021,24 @@ interface MeetingExtract {
   nextSteps: { text: string; assignedTo: 'agencia' | 'cliente' }[];
 }
 
+const MEETING_ARCHIVE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+
 const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
   const { data: meetings, setData: setMeetings } = useClientData<Meeting[]>(client.id, 'meetings', []);
 
-  const [formOpen, setFormOpen]       = useState(false);
-  const [expandedId, setExpandedId]   = useState<string | null>(null);
+  const [formOpen, setFormOpen]                   = useState(false);
+  const [expandedId, setExpandedId]               = useState<string | null>(null);
+  const [showMeetingArchiveModal, setShowMeetingArchiveModal] = useState(false);
+
+  // Lazy cleanup: purge expired archived meetings on mount
+  useEffect(() => {
+    const now = Date.now();
+    setMeetings(prev => prev.filter(m =>
+      !m.isArchived || !m.archivedAt ||
+      now - new Date(m.archivedAt).getTime() <= MEETING_ARCHIVE_RETENTION_MS
+    ));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Form fields ──────────────────────────────
   const [formTitle, setFormTitle]           = useState('');
@@ -5136,6 +5149,12 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
     setExpandedId(meeting.id);
   };
 
+  const activeMeetings  = meetings.filter(m => !m.isArchived);
+  const archivedMeetings = meetings.filter(m =>
+    m.isArchived && m.archivedAt &&
+    Date.now() - new Date(m.archivedAt).getTime() <= MEETING_ARCHIVE_RETENTION_MS
+  );
+
   const formatMeetingDate = (dateStr: string): string => {
     const [y, m, d] = dateStr.split('-');
     const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -5150,19 +5169,29 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
         <div>
           <h2 className="text-lg font-black text-zinc-900 dark:text-white">🤝 Reuniões</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {meetings.length > 0
-              ? `${meetings.length} reunião${meetings.length > 1 ? 'ões' : ''} registrada${meetings.length > 1 ? 's' : ''}`
+            {activeMeetings.length > 0
+              ? `${activeMeetings.length} reunião${activeMeetings.length > 1 ? 'ões' : ''} registrada${activeMeetings.length > 1 ? 's' : ''}`
               : 'Registre reuniões e extraia resumos com IA'}
           </p>
         </div>
-        {!formOpen && (
-          <button
-            onClick={() => setFormOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-black transition-all hover:scale-[1.02] active:scale-100 shadow-lg shadow-violet-500/20"
-          >
-            <Plus className="w-4 h-4" /> Nova Reunião
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {archivedMeetings.length > 0 && (
+            <button
+              onClick={() => setShowMeetingArchiveModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Ver Arquivados ({archivedMeetings.length})
+            </button>
+          )}
+          {!formOpen && (
+            <button
+              onClick={() => setFormOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-black transition-all hover:scale-[1.02] active:scale-100 shadow-lg shadow-violet-500/20"
+            >
+              <Plus className="w-4 h-4" /> Nova Reunião
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Create form ── */}
@@ -5354,7 +5383,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
       )}
 
       {/* ── Empty state ── */}
-      {meetings.length === 0 && !formOpen && (
+      {activeMeetings.length === 0 && !formOpen && (
         <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-12 text-center">
           <div className="text-4xl mb-4">🤝</div>
           <h3 className="text-sm font-black text-zinc-700 dark:text-zinc-300 mb-1">Nenhuma reunião registrada</h3>
@@ -5365,9 +5394,53 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
       )}
 
       {/* ── Meeting list ── */}
-      {meetings.length > 0 && (
+      {/* ── Archive modal ── */}
+      {showMeetingArchiveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
+              <div>
+                <h3 className="text-sm font-black text-zinc-900 dark:text-white">Lixeira de Reuniões</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">Os itens são eliminados permanentemente após 15 dias.</p>
+              </div>
+              <button onClick={() => setShowMeetingArchiveModal(false)} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4 space-y-3">
+              {archivedMeetings.length === 0 ? (
+                <p className="text-sm text-zinc-400 text-center py-8">Nenhuma reunião arquivada.</p>
+              ) : (
+                archivedMeetings.map(m => {
+                  const msLeft = MEETING_ARCHIVE_RETENTION_MS - (Date.now() - new Date(m.archivedAt!).getTime());
+                  const daysLeft = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+                  return (
+                    <div key={m.id} className="flex items-center justify-between gap-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 truncate">{m.title}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">{formatMeetingDate(m.date)} · Arquivada em {new Date(m.archivedAt!).toLocaleDateString('pt-BR')}</p>
+                        <p className={`text-xs font-bold mt-0.5 ${daysLeft <= 3 ? 'text-red-500' : 'text-zinc-400'}`}>
+                          {daysLeft <= 3 ? `⚠️ Expira em ${daysLeft} dia${daysLeft !== 1 ? 's' : ''}` : `Expira em ${daysLeft} dias`}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setMeetings(prev => prev.map(x => x.id === m.id ? { ...x, isArchived: false, archivedAt: undefined } : x))}
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all flex-shrink-0"
+                      >
+                        <RotateCcw className="w-3 h-3" /> Restaurar
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeMeetings.length > 0 && (
         <div className="space-y-3">
-          {meetings.map(meeting => {
+          {activeMeetings.map(meeting => {
             const isExpanded   = expandedId === meeting.id;
             const agencySteps  = meeting.nextSteps.filter(s => s.assignedTo === 'agencia');
             const clientSteps  = meeting.nextSteps.filter(s => s.assignedTo === 'cliente');
@@ -5457,11 +5530,15 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                       </div>
                     )}
 
-                    {/* Delete */}
+                    {/* Delete (soft) */}
                     <div className="flex justify-end pt-1">
                       <button
                         onClick={() => {
-                          setMeetings(prev => prev.filter(m => m.id !== meeting.id));
+                          setMeetings(prev => prev.map(m =>
+                            m.id === meeting.id
+                              ? { ...m, isArchived: true, archivedAt: new Date().toISOString() }
+                              : m
+                          ));
                           setExpandedId(null);
                         }}
                         className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-xl transition-all"
@@ -6232,6 +6309,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       >
                         <option value="">Selecione uma reuniao...</option>
                         {availableMeetings
+                          .filter(m => !m.isArchived)
                           .slice()
                           .sort((a, b) => {
                             if (a.createdAt && b.createdAt) return b.createdAt - a.createdAt;
