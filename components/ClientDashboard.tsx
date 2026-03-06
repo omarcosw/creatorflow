@@ -4560,7 +4560,7 @@ const BrandBrainBadge: React.FC<{ clientId: string }> = ({ clientId }) => {
 };
 
 // ─────────────────────────────────────────────
-// ClientBrandBrainTab — Cérebro da Marca
+// ClientBrandBrainTab — Cérebro da Marca (Wizard)
 // ─────────────────────────────────────────────
 
 const BRAND_BRAIN_FIELDS: { key: keyof BrandBrain; label: string; placeholder: string }[] = [
@@ -4574,9 +4574,25 @@ const BRAND_BRAIN_FIELDS: { key: keyof BrandBrain; label: string; placeholder: s
   { key: 'inspirationBrands',    label: 'Marcas de Inspiração',          placeholder: 'Quais marcas (nacionais ou internacionais) inspiram a comunicação deste cliente...' },
 ];
 
+interface BrainWizardStep {
+  label: string;
+  subtitle: string;
+  fields: (keyof BrandBrain)[];
+}
+
+const BB_WIZARD_STEPS: BrainWizardStep[] = [
+  { label: 'Essência',      subtitle: 'A proposta central e o mecanismo único da marca',     fields: ['coreTransformation', 'uniqueMechanism'] },
+  { label: 'Público',       subtitle: 'Quem você impacta, suas dores e objeções de compra',  fields: ['audiencePainsDesires', 'commonObjections'] },
+  { label: 'Comunicação',   subtitle: 'Voz, vocabulário, estilo visual e referências',       fields: ['brandVoice', 'keywordsRules', 'visualStyle', 'inspirationBrands'] },
+  { label: 'Quadro Branco', subtitle: 'Contexto livre — escreva ou dicte tudo que faltou',   fields: [] },
+];
+
+const BB_TOTAL_STEPS = BB_WIZARD_STEPS.length;
+
 const EMPTY_BRAIN: BrandBrain = {
   coreTransformation: '', audiencePainsDesires: '', uniqueMechanism: '',
-  commonObjections: '', brandVoice: '', keywordsRules: '', visualStyle: '', inspirationBrands: '',
+  commonObjections: '', brandVoice: '', keywordsRules: '', visualStyle: '',
+  inspirationBrands: '', freeDump: '',
 };
 
 const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
@@ -4590,8 +4606,18 @@ const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
     return { ...EMPTY_BRAIN };
   });
 
-  const [activeField, setActiveField] = useState<keyof BrandBrain | null>(null);
+  const [step, setStep]   = useState(1);
   const [saved, setSaved] = useState(false);
+
+  // Speech recognition state (steps 1–3 per-field voice)
+  const [activeField, setActiveField] = useState<keyof BrandBrain | null>(null);
+
+  // MediaRecorder state (step 4 — quadro branco)
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [isTranscribing,   setIsTranscribing]   = useState(false);
+  const mediaRecorderRef  = useRef<MediaRecorder | null>(null);
+  const audioChunksRef    = useRef<Blob[]>([]);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
 
   const updateField = (key: keyof BrandBrain, value: string) => {
     setBrain(prev => ({ ...prev, [key]: value }));
@@ -4603,131 +4629,289 @@ const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const startRecording = (key: keyof BrandBrain) => {
-    const SR = typeof window !== 'undefined'
-      ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-      : null;
-
-    if (!SR) {
-      alert('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.');
-      return;
-    }
-
-    if (activeField === key) {
-      setActiveField(null);
-      return;
-    }
-
-    setActiveField(key);
-
-    const recognition = new SR();
-    recognition.lang = 'pt-BR';
-    recognition.continuous = true;
-    recognition.interimResults = false;
-
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results as any[])
-        .map((r: any) => r[0].transcript)
-        .join(' ');
-      setBrain(prev => ({
-        ...prev,
-        [key]: (prev[key] ? prev[key] + ' ' : '') + transcript,
-      }));
-    };
-
-    recognition.onerror = () => setActiveField(null);
-    recognition.onend = () => setActiveField(null);
-
-    recognition.start();
-
-    // store ref so user can cancel by clicking again
-    (window as any).__brainRecognition = recognition;
-  };
-
-  const stopRecording = () => {
+  // ── Speech recognition (per-field, steps 1–3) ──────────────
+  const stopSpeech = () => {
     try { (window as any).__brainRecognition?.stop(); } catch { /* ignore */ }
     setActiveField(null);
   };
 
+  const startSpeech = (key: keyof BrandBrain) => {
+    const SR = typeof window !== 'undefined'
+      ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+      : null;
+    if (!SR) { alert('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.'); return; }
+    setActiveField(key);
+    const recognition = new SR();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results as any[]).map((r: any) => r[0].transcript).join(' ');
+      setBrain(prev => ({ ...prev, [key]: (prev[key] ? prev[key] + ' ' : '') + transcript }));
+    };
+    recognition.onerror = () => setActiveField(null);
+    recognition.onend   = () => setActiveField(null);
+    recognition.start();
+    (window as any).__brainRecognition = recognition;
+  };
+
   const handleMicClick = (key: keyof BrandBrain) => {
-    if (activeField === key) {
-      stopRecording();
-    } else {
-      if (activeField) stopRecording();
-      startRecording(key);
+    if (activeField === key) { stopSpeech(); } else { if (activeField) stopSpeech(); startSpeech(key); }
+  };
+
+  // ── MediaRecorder + transcription (step 4) ─────────────────
+  const transcribeBlob = async (blob: Blob, mimeType: string) => {
+    setIsTranscribing(true);
+    try {
+      const reader  = new FileReader();
+      const base64  = await new Promise<string>((resolve, reject) => {
+        reader.onload  = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const res  = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: base64 }),
+      });
+      const data = await res.json();
+      if (data.transcript) {
+        setBrain(prev => ({
+          ...prev,
+          freeDump: (prev.freeDump ? prev.freeDump + '\n\n' : '') + data.transcript,
+        }));
+      }
+    } catch { /* silently fail — textarea unchanged */ }
+    finally  { setIsTranscribing(false); }
+  };
+
+  const startAudioRecording = async () => {
+    try {
+      const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      const recorder = new MediaRecorder(stream, { mimeType });
+      audioChunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        transcribeBlob(blob, mimeType);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecordingAudio(true);
+    } catch {
+      alert('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
     }
   };
 
+  const stopAudioRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecordingAudio(false);
+  };
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    await transcribeBlob(file, file.type || 'audio/mpeg');
+  };
+
+  // ── Field renderer (steps 1–3) ──────────────────────────────
+  const renderField = (key: keyof BrandBrain) => {
+    const meta        = BRAND_BRAIN_FIELDS.find(f => f.key === key)!;
+    const isListening = activeField === key;
+    return (
+      <div key={key} className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-black text-gray-400 uppercase tracking-wide">{meta.label}</label>
+          <button
+            onClick={() => handleMicClick(key)}
+            title={isListening ? 'Parar gravação' : 'Ditar por voz'}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              isListening
+                ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            {isListening ? <><Square className="w-3 h-3" /> Parar</> : <><Mic className="w-3 h-3" /> Voz</>}
+          </button>
+        </div>
+        <textarea
+          value={(brain[key] as string) || ''}
+          onChange={e => updateField(key, e.target.value)}
+          placeholder={meta.placeholder}
+          rows={4}
+          className={`w-full text-sm px-3 py-2.5 rounded-xl bg-gray-800 border text-gray-100 placeholder:text-gray-600 focus:outline-none focus:ring-2 transition-all resize-none ${
+            isListening
+              ? 'border-red-500/50 focus:ring-red-500/30 bg-red-950/10'
+              : 'border-gray-700 focus:ring-indigo-500/30 focus:border-indigo-500/50'
+          }`}
+        />
+      </div>
+    );
+  };
+
+  const currentStepCfg = BB_WIZARD_STEPS[step - 1];
+
   return (
     <div className="animate-in fade-in duration-200 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+
+      {/* ── Wizard progress header ── */}
+      <div className="space-y-4">
+        {/* Progress bar */}
         <div>
-          <h2 className="text-xl font-black text-white flex items-center gap-2">
-            <Brain className="w-5 h-5 text-indigo-400" />
-            Cérebro da Marca
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">Base de conhecimento estratégico de {client.brandName}</p>
+          <div className="flex justify-between text-xs text-gray-500 mb-2">
+            <span>Passo {step} de {BB_TOTAL_STEPS}</span>
+            <span>{Math.round((step / BB_TOTAL_STEPS) * 100)}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full transition-all duration-500"
+              style={{ width: `${(step / BB_TOTAL_STEPS) * 100}%` }}
+            />
+          </div>
         </div>
-        <button
-          onClick={handleSave}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            saved
-              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-              : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-          }`}
-        >
-          <Save className="w-4 h-4" />
-          {saved ? 'Inteligência Salva!' : 'Salvar Inteligência da Marca'}
-        </button>
-      </div>
 
-      {/* Voice hint */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
-        <Mic className="w-3.5 h-3.5 flex-shrink-0" />
-        Clique no microfone ao lado de cada campo para ditar por voz. Clique novamente para parar.
-      </div>
-
-      {/* Fields grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {BRAND_BRAIN_FIELDS.map(({ key, label, placeholder }) => {
-          const isRecording = activeField === key;
-          return (
-            <div key={key} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-black text-gray-400 uppercase tracking-wide">{label}</label>
-                <button
-                  onClick={() => handleMicClick(key)}
-                  title={isRecording ? 'Parar gravação' : 'Gravar por voz'}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    isRecording
-                      ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
-                      : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  {isRecording ? (
-                    <><Square className="w-3 h-3" /> Parar</>
-                  ) : (
-                    <><Mic className="w-3 h-3" /> Voz</>
-                  )}
-                </button>
+        {/* Step indicators */}
+        <div className="flex justify-between">
+          {BB_WIZARD_STEPS.map((s, i) => (
+            <div key={i} className="flex flex-col items-center gap-1.5">
+              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all ${
+                i + 1 < step
+                  ? 'bg-indigo-500 border-indigo-500 text-white'
+                  : i + 1 === step
+                  ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
+                  : 'border-white/10 text-gray-600'
+              }`}>
+                {i + 1 < step ? <Check className="w-3 h-3" /> : i + 1}
               </div>
-              <textarea
-                value={brain[key]}
-                onChange={e => updateField(key, e.target.value)}
-                placeholder={placeholder}
-                rows={4}
-                className={`w-full text-sm px-3 py-2.5 rounded-xl bg-gray-800 border text-gray-100 placeholder:text-gray-600 focus:outline-none focus:ring-2 transition-all resize-none ${
-                  isRecording
-                    ? 'border-red-500/50 focus:ring-red-500/30 bg-red-950/10'
-                    : 'border-gray-700 focus:ring-indigo-500/30 focus:border-indigo-500/50'
-                }`}
-              />
+              <span className={`text-[10px] font-bold hidden sm:block ${i + 1 === step ? 'text-indigo-400' : 'text-gray-600'}`}>
+                {s.label}
+              </span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Step card header */}
+        <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-4">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <Brain className="w-5 h-5 text-indigo-400" />
+            {currentStepCfg.label}
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">{currentStepCfg.subtitle}</p>
+        </div>
       </div>
 
+      {/* ── Step content ── */}
+      <div className="space-y-5 animate-in fade-in duration-200" key={step}>
+
+        {/* Steps 1–3: field inputs */}
+        {step <= 3 && (
+          <>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
+              <Mic className="w-3.5 h-3.5 flex-shrink-0" />
+              Clique no microfone ao lado de cada campo para ditar por voz. Clique novamente para parar.
+            </div>
+            <div className={`grid grid-cols-1 ${currentStepCfg.fields.length > 2 ? 'lg:grid-cols-2' : ''} gap-5`}>
+              {currentStepCfg.fields.map(k => renderField(k))}
+            </div>
+          </>
+        )}
+
+        {/* Step 4: Quadro Branco Livre */}
+        {step === 4 && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Use este espaço como um quadro branco estratégico. Escreva qualquer contexto adicional ou grave um áudio — a IA transcreve e adiciona automaticamente ao campo.
+            </p>
+            <textarea
+              value={brain.freeDump || ''}
+              onChange={e => updateField('freeDump', e.target.value)}
+              placeholder="Descreva livremente o histórico da marca, insights de reunião, posicionamento especial, referências importantes… Tudo que não coube nos campos anteriores."
+              rows={11}
+              className="w-full text-sm px-4 py-3 rounded-2xl bg-gray-800 border border-gray-700 text-gray-100 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all resize-none"
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Record / Stop */}
+              {!isRecordingAudio ? (
+                <button
+                  onClick={startAudioRecording}
+                  disabled={isTranscribing}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Mic className="w-4 h-4" /> Gravar Áudio
+                </button>
+              ) : (
+                <button
+                  onClick={stopAudioRecording}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse text-sm font-bold"
+                >
+                  <Square className="w-4 h-4" /> Parar Gravação
+                </button>
+              )}
+
+              {/* Upload */}
+              <button
+                onClick={() => audioFileInputRef.current?.click()}
+                disabled={isRecordingAudio || isTranscribing}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-700 text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <UploadCloud className="w-4 h-4" /> Upload de Áudio
+              </button>
+              <input
+                ref={audioFileInputRef}
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={handleAudioUpload}
+              />
+
+              {/* Transcribing indicator */}
+              {isTranscribing && (
+                <div className="flex items-center gap-2 text-indigo-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-xs font-bold">Transcrevendo áudio…</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Navigation footer ── */}
+      <div className="flex gap-3 pt-4 border-t border-white/5">
+        {step > 1 && (
+          <button
+            onClick={() => setStep(s => s - 1)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-gray-300 font-bold text-sm hover:bg-white/10 transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" /> Passo Anterior
+          </button>
+        )}
+        {step < BB_TOTAL_STEPS ? (
+          <button
+            onClick={() => setStep(s => s + 1)}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-all"
+          >
+            Próximo Passo <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSave}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
+              saved
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/20 hover:opacity-90'
+            }`}
+          >
+            {saved
+              ? <><Check className="w-4 h-4" /> Inteligência Salva!</>
+              : <><Save className="w-4 h-4" /> Salvar Cérebro da Marca</>
+            }
+          </button>
+        )}
+      </div>
     </div>
   );
 };

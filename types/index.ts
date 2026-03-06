@@ -88,6 +88,7 @@ export interface BrandBrain {
   keywordsRules:         string;
   visualStyle:           string;
   inspirationBrands:     string;
+  freeDump?:             string; // Quadro Branco Livre — áudio + texto livre
 }
 
 export interface Client {
