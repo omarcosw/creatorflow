@@ -934,7 +934,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   const [addingToCol, setAddingToCol]           = useState<string | null>(null);
   const [editingCard, setEditingCard]           = useState<{ card: KanbanCard; colId: string } | null>(null);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [showColumnArchiveModal, setShowColumnArchiveModal] = useState(false);
+  const [activeArchiveTab, setActiveArchiveTab] = useState<'tasks' | 'columns'>('tasks');
   const [renamingColId, setRenamingColId]       = useState<string | null>(null);
   const [renamingTitle, setRenamingTitle]       = useState('');
   const [addingCol, setAddingCol]               = useState(false);
@@ -1108,95 +1108,95 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
 
-      {/* ── Archive Modal ── */}
+      {/* ── Unified Archive Modal ── */}
       {showArchiveModal && (
         <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+            {/* Header */}
             <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Archive className="w-4 h-4 text-violet-500" />
-                <div>
-                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">Tarefas Arquivadas</h2>
-                  <p className="text-xs text-zinc-400 mt-0.5">{archivedCards.length} tarefa{archivedCards.length !== 1 ? 's' : ''} concluída{archivedCards.length !== 1 ? 's' : ''}</p>
-                </div>
+                <h2 className="text-base font-bold text-zinc-900 dark:text-white">Itens Arquivados</h2>
               </div>
               <button onClick={() => setShowArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
+            {/* Tabs */}
+            <div className="flex border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+              {(['tasks', 'columns'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveArchiveTab(tab)}
+                  className={`flex-1 py-3 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${
+                    activeArchiveTab === tab
+                      ? 'text-violet-600 dark:text-violet-400 border-b-2 border-violet-500'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  {tab === 'tasks' ? (
+                    <><CheckCircle className="w-3.5 h-3.5" /> Tarefas {archivedCards.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black">{archivedCards.length}</span>}</>
+                  ) : (
+                    <><Folder className="w-3.5 h-3.5" /> Colunas {columns.filter(c => c.isArchived).length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black">{columns.filter(c => c.isArchived).length}</span>}</>
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Tab content */}
             <div className="flex-1 overflow-y-auto px-4 py-4">
-              {archivedCards.length === 0 ? (
-                <div className="py-12 flex flex-col items-center text-center">
-                  <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
-                  <p className="text-sm text-zinc-500">Nenhuma tarefa arquivada ainda.</p>
-                  <p className="text-xs text-zinc-400 mt-1">Cards movidos para "Finalizado" aparecerão aqui.</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {archivedCards.map(card => (
-                    <div key={card.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
-                      <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-snug">{card.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${KANBAN_PRIORITY_COLORS[card.priority] ?? ''}`}>{card.priority}</span>
-                          {card.dueDate && <span className="text-[10px] text-zinc-400">{formatDate(card.dueDate)}</span>}
+              {activeArchiveTab === 'tasks' ? (
+                archivedCards.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center text-center">
+                    <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <p className="text-sm text-zinc-500">Nenhuma tarefa arquivada ainda.</p>
+                    <p className="text-xs text-zinc-400 mt-1">Cards movidos para "Finalizado" aparecerão aqui.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {archivedCards.map(card => (
+                      <div key={card.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                        <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-snug">{card.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${KANBAN_PRIORITY_COLORS[card.priority] ?? ''}`}>{card.priority}</span>
+                            {card.dueDate && <span className="text-[10px] text-zinc-400">{formatDate(card.dueDate)}</span>}
+                          </div>
                         </div>
+                        <button
+                          onClick={() => restoreCard(card)}
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Restaurar
+                        </button>
                       </div>
-                      <button
-                        onClick={() => restoreCard(card)}
-                        className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
-                      >
-                        <RotateCcw className="w-3 h-3" /> Restaurar
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Column Archive Modal ── */}
-      {showColumnArchiveModal && (
-        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
-            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Folder className="w-4 h-4 text-violet-500" />
-                <div>
-                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">Colunas Arquivadas</h2>
-                  <p className="text-xs text-zinc-400 mt-0.5">Restaure colunas para que voltem ao board</p>
-                </div>
-              </div>
-              <button onClick={() => setShowColumnArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              {columns.filter(c => c.isArchived).length === 0 ? (
-                <div className="py-12 flex flex-col items-center text-center">
-                  <Folder className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
-                  <p className="text-sm text-zinc-500">Nenhuma coluna arquivada.</p>
-                </div>
+                    ))}
+                  </div>
+                )
               ) : (
-                <div className="space-y-2.5">
-                  {columns.filter(c => c.isArchived).map(col => (
-                    <div key={col.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{col.title}</p>
-                        <p className="text-xs text-zinc-400 mt-0.5">{col.cards.length} tarefa{col.cards.length !== 1 ? 's' : ''}</p>
+                columns.filter(c => c.isArchived).length === 0 ? (
+                  <div className="py-12 flex flex-col items-center text-center">
+                    <Folder className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <p className="text-sm text-zinc-500">Nenhuma coluna arquivada.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {columns.filter(c => c.isArchived).map(col => (
+                      <div key={col.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{col.title}</p>
+                          <p className="text-xs text-zinc-400 mt-0.5">{col.cards.length} tarefa{col.cards.length !== 1 ? 's' : ''}</p>
+                        </div>
+                        <button
+                          onClick={() => setColumns(prev => prev.map(c => c.id === col.id ? { ...c, isArchived: false } : c))}
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Restaurar
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setColumns(prev => prev.map(c => c.id === col.id ? { ...c, isArchived: false } : c))}
-                        className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
-                      >
-                        <RotateCcw className="w-3 h-3" /> Restaurar
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           </div>
@@ -1345,31 +1345,23 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col gap-2">
           {/* Kanban top controls */}
           <div className="flex items-center justify-end gap-2 flex-shrink-0">
-            {(() => { const archivedCols = columns.filter(c => c.isArchived); return archivedCols.length > 0 && (
-              <button
-                onClick={() => setShowColumnArchiveModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
-                title="Ver colunas arquivadas e restaurar"
-              >
-                <Folder className="w-3.5 h-3.5" />
-                Colunas Arquivadas
-                <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] font-black">
-                  {archivedCols.length}
-                </span>
-              </button>
-            ); })()}
-            <button
-              onClick={() => setShowArchiveModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
-            >
-              <Archive className="w-3.5 h-3.5" />
-              Ver Tarefas Arquivadas
-              {archivedCards.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">
-                  {archivedCards.length}
-                </span>
-              )}
-            </button>
+            {(() => {
+              const totalArchived = archivedCards.length + columns.filter(c => c.isArchived).length;
+              return (
+                <button
+                  onClick={() => { setActiveArchiveTab('tasks'); setShowArchiveModal(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  Ver Arquivados
+                  {totalArchived > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">
+                      {totalArchived}
+                    </span>
+                  )}
+                </button>
+              );
+            })()}
           </div>
           <div className="flex-1 min-h-0 overflow-hidden">
           <DragDropContext onDragEnd={onDragEnd}>
