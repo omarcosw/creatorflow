@@ -2352,7 +2352,12 @@ interface ScriptDocument {
   sentToPortalAt?: number;
   rating?: number; // 1–5 stars from portal client
   inWorkflow?: boolean; // true when sent to the Kanban workflow
+  // Soft delete
+  isArchived?: boolean;
+  archivedAt?: string; // ISO timestamp
 }
+
+const ARCHIVE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000; // 15 days
 
 interface ScriptPackage {
   id: string;
@@ -2412,6 +2417,42 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
     }));
   };
   const STORYBOARD_LIMIT = 15;
+  const [showScriptArchiveModal, setShowScriptArchiveModal] = useState(false);
+
+  // ── Helpers ───────────────────────────────────────────────────
+  const purgeExpiredArchived = (pkgs: ScriptPackage[]): ScriptPackage[] => {
+    const now = Date.now();
+    return pkgs.map(pkg => ({
+      ...pkg,
+      scripts: pkg.scripts.filter(s => {
+        if (!s.isArchived || !s.archivedAt) return true;
+        return now - new Date(s.archivedAt).getTime() <= ARCHIVE_RETENTION_MS;
+      }),
+      subFolders: pkg.subFolders ? purgeExpiredArchived(pkg.subFolders) : undefined,
+    }));
+  };
+
+  const collectArchivedScripts = (pkgs: ScriptPackage[]): { script: ScriptDocument; pkgId: string; pkgTitle: string }[] => {
+    const now = Date.now();
+    const result: { script: ScriptDocument; pkgId: string; pkgTitle: string }[] = [];
+    for (const pkg of pkgs) {
+      for (const s of pkg.scripts) {
+        if (s.isArchived && s.archivedAt) {
+          if (now - new Date(s.archivedAt).getTime() <= ARCHIVE_RETENTION_MS) {
+            result.push({ script: s, pkgId: pkg.id, pkgTitle: pkg.title });
+          }
+        }
+      }
+      if (pkg.subFolders?.length) result.push(...collectArchivedScripts(pkg.subFolders));
+    }
+    return result;
+  };
+
+  // Purge expired archives on mount (lazy cleanup)
+  useEffect(() => {
+    setPackages(prev => purgeExpiredArchived(prev));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sendToWorkflow = async (pkgId: string, script: ScriptDocument) => {
     try {
@@ -2560,9 +2601,19 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
   const deleteScript = (pkgId: string, scriptId: string) => {
     setPackages(prev => updatePkgDeep(prev, pkgId, p => ({
-      ...p, scripts: p.scripts.filter(s => s.id !== scriptId),
+      ...p, scripts: p.scripts.map(s =>
+        s.id === scriptId ? { ...s, isArchived: true, archivedAt: new Date().toISOString() } : s
+      ),
     })));
     if (expandedId === scriptId) setExpandedId(null);
+  };
+
+  const restoreScript = (pkgId: string, scriptId: string) => {
+    setPackages(prev => updatePkgDeep(prev, pkgId, p => ({
+      ...p, scripts: p.scripts.map(s =>
+        s.id === scriptId ? { ...s, isArchived: false, archivedAt: undefined } : s
+      ),
+    })));
   };
 
   const cycleStatus = (pkgId: string, script: ScriptDocument) => {
@@ -2664,7 +2715,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             >
               <Folder className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="truncate flex-1">{pkg.title}</span>
-              <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.length}</span>
+              <span className="text-[10px] font-black text-zinc-400 flex-shrink-0">{pkg.scripts.filter(s => !s.isArchived).length}</span>
             </button>
             <button
               onClick={() => { setAddingSubFolderFor(pkg.id); setNewSubFolderTitle(''); }}
@@ -2724,6 +2775,68 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   // ─────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:flex-row gap-5">
+
+      {/* ── Script Archive Modal ── */}
+      {showScriptArchiveModal && (() => {
+        const archived = collectArchivedScripts(packages);
+        return (
+          <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+              <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Archive className="w-4 h-4 text-violet-500" />
+                  <div>
+                    <h2 className="text-base font-bold text-zinc-900 dark:text-white">Roteiros Arquivados</h2>
+                    <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                      Itens na lixeira são excluídos permanentemente após 15 dias.
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setShowScriptArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                {archived.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center text-center">
+                    <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <p className="text-sm text-zinc-500">Nenhum roteiro arquivado.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {archived.map(({ script, pkgId, pkgTitle }) => {
+                      const archivedDate = script.archivedAt ? new Date(script.archivedAt) : null;
+                      const daysLeft = archivedDate
+                        ? Math.ceil((ARCHIVE_RETENTION_MS - (Date.now() - archivedDate.getTime())) / (24 * 60 * 60 * 1000))
+                        : null;
+                      return (
+                        <div key={script.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{script.title || 'Sem título'}</p>
+                            <p className="text-xs text-zinc-400 mt-0.5">{pkgTitle}</p>
+                            {archivedDate && (
+                              <p className={`text-[10px] mt-0.5 font-bold ${daysLeft !== null && daysLeft <= 3 ? 'text-red-400' : 'text-zinc-400'}`}>
+                                Arquivado em {archivedDate.toLocaleDateString('pt-BR')} · {daysLeft}d restante{daysLeft !== 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => restoreScript(pkgId, script.id)}
+                            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Restaurar
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Pinned toast ── */}
       {pinnedToast && (
@@ -2801,12 +2914,23 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   {selectedPkg.title}
                 </h2>
                 <p className="text-xs text-zinc-400 mt-0.5 pl-7">
-                  {selectedPkg.scripts.length} roteiro{selectedPkg.scripts.length !== 1 ? 's' : ''}
+                  {selectedPkg.scripts.filter(s => !s.isArchived).length} roteiro{selectedPkg.scripts.filter(s => !s.isArchived).length !== 1 ? 's' : ''}
                 </p>
               </div>
 
-              {/* Dual-mode toggle */}
-              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1 gap-1 self-start sm:self-auto">
+              {/* Archive + Dual-mode toggle */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+              {(() => { const count = collectArchivedScripts(packages).length; return (
+                <button
+                  onClick={() => setShowScriptArchiveModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  Ver Arquivados
+                  {count > 0 && <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">{count}</span>}
+                </button>
+              ); })()}
+              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1 gap-1">
                 <button
                   onClick={() => setViewMode('edicao')}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
@@ -2830,6 +2954,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   Modo Shotlist
                 </button>
               </div>
+              </div>
             </div>
 
             {/* New script button */}
@@ -2841,7 +2966,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             </button>
 
             {/* Empty state */}
-            {selectedPkg.scripts.length === 0 && (
+            {selectedPkg.scripts.filter(s => !s.isArchived).length === 0 && (
               <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
                 <FileText className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
                 <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum roteiro neste pacote.</p>
@@ -2850,7 +2975,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             )}
 
             {/* Script Accordions */}
-            {selectedPkg.scripts.map((script, idx) => {
+            {selectedPkg.scripts.filter(s => !s.isArchived).map((script, idx) => {
               const isOpen       = expandedId === script.id;
               const checkedCount = script.scenes.filter(sc => sc.isChecked).length;
               const wMode        = script.writingMode ?? 'structured';
