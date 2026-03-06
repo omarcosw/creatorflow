@@ -1088,13 +1088,27 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
   };
 
   const handleRestoreDefaults = () => {
-    const defaultIds = KANBAN_INITIAL_COLUMNS.map(c => c.id);
-    const currentById = new Map(columns.map(c => [c.id, c]));
-    // Default columns in order — keep existing cards, create empty if missing
-    const merged = KANBAN_INITIAL_COLUMNS.map(def => currentById.get(def.id) ?? { ...def, cards: [] });
-    // Custom columns not part of defaults — preserve at the end
-    const custom = columns.filter(c => !defaultIds.includes(c.id));
-    setColumns([...merged, ...custom]);
+    // Never rebuild from scratch — only INSERT missing defaults into the existing array.
+    // Match by title (case-insensitive) so renamed columns are still recognised.
+    // Existing columns and their cards are never removed or zeroed.
+    const result = [...columns];
+    let insertIdx = 0;
+
+    for (const def of KANBAN_INITIAL_COLUMNS) {
+      const defTitle = def.title.toLowerCase().trim();
+      const existingIdx = result.findIndex(c => c.title.toLowerCase().trim() === defTitle);
+
+      if (existingIdx >= 0) {
+        // Column already exists — advance past it so next inserts land after it
+        insertIdx = existingIdx + 1;
+      } else {
+        // Column missing — insert a fresh empty one at current position
+        result.splice(insertIdx, 0, { ...def, id: crypto.randomUUID(), cards: [] });
+        insertIdx++;
+      }
+    }
+
+    setColumns(result);
     setWorkflowToast('Colunas padrão restauradas com sucesso!');
     setTimeout(() => setWorkflowToast(''), 4000);
   };
