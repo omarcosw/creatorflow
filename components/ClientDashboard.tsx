@@ -5899,6 +5899,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
          ══════════════════════════════════ */}
       <aside className={`
         fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-gray-950 border-r border-gray-800/50
+        overflow-hidden
         transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0 lg:flex-shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -5940,9 +5941,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
           {/* Mini health bar */}
           <div className="mt-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-600">Saúde</span>
-              <span className={`text-[10px] font-black ${sidebarHealth < 34 ? 'text-red-400' : sidebarHealth < 67 ? 'text-amber-400' : 'text-emerald-400'}`}>
+            <div className="flex items-center justify-between min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-600 truncate">Saúde</span>
+              <span className={`text-[10px] font-black flex-shrink-0 ${sidebarHealth < 34 ? 'text-red-400' : sidebarHealth < 67 ? 'text-amber-400' : 'text-emerald-400'}`}>
                 {sidebarHealth}%
               </span>
             </div>
