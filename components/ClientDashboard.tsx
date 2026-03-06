@@ -293,6 +293,15 @@ const KANBAN_COL_ICON: Record<string, React.FC<{ className?: string }>> = {
   finalizado:  CheckCircle,
 };
 
+// Status color mapping for kanban column icons
+const KANBAN_COL_COLOR: Record<string, string> = {
+  preproducao: 'text-blue-500',
+  gravar:      'text-amber-500',
+  edicao:      'text-purple-500',
+  aprovacao:   'text-orange-500',
+  finalizado:  'text-green-500',
+};
+
 // Column → production stage index mapping (for automatic timeline)
 const COLUMN_STAGE_MAP: Record<string, number> = {
   preproducao: 1,
@@ -1338,7 +1347,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                           ) : (
                             <>
                               <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
-                                {(() => { const ColIcon = KANBAN_COL_ICON[col.id]; return ColIcon ? <ColIcon className="w-3.5 h-3.5 flex-shrink-0 text-zinc-400" /> : null; })()}
+                                {(() => { const ColIcon = KANBAN_COL_ICON[col.id]; const colColor = KANBAN_COL_COLOR[col.id] || 'text-zinc-400'; return ColIcon ? <ColIcon className={`w-3.5 h-3.5 flex-shrink-0 ${colColor}`} /> : null; })()}
                                 <span className="truncate">{col.title}</span>
                                 <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
                                   {col.cards.length}
@@ -1353,7 +1362,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                               </button>
                               <button
                                 onClick={() => deleteColumn(col.id)}
-                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-red-500 transition-colors"
+                                className="flex-shrink-0 p-0.5 text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                 title="Excluir coluna"
                               >
                                 <Trash2 className="w-3 h-3" />
