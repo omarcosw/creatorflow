@@ -101,7 +101,7 @@ const TABS: Tab[] = [
   { id: 'kanban',      label: 'Workflow',               icon: LayoutDashboard },
   { id: 'agenda',      label: 'Agenda',                 icon: Calendar        },
   { id: 'acervo',      label: 'Acervo e HDs',           icon: HardDrive       },
-  { id: 'entregas',    label: 'Entregas & Aprovações',  icon: UploadCloud     },
+  { id: 'entregas',    label: 'Entregas',               icon: UploadCloud     },
   { id: 'reunioes',    label: 'Reuniões',               icon: Users           },
   { id: 'financeiro',      label: 'Financeiro & Métricas',  icon: TrendingUp  },
   { id: 'cerebro_da_marca', label: 'Cérebro da Marca',      icon: Brain       },
@@ -6172,9 +6172,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     <span className="absolute left-0 inset-y-0 my-2 w-[2px] rounded-full bg-indigo-500" />
                   )}
                   <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-600 group-hover:text-gray-400'}`} />
-                  <span className="truncate flex-1">{tab.label}</span>
+                  <span className="truncate">{tab.label}</span>
                   {tab.id === 'entregas' && (
-                    <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full flex-shrink-0">Em breve</span>
+                    <span className="ml-auto text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full flex-shrink-0">Em breve</span>
                   )}
                 </button>
               </React.Fragment>
