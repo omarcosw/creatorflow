@@ -6172,7 +6172,10 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     <span className="absolute left-0 inset-y-0 my-2 w-[2px] rounded-full bg-indigo-500" />
                   )}
                   <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-600 group-hover:text-gray-400'}`} />
-                  <span className="truncate">{tab.label}</span>
+                  <span className="truncate flex-1">{tab.label}</span>
+                  {tab.id === 'entregas' && (
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full flex-shrink-0">Em breve</span>
+                  )}
                 </button>
               </React.Fragment>
             );
@@ -6778,8 +6781,15 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
           {/* ══ TAB: Entregas & Aprovações ══ */}
           {activeTab === 'entregas' && (
-            <div className="animate-in fade-in duration-200">
-              <ClientEntregasTab client={client} />
+            <div className="animate-in fade-in duration-200 flex flex-col items-center justify-center min-h-[400px] text-center px-6 py-16">
+              <div className="w-20 h-20 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-6">
+                <Rocket className="w-10 h-10 text-purple-400" strokeWidth={1.5} />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-widest text-purple-500 mb-3">Em Breve</span>
+              <h2 className="text-xl font-black text-white mb-3">Entregas e Aprovações em Breve!</h2>
+              <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
+                Estamos construindo um sistema incrível para você enviar os arquivos finais e receber aprovações dos seus clientes em um só lugar. Fique ligado!
+              </p>
             </div>
           )}
 
