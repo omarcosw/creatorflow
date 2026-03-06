@@ -6781,15 +6781,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
           {/* ══ TAB: Entregas & Aprovações ══ */}
           {activeTab === 'entregas' && (
-            <div className="animate-in fade-in duration-200 flex flex-col items-center justify-center min-h-[400px] text-center px-6 py-16">
-              <div className="w-20 h-20 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-6">
-                <Rocket className="w-10 h-10 text-purple-400" strokeWidth={1.5} />
-              </div>
-              <span className="text-[11px] font-black uppercase tracking-widest text-purple-500 mb-3">Em Breve</span>
-              <h2 className="text-xl font-black text-white mb-3">Entregas e Aprovações em Breve!</h2>
-              <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
-                Estamos construindo um sistema incrível para você enviar os arquivos finais e receber aprovações dos seus clientes em um só lugar. Fique ligado!
-              </p>
+            <div className="animate-in fade-in duration-200">
+              <ClientEntregasTab client={client} />
             </div>
           )}
 
