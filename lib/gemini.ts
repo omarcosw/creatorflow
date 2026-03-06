@@ -174,6 +174,12 @@ export const sendMessageToAgent = async (
         config.thinkingConfig = { thinkingBudget: 16000 };
     }
 
+    // Force JSON output for flash agents that return structured data (incompatible with thinkingConfig/tools)
+    if (!useThinking && !isProVisual && !useSearch &&
+        (agentId === AgentId.BUDGET_SHEET || agentId === AgentId.BUDGET_PRICING)) {
+        config.responseMimeType = 'application/json';
+    }
+
     if (useSearch) {
         config.tools = [{ googleSearch: {} }];
     }
@@ -218,6 +224,7 @@ export const sendMessageToAgent = async (
         const groundingMetadata = response.candidates[0].groundingMetadata;
         if (response.candidates[0].content?.parts) {
             for (const part of response.candidates[0].content.parts) {
+                if ((part as any).thought) continue; // skip thinking-model reasoning parts
                 if (part.text) responseText += part.text;
                 if (part.inlineData) {
                     const mimeType = part.inlineData.mimeType || 'image/png';
@@ -244,6 +251,13 @@ export const sendMessageToAgent = async (
     if (usedFallback) {
       responseText += `\n\n_(Usei o modelo Flash devido ao limite de cota do Pro.)_`;
     }
+
+    // Strip markdown fences that LLMs sometimes wrap around JSON responses
+    if (responseText) {
+      responseText = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    }
+
+    console.log('[DEBUG IA CRU]:', responseText.slice(0, 500));
 
     if (responseText || generatedImage) {
       return { text: responseText, generatedImage };
