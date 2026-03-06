@@ -13,7 +13,7 @@ const ALLOWED_ORIGINS = [
 // --- Rate Limiting ---
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 30; // 30 requests per minute per IP
+const RATE_LIMIT_MAX = 200; // 200 requests per minute per IP
 
 // --- Auth Rate Limiting (stricter) ---
 const authRateLimitMap = new Map<string, { count: number; resetTime: number }>();

@@ -23,8 +23,13 @@ export function useUserData<T>(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDataRef = useRef<T>(fallback);
   const hasSavedRef = useRef(false);
+  const fetchedForRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // StrictMode guard — skip if already fetched for this dataType
+    if (fetchedForRef.current === dataType) return;
+    fetchedForRef.current = dataType;
+
     let cancelled = false;
     setLoading(true);
 
