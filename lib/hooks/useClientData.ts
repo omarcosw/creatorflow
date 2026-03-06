@@ -33,15 +33,10 @@ export function useClientData<T>(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDataRef = useRef<T>(fallback);
   const hasSavedRef = useRef(false);
-  const fetchedForRef = useRef<string | null>(null);
 
   // Load data on mount — wait for any pending save first
   useEffect(() => {
     const key = getSaveKey(clientId, dataType);
-
-    // StrictMode guard — skip if already fetched for this key
-    if (fetchedForRef.current === key) return;
-    fetchedForRef.current = key;
 
     let cancelled = false;
     setLoading(true);
