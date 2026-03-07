@@ -3528,15 +3528,18 @@ interface ScriptModalProps {
   onClose: () => void;
   onSendToWorkflow: (title: string) => void;
   onScheduleRecording: (title: string) => void;
-  onSaveToRoteiros: (idea: IdeaCard) => void;
+  onSaveToRoteiros: (idea: IdeaCard) => Promise<void>;
 }
 
 const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkflow, onScheduleRecording, onSaveToRoteiros }) => {
   const [currentIdea, setCurrentIdea]               = useState<IdeaCard>(idea);
   const [copiedAll, setCopiedAll]                   = useState(false);
   const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
-  const [workflowToast, setWorkflowToast]           = useState(false);
-  const [roteirosSaveToast, setRoteirosSaveToast]   = useState(false);
+  const [workflowToast, setWorkflowToast]             = useState(false);
+  const [roteirosSaveToast, setRoteirosSaveToast]     = useState(false);
+  const [roteirosSaved, setRoteirosSaved]             = useState(false); // permanent lock after save
+  const [roteirosSaving, setRoteirosSaving]           = useState(false);
+  const [roteirosError, setRoteirosError]             = useState('');
 
   const copyAll = () => {
     const slidesText = currentIdea.script.slides
@@ -3554,10 +3557,21 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
     setTimeout(() => setWorkflowToast(false), 3000);
   };
 
-  const handleSaveToRoteiros = () => {
-    onSaveToRoteiros(currentIdea);
-    setRoteirosSaveToast(true);
-    setTimeout(() => setRoteirosSaveToast(false), 3000);
+  const handleSaveToRoteiros = async () => {
+    if (roteirosSaved || roteirosSaving) return;
+    setRoteirosSaving(true);
+    setRoteirosError('');
+    try {
+      await onSaveToRoteiros(currentIdea);
+      setRoteirosSaved(true);         // permanent — blocks re-save
+      setRoteirosSaveToast(true);
+      setTimeout(() => setRoteirosSaveToast(false), 4000);
+    } catch {
+      setRoteirosError('Erro ao salvar. Tente novamente.');
+      setTimeout(() => setRoteirosError(''), 4000);
+    } finally {
+      setRoteirosSaving(false);
+    }
   };
 
   const handleGenerateVariation = async () => {
@@ -3642,6 +3656,12 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
             <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 animate-in fade-in duration-200">
               <CheckCircle2 className="w-4 h-4 text-violet-500 flex-shrink-0" />
               <p className="text-xs font-bold text-violet-700 dark:text-violet-300">✅ Roteiro salvo na Sala de Roteiros!</p>
+            </div>
+          )}
+          {roteirosError && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-xs font-bold text-red-700 dark:text-red-300">{roteirosError}</p>
             </div>
           )}
 
@@ -3739,10 +3759,16 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
               </button>
               <button
                 onClick={handleSaveToRoteiros}
-                disabled={roteirosSaveToast}
-                className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 hover:opacity-90 transition-all disabled:opacity-60"
+                disabled={roteirosSaved || roteirosSaving}
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 hover:opacity-90 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <FileText className="w-3.5 h-3.5" /> Sala de Roteiros
+                {roteirosSaving ? (
+                  <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Salvando…</>
+                ) : roteirosSaved ? (
+                  <><Check className="w-3.5 h-3.5" /> Salvo</>
+                ) : (
+                  <><FileText className="w-3.5 h-3.5" /> Sala de Roteiros</>
+                )}
               </button>
             </div>
           </div>
@@ -6050,35 +6076,34 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   };
 
   // ── Roteiros: convert IdeaCard → ScriptDocument and persist via API ──
-  const saveToRoteiros = async (idea: IdeaCard) => {
-    try {
-      const current = await fetchClientData<ScriptPackage[]>(client.id, 'roteiros');
-      let pkgs = Array.isArray(current) && current.length > 0 ? current : [];
+  const saveToRoteiros = async (idea: IdeaCard): Promise<void> => {
+    const current = await fetchClientData<ScriptPackage[]>(client.id, 'roteiros');
+    let pkgs = Array.isArray(current) && current.length > 0 ? current : [];
 
-      if (pkgs.length === 0) {
-        pkgs = [{ id: crypto.randomUUID(), title: 'Roteiros Gerados', scripts: [], createdAt: Date.now() }];
-      }
+    if (pkgs.length === 0) {
+      pkgs = [{ id: crypto.randomUUID(), title: 'Roteiros Gerados', scripts: [], createdAt: Date.now() }];
+    }
 
-      const scenes: ScriptScene[] = idea.script.slides.map(slide => ({
-        id: crypto.randomUUID(),
-        visual: slide.visual || '',
-        audio:  slide.audio  || '',
-        isChecked: false,
-      }));
+    const scenes: ScriptScene[] = idea.script.slides.map(slide => ({
+      id: crypto.randomUUID(),
+      visual: slide.visual || '',
+      audio:  slide.audio  || '',
+      isChecked: false,
+    }));
 
-      const newScript: ScriptDocument = {
-        id: crypto.randomUUID(),
-        title: idea.title,
-        status: 'Rascunho',
-        referenceLink: '',
-        gancho: idea.gancho,
-        scenes,
-        createdAt: Date.now(),
-      };
+    const newScript: ScriptDocument = {
+      id: crypto.randomUUID(),
+      title: idea.title,
+      status: 'Rascunho',
+      referenceLink: '',
+      gancho: idea.gancho,
+      scenes,
+      createdAt: Date.now(),
+    };
 
-      pkgs[0] = { ...pkgs[0], scripts: [newScript, ...pkgs[0].scripts] };
-      await saveClientData(client.id, 'roteiros', pkgs);
-    } catch { /* ignore */ }
+    pkgs[0] = { ...pkgs[0], scripts: [newScript, ...pkgs[0].scripts] };
+    await saveClientData(client.id, 'roteiros', pkgs);
+    // throws on failure — caller handles feedback
   };
 
   const handleScheduleRecording = (title: string) => {
