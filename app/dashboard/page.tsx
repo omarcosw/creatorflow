@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AGENTS } from '@/lib/constants';
 import { AgentId, ChatSession, InstagramProfile, ShotList, BrandKit, HDD, Recording, StudioProfile, Client } from '@/types';
 import { useIara } from '@/components/IaraContext';
-import { fetchClients, createClient, deleteClientAPI, migrateFromLocalStorage } from '@/lib/clients-api';
+import { fetchClients, createClient, deleteClientAPI, migrateFromLocalStorage, fetchUserData, saveUserData } from '@/lib/clients-api';
 import AgentView from '@/components/AgentView';
 import ShotListManager from '@/components/ShotListManager';
 import HubArquivos from '@/components/HubArquivos';
@@ -293,7 +293,6 @@ export default function DashboardPage() {
         const parsed = JSON.parse(savedHdds);
         const now = Date.now();
         const RETENTION = 15 * 24 * 60 * 60 * 1000;
-        // Lazy cleanup: purge HDDs archived more than 15 days ago
         setHdds(parsed.filter((h: { isArchived?: boolean; archivedAt?: string }) =>
           !h.isArchived || !h.archivedAt || now - new Date(h.archivedAt).getTime() <= RETENTION
         ));
@@ -301,6 +300,16 @@ export default function DashboardPage() {
     }
     if (savedRecordings) {
       try { setRecordings(JSON.parse(savedRecordings)); } catch (e) { console.error(e); }
+    }
+
+    // Prefer API data over localStorage — API is source of truth for cross-view sync
+    if (localStorage.getItem('cf_token')) {
+      fetchUserData<HDD[]>('hdds').then(apiHdds => {
+        if (Array.isArray(apiHdds) && apiHdds.length > 0) setHdds(apiHdds);
+      }).catch(() => { /* keep localStorage data */ });
+      fetchUserData<Recording[]>('recordings').then(apiRec => {
+        if (Array.isArray(apiRec) && apiRec.length > 0) setRecordings(apiRec);
+      }).catch(() => { /* keep localStorage data */ });
     }
     const savedStudio = localStorage.getItem(STUDIO_KEY);
     if (savedStudio) {
@@ -461,27 +470,44 @@ export default function DashboardPage() {
   };
 
   const handleSaveHDD = (hdd: HDD) => {
-    setHdds(prev => [hdd, ...prev]);
+    setHdds(prev => {
+      const updated = [hdd, ...prev];
+      saveUserData('hdds', updated).catch(e => console.error('[HubArquivos] saveUserData hdds:', e));
+      return updated;
+    });
   };
 
   const handleDeleteHDD = (id: string) => {
-    setHdds(prev => prev.map(h => h.id === id ? { ...h, isArchived: true, archivedAt: new Date().toISOString() } : h));
+    setHdds(prev => {
+      const updated = prev.map(h => h.id === id ? { ...h, isArchived: true, archivedAt: new Date().toISOString() } : h);
+      saveUserData('hdds', updated).catch(e => console.error('[HubArquivos] saveUserData hdds:', e));
+      return updated;
+    });
   };
 
   const handleRestoreHDD = (id: string) => {
-    setHdds(prev => prev.map(h => h.id === id ? { ...h, isArchived: false, archivedAt: undefined } : h));
+    setHdds(prev => {
+      const updated = prev.map(h => h.id === id ? { ...h, isArchived: false, archivedAt: undefined } : h);
+      saveUserData('hdds', updated).catch(e => console.error('[HubArquivos] saveUserData hdds:', e));
+      return updated;
+    });
   };
 
   const handleSaveRecording = (recording: Recording) => {
     setRecordings(prev => {
       const exists = prev.some(r => r.id === recording.id);
-      if (exists) return prev.map(r => r.id === recording.id ? recording : r);
-      return [recording, ...prev];
+      const updated = exists ? prev.map(r => r.id === recording.id ? recording : r) : [recording, ...prev];
+      saveUserData('recordings', updated).catch(e => console.error('[HubArquivos] saveUserData recordings:', e));
+      return updated;
     });
   };
 
   const handleDeleteRecording = (id: string) => {
-    setRecordings(prev => prev.filter(r => r.id !== id));
+    setRecordings(prev => {
+      const updated = prev.filter(r => r.id !== id);
+      saveUserData('recordings', updated).catch(e => console.error('[HubArquivos] saveUserData recordings:', e));
+      return updated;
+    });
   };
 
   // Reload clients from API (source of truth)

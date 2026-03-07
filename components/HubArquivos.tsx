@@ -139,6 +139,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   onBack,
 }) => {
   const HDD_ARCHIVE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
   const [showHDDArchiveModal, setShowHDDArchiveModal] = useState(false);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -219,6 +221,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       pendingTakesDescription: continuePendingDone === false ? undefined : target.pendingTakesDescription,
     };
     onSaveRecording(updated);
+    showToast('Backup atualizado com sucesso!');
     closeQuiz();
   };
 
@@ -244,6 +247,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       createdAt: Date.now(),
     };
     onSaveRecording(rec);
+    showToast('Backup registrado com sucesso!');
     closeQuiz();
   };
 
@@ -275,6 +279,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   const addHDD = () => {
     if (!newHDDName.trim()) return;
     onSaveHDD({ id: crypto.randomUUID(), name: newHDDName.trim(), addedAt: Date.now() });
+    showToast('HD cadastrado com sucesso!');
     setNewHDDName('');
     setIsAddHDDOpen(false);
   };
@@ -355,6 +360,14 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   // ─────────────────────────────────────────
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+
+      {/* ── Success Toast ── */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-2.5 px-5 py-3 bg-emerald-600 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300 whitespace-nowrap">
+          <Check className="w-4 h-4 text-white flex-shrink-0" />
+          <p className="text-sm font-bold text-white">{toast}</p>
+        </div>
+      )}
 
       {/* ── HDD Archive Modal ── */}
       {showHDDArchiveModal && (
