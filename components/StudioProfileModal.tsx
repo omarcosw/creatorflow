@@ -83,12 +83,12 @@ const TagInput: React.FC<TagInputProps> = ({ icon, label, placeholder, tags, onC
       </label>
       <div
         onClick={() => inputRef.current?.focus()}
-        className="min-h-[52px] flex flex-wrap gap-1.5 p-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-text focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all"
+        className="min-h-[52px] flex flex-wrap gap-1.5 p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl cursor-text focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all"
       >
         {tags.map((tag, i) => (
           <span
             key={i}
-            className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 rounded-lg border border-violet-200 dark:border-violet-800/50 select-none"
+            className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 bg-violet-900/40 text-violet-300 rounded-lg border border-violet-800/50 select-none"
           >
             {tag}
             <button
@@ -96,7 +96,7 @@ const TagInput: React.FC<TagInputProps> = ({ icon, label, placeholder, tags, onC
                 e.stopPropagation();
                 onChange(tags.filter((_, idx) => idx !== i));
               }}
-              className="ml-0.5 text-violet-400 hover:text-violet-700 dark:hover:text-violet-200 transition-colors"
+              className="ml-0.5 text-violet-400 hover:text-violet-200 transition-colors"
               aria-label={`Remover ${tag}`}
             >
               <X className="w-3 h-3" />
@@ -111,11 +111,11 @@ const TagInput: React.FC<TagInputProps> = ({ icon, label, placeholder, tags, onC
           onKeyDown={handleKeyDown}
           onBlur={() => value.trim() && commit(value)}
           placeholder={tags.length === 0 ? placeholder : '+ Adicionar…'}
-          className="flex-1 min-w-[130px] bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none py-0.5 px-1"
+          className="flex-1 min-w-[130px] bg-transparent text-sm text-white placeholder:text-zinc-400 focus:outline-none py-0.5 px-1"
         />
       </div>
       <p className="text-[10px] text-zinc-400 mt-1.5">
-        <kbd className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded font-mono text-zinc-500 dark:text-zinc-400">Enter</kbd>
+        <kbd className="px-1 py-0.5 bg-zinc-800 rounded font-mono text-zinc-400">Enter</kbd>
         {' '}ou vírgula para adicionar · Backspace para remover a última tag
       </p>
     </div>
@@ -150,21 +150,21 @@ const StudioProfileModal: React.FC<StudioProfileModalProps> = ({
   };
 
   const inputCls =
-    'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all';
+    'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all';
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+      <div className="bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[92vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
         {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-xl border border-violet-100 dark:border-violet-900/40">
+              <div className="p-2.5 bg-violet-900/20 text-violet-400 rounded-xl border border-violet-900/40">
                 <Clapperboard className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white leading-tight">
+                <h2 className="text-lg font-bold text-white leading-tight">
                   Meu Estúdio
                 </h2>
                 <p className="text-xs text-zinc-400">Perfil & Inventário de Equipamentos</p>
@@ -172,22 +172,22 @@ const StudioProfileModal: React.FC<StudioProfileModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+              className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl">
+          <div className="flex gap-1 p-1 bg-zinc-800/80 rounded-xl">
             {(['identity', 'inventory'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
                   activeTab === tab
-                    ? 'bg-white dark:bg-zinc-900 text-violet-600 dark:text-violet-400 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-zinc-900 text-violet-400 shadow-sm'
+                    : 'text-zinc-500 hover:hover:text-zinc-300'
                 }`}
               >
                 {tab === 'identity' ? '🎬 Identidade' : '🎛️ Inventário'}
@@ -229,15 +229,15 @@ const StudioProfileModal: React.FC<StudioProfileModalProps> = ({
                       onClick={() => setDraft(p => ({ ...p, type: opt.value }))}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${
                         draft.type === opt.value
-                          ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700'
+                          ? 'border-violet-500 bg-violet-900/20'
+                          : 'border-zinc-800 hover:border-violet-700'
                       }`}
                     >
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                           draft.type === opt.value
                             ? 'border-violet-600 bg-violet-600'
-                            : 'border-zinc-300 dark:border-zinc-600'
+                            : 'border-zinc-600'
                         }`}
                       >
                         {draft.type === opt.value && (
@@ -246,7 +246,7 @@ const StudioProfileModal: React.FC<StudioProfileModalProps> = ({
                       </div>
                       <span className="text-xl flex-shrink-0">{opt.emoji}</span>
                       <div>
-                        <p className="font-bold text-sm text-zinc-900 dark:text-white">{opt.label}</p>
+                        <p className="font-bold text-sm text-white">{opt.label}</p>
                         <p className="text-xs text-zinc-400">{opt.desc}</p>
                       </div>
                     </button>
@@ -299,10 +299,10 @@ const StudioProfileModal: React.FC<StudioProfileModalProps> = ({
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+            className="px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
           >
             Cancelar
           </button>

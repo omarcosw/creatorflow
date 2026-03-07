@@ -252,24 +252,24 @@ interface KanbanColumn {
 const KANBAN_PRIORITIES: KanbanPriority[] = ['Urgente', 'Alta', 'Normal', 'Baixa'];
 
 const KANBAN_PRIORITY_COLORS: Record<string, string> = {
-  'Alta':    'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50',
-  'Normal':  'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/50',
-  'Baixa':   'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700',
-  'Urgente': 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50',
+  'Alta':    'bg-red-900/30 text-red-400 border border-red-800/50',
+  'Normal':  'bg-sky-900/30 text-sky-400 border border-sky-800/50',
+  'Baixa':   'bg-zinc-800 text-zinc-400 border border-zinc-700',
+  'Urgente': 'bg-orange-900/30 text-orange-400 border border-orange-800/50',
 };
 
 const TODO_PRIORITY_STYLES: Record<TodoPriority, { btn: string; badge: string }> = {
   'Baixa':   {
-    btn:   'border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50',
-    badge: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400',
+    btn:   'border-zinc-600 text-zinc-400 bg-zinc-800/50',
+    badge: 'bg-zinc-800 text-zinc-400',
   },
   'Média':   {
-    btn:   'border-sky-400 dark:border-sky-600 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20',
-    badge: 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400',
+    btn:   'border-sky-600 text-sky-400 bg-sky-900/20',
+    badge: 'bg-sky-900/30 text-sky-400',
   },
   'Urgente': {
-    btn:   'border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
-    badge: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    btn:   'border-red-600 text-red-400 bg-red-900/20',
+    badge: 'bg-red-900/30 text-red-400',
   },
 };
 
@@ -343,10 +343,10 @@ const EVENT_TYPES: string[]            = ['Gravação', 'Reunião', 'Entrega de 
 const EVENT_LOCATIONS: EventLocation[] = ['Interna', 'Externa', 'Remoto'];
 
 const EVENT_TYPE_STYLES: { [key: string]: { bg: string; text: string; border: string; emoji: string } } = {
-  'Gravação':         { bg: 'bg-violet-500/10 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-300 dark:border-violet-700/50', emoji: '🎬' },
-  'Reunião':          { bg: 'bg-sky-500/10 dark:bg-sky-900/20',       text: 'text-sky-600 dark:text-sky-400',       border: 'border-sky-300 dark:border-sky-700/50',       emoji: '🤝' },
-  'Entrega de Vídeo': { bg: 'bg-emerald-500/10 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-300 dark:border-emerald-700/50', emoji: '📦' },
-  'Visita Técnica':   { bg: 'bg-amber-500/10 dark:bg-amber-900/20',   text: 'text-amber-600 dark:text-amber-400',   border: 'border-amber-300 dark:border-amber-700/50',   emoji: '🔍' },
+  'Gravação':         { bg: 'bg-violet-900/20', text: 'text-violet-400', border: 'border-violet-700/50', emoji: '🎬' },
+  'Reunião':          { bg: 'bg-sky-900/20',       text: 'text-sky-400',       border: 'border-sky-700/50',       emoji: '🤝' },
+  'Entrega de Vídeo': { bg: 'bg-emerald-900/20', text: 'text-emerald-400', border: 'border-emerald-700/50', emoji: '📦' },
+  'Visita Técnica':   { bg: 'bg-amber-900/20',   text: 'text-amber-400',   border: 'border-amber-700/50',   emoji: '🔍' },
 };
 
 const EVENT_LOCATION_LABELS: Record<EventLocation, { label: string; emoji: string }> = {
@@ -368,8 +368,8 @@ const DOW_PT      = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const DOW_FULL_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const DEFAULT_EVENT_STYLE = {
-  bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-400',
-  border: 'border-zinc-200 dark:border-zinc-700', emoji: '📌',
+  bg: 'bg-zinc-800', text: 'text-zinc-400',
+  border: 'border-zinc-700', emoji: '📌',
 };
 
 const getEventTypeStyle = (type: string) => EVENT_TYPE_STYLES[type] ?? DEFAULT_EVENT_STYLE;
@@ -405,7 +405,7 @@ function getInitials(name: string): string {
 // Shared modal style constants
 // ─────────────────────────────────────────────
 const MODAL_INPUT_CLS =
-  'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400 dark:[color-scheme:dark]';
+  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400';
 const MODAL_LABEL_CLS = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
 
 // ─────────────────────────────────────────────
@@ -432,18 +432,18 @@ const AddCardModal: React.FC<AddCardModalProps> = ({ columnTitle, onSave, onClos
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+      <div className="bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Novo Card</h2>
+              <h2 className="text-lg font-bold text-white">Novo Card</h2>
               <p className="text-xs text-zinc-400 mt-0.5">Coluna: {columnTitle}</p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+              className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -474,8 +474,8 @@ const AddCardModal: React.FC<AddCardModalProps> = ({ columnTitle, onSave, onClos
                   onClick={() => setPriority(p)}
                   className={`py-2 px-1 rounded-xl border-2 text-[10px] font-black transition-all text-center ${
                     priority === p
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                      ? 'border-violet-500 bg-violet-900/20 text-violet-300'
+                      : 'border-zinc-800 text-zinc-400 hover:border-violet-700'
                   }`}
                 >
                   {p}
@@ -531,10 +531,10 @@ const AddCardModal: React.FC<AddCardModalProps> = ({ columnTitle, onSave, onClos
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+            className="px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
           >
             Cancelar
           </button>
@@ -581,18 +581,18 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+      <div className="bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Editar Card</h2>
+              <h2 className="text-lg font-bold text-white">Editar Card</h2>
               <p className="text-xs text-zinc-400 mt-0.5">Coluna: {columnTitle}</p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+              className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -621,8 +621,8 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({
                   onClick={() => set('priority', p)}
                   className={`py-2 px-1 rounded-xl border-2 text-[10px] font-black transition-all text-center ${
                     draft.priority === p
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                      ? 'border-violet-500 bg-violet-900/20 text-violet-300'
+                      : 'border-zinc-800 text-zinc-400 hover:border-violet-700'
                   }`}
                 >
                   {p}
@@ -678,17 +678,17 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
           <button
             onClick={onDelete}
-            className="p-3 rounded-xl border border-red-200 dark:border-red-800/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex-shrink-0"
+            className="p-3 rounded-xl border border-red-800/50 text-red-500 hover:bg-red-900/20 transition-all flex-shrink-0"
             title="Excluir card"
           >
             <Trash2 className="w-4 h-4" />
           </button>
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+            className="px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
           >
             Cancelar
           </button>
@@ -745,16 +745,16 @@ const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onD
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+      <div className="bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{isEdit ? 'Editar Evento' : 'Novo Evento'}</h2>
+              <h2 className="text-lg font-bold text-white">{isEdit ? 'Editar Evento' : 'Novo Evento'}</h2>
               <p className="text-xs text-zinc-400 mt-0.5">Agenda de produção audiovisual</p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -789,8 +789,8 @@ const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onD
                     onClick={() => { setType(t); setUseCustomType(false); }}
                     className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-left transition-all flex items-center gap-2 ${
                       !useCustomType && type === t
-                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                        ? 'border-violet-500 bg-violet-900/20 text-violet-300'
+                        : 'border-zinc-800 text-zinc-400 hover:border-violet-700'
                     }`}
                   >
                     <span>{s.emoji}</span> {t}
@@ -801,8 +801,8 @@ const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onD
                 onClick={() => setUseCustomType(true)}
                 className={`col-span-2 py-2.5 px-3 rounded-xl border-2 text-xs font-bold text-left transition-all flex items-center gap-2 ${
                   useCustomType
-                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                    ? 'border-violet-500 bg-violet-900/20 text-violet-300'
+                    : 'border-zinc-800 text-zinc-400 hover:border-violet-700'
                 }`}
               >
                 <span>✏️</span> Outros...
@@ -849,8 +849,8 @@ const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onD
                     onClick={() => setLocation(loc)}
                     className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 text-xs font-bold transition-all ${
                       location === loc
-                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                        ? 'border-violet-500 bg-violet-900/20 text-violet-300'
+                        : 'border-zinc-800 text-zinc-400 hover:border-violet-700'
                     }`}
                   >
                     <span className="text-base">{l.emoji}</span>
@@ -888,11 +888,11 @@ const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onD
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
           {onDelete && (
             <button
               onClick={onDelete}
-              className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-red-200 dark:border-red-800/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex-shrink-0 text-xs font-bold"
+              className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-red-800/50 text-red-500 hover:bg-red-900/20 transition-all flex-shrink-0 text-xs font-bold"
               title="Excluir evento"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -901,7 +901,7 @@ const NewEventModal: React.FC<NewEventModalProps> = ({ initialEvent, onSave, onD
           )}
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+            className="px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
           >
             Cancelar
           </button>
@@ -1125,33 +1125,33 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
       {/* ── Unified Archive Modal ── */}
       {showArchiveModal && (
         <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+          <div className="bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
             {/* Header */}
-            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Archive className="w-4 h-4 text-violet-500" />
-                <h2 className="text-base font-bold text-zinc-900 dark:text-white">Itens Arquivados</h2>
+                <h2 className="text-base font-bold text-white">Itens Arquivados</h2>
               </div>
-              <button onClick={() => setShowArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+              <button onClick={() => setShowArchiveModal(false)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             {/* Tabs */}
-            <div className="flex border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+            <div className="flex border-b border-zinc-800 flex-shrink-0">
               {(['tasks', 'columns'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveArchiveTab(tab)}
                   className={`flex-1 py-3 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${
                     activeArchiveTab === tab
-                      ? 'text-violet-600 dark:text-violet-400 border-b-2 border-violet-500'
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                      ? 'text-violet-400 border-b-2 border-violet-500'
+                      : 'text-zinc-400 hover:text-zinc-300'
                   }`}
                 >
                   {tab === 'tasks' ? (
-                    <><CheckCircle className="w-3.5 h-3.5" /> Tarefas {archivedCards.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black">{archivedCards.length}</span>}</>
+                    <><CheckCircle className="w-3.5 h-3.5" /> Tarefas {archivedCards.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 text-[10px] font-black">{archivedCards.length}</span>}</>
                   ) : (
-                    <><Folder className="w-3.5 h-3.5" /> Colunas {columns.filter(c => c.isArchived).length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black">{columns.filter(c => c.isArchived).length}</span>}</>
+                    <><Folder className="w-3.5 h-3.5" /> Colunas {columns.filter(c => c.isArchived).length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 text-[10px] font-black">{columns.filter(c => c.isArchived).length}</span>}</>
                   )}
                 </button>
               ))}
@@ -1161,17 +1161,17 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
               {activeArchiveTab === 'tasks' ? (
                 archivedCards.length === 0 ? (
                   <div className="py-12 flex flex-col items-center text-center">
-                    <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <Archive className="w-8 h-8 text-zinc-600 mb-3" />
                     <p className="text-sm text-zinc-500">Nenhuma tarefa arquivada ainda.</p>
                     <p className="text-xs text-zinc-400 mt-1">Cards movidos para "Finalizado" aparecerão aqui.</p>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
                     {archivedCards.map(card => (
-                      <div key={card.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                      <div key={card.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-800/40">
                         <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-snug">{card.title}</p>
+                          <p className="text-sm font-bold text-zinc-300 leading-snug">{card.title}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${KANBAN_PRIORITY_COLORS[card.priority] ?? ''}`}>{card.priority}</span>
                             {card.dueDate && <span className="text-[10px] text-zinc-400">{formatDate(card.dueDate)}</span>}
@@ -1179,7 +1179,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                         </div>
                         <button
                           onClick={() => restoreCard(card)}
-                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-800/50 text-violet-400 hover:bg-violet-900/20 transition-all"
                         >
                           <RotateCcw className="w-3 h-3" /> Restaurar
                         </button>
@@ -1190,20 +1190,20 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
               ) : (
                 columns.filter(c => c.isArchived).length === 0 ? (
                   <div className="py-12 flex flex-col items-center text-center">
-                    <Folder className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <Folder className="w-8 h-8 text-zinc-600 mb-3" />
                     <p className="text-sm text-zinc-500">Nenhuma coluna arquivada.</p>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
                     {columns.filter(c => c.isArchived).map(col => (
-                      <div key={col.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                      <div key={col.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-800/40">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{col.title}</p>
+                          <p className="text-sm font-bold text-zinc-300 truncate">{col.title}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">{col.cards.length} tarefa{col.cards.length !== 1 ? 's' : ''}</p>
                         </div>
                         <button
                           onClick={() => setColumns(prev => prev.map(c => c.id === col.id ? { ...c, isArchived: false } : c))}
-                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-800/50 text-violet-400 hover:bg-violet-900/20 transition-all"
                         >
                           <RotateCcw className="w-3 h-3" /> Restaurar
                         </button>
@@ -1221,17 +1221,17 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
       {(overdueCount > 0 || dueSoonCount > 0) && (
         <div className="flex flex-col gap-2 flex-shrink-0">
           {overdueCount > 0 && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 animate-in fade-in duration-200">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-500 dark:text-red-400" />
-              <p className="text-xs font-bold text-red-700 dark:text-red-400">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-900/20 border border-red-800/50 animate-in fade-in duration-200">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-400" />
+              <p className="text-xs font-bold text-red-400">
                 Atenção: Há {overdueCount} tarefa{overdueCount !== 1 ? 's' : ''} atrasada{overdueCount !== 1 ? 's' : ''} para este cliente!
               </p>
             </div>
           )}
           {dueSoonCount > 0 && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 animate-in fade-in duration-200">
-              <Clock className="w-4 h-4 flex-shrink-0 text-amber-500 dark:text-amber-400" />
-              <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-900/20 border border-amber-800/50 animate-in fade-in duration-200">
+              <Clock className="w-4 h-4 flex-shrink-0 text-amber-400" />
+              <p className="text-xs font-bold text-amber-400">
                 Há {dueSoonCount} tarefa{dueSoonCount !== 1 ? 's' : ''} que precisa{dueSoonCount !== 1 ? 'm' : ''} ser entregue{dueSoonCount !== 1 ? 's' : ''} hoje ou amanhã.
               </p>
             </div>
@@ -1244,18 +1244,18 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
         {/* ── To-Do List ── */}
         <aside className="lg:w-64 flex-shrink-0 flex flex-col min-h-0">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col flex-1 min-h-0">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col flex-1 min-h-0">
 
             {/* Header */}
-            <div className="px-4 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
-              <h3 className="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-1.5"><ListTodo className="w-3.5 h-3.5 text-violet-500" /> Tarefas & Lembretes</h3>
+            <div className="px-4 py-3.5 border-b border-zinc-800 flex-shrink-0">
+              <h3 className="font-bold text-sm text-white flex items-center gap-1.5"><ListTodo className="w-3.5 h-3.5 text-violet-500" /> Tarefas & Lembretes</h3>
               <p className="text-xs text-zinc-400 mt-0.5">
                 {todos.length} pendente{todos.length !== 1 ? 's' : ''} · {client.brandName}
               </p>
             </div>
 
             {/* Input + priority selector */}
-            <div className="px-3 py-3 border-b border-zinc-100 dark:border-zinc-800 space-y-2 flex-shrink-0">
+            <div className="px-3 py-3 border-b border-zinc-800 space-y-2 flex-shrink-0">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -1263,7 +1263,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                   onChange={e => setTodoInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addTodo(); }}
                   placeholder="Nova tarefa..."
-                  className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400"
+                  className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400"
                 />
                 <button
                   onClick={addTodo}
@@ -1283,7 +1283,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                     className={`flex-1 text-[10px] font-black py-1 rounded-lg border-2 transition-all ${
                       todoPriority === p
                         ? TODO_PRIORITY_STYLES[p].btn
-                        : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
+                        : 'border-zinc-700 text-zinc-400 hover:hover:border-zinc-600'
                     }`}
                   >
                     {p}
@@ -1306,10 +1306,10 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                     className="mt-0.5 flex-shrink-0"
                     title="Marcar como concluída"
                   >
-                    <Circle className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-emerald-500 transition-colors" />
+                    <Circle className="w-4 h-4 text-zinc-600 group-hover:text-emerald-500 transition-colors" />
                   </button>
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs leading-relaxed block text-zinc-700 dark:text-zinc-300">
+                    <span className="text-xs leading-relaxed block text-zinc-300">
                       {todo.text}
                     </span>
                     <span className={`mt-0.5 inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded ${TODO_PRIORITY_STYLES[todo.priority].badge}`}>
@@ -1322,10 +1322,10 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
 
             {/* Footer: done archive */}
             {doneTodos.length > 0 && (
-              <div className="border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+              <div className="border-t border-zinc-800 flex-shrink-0">
                 <button
                   onClick={() => setShowDone(v => !v)}
-                  className="w-full px-4 py-2.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 font-bold flex items-center justify-between transition-colors"
+                  className="w-full px-4 py-2.5 text-xs text-zinc-400 hover:text-zinc-300 font-bold flex items-center justify-between transition-colors"
                 >
                   <span>Ver {doneTodos.length} tarefa{doneTodos.length !== 1 ? 's' : ''} concluída{doneTodos.length !== 1 ? 's' : ''}</span>
                   <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${showDone ? 'rotate-90' : ''}`} />
@@ -1341,7 +1341,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                           </span>
                           <button
                             onClick={() => undoTodo(todo.id)}
-                            className="text-[10px] font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                            className="text-[10px] font-bold text-violet-500 hover:text-violet-300 transition-colors"
                           >
                             Desfazer
                           </button>
@@ -1373,12 +1373,12 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
               return (
                 <button
                   onClick={() => { setActiveArchiveTab('tasks'); setShowArchiveModal(true); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 text-zinc-400 hover:text-violet-400 hover:border-violet-700 transition-all"
                 >
                   <Archive className="w-3.5 h-3.5" />
                   Ver Arquivados
                   {totalArchived > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">
+                    <span className="px-1.5 py-0.5 rounded-full bg-violet-900/30 text-violet-400 text-[10px] font-black">
                       {totalArchived}
                     </span>
                   )}
@@ -1409,7 +1409,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                   if (e.key === 'Escape') setRenamingColId(null);
                                 }}
                                 onBlur={() => renameColumn(col.id, renamingTitle || col.title)}
-                                className="flex-1 min-w-0 text-xs font-bold bg-transparent border-b border-violet-400 dark:border-violet-500 text-zinc-800 dark:text-white focus:outline-none pb-0.5"
+                                className="flex-1 min-w-0 text-xs font-bold bg-transparent border-b border-violet-500 text-white focus:outline-none pb-0.5"
                               />
                               <button
                                 onMouseDown={e => { e.preventDefault(); renameColumn(col.id, renamingTitle); }}
@@ -1426,23 +1426,23 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                             </>
                           ) : (
                             <>
-                              <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
+                              <h4 className="text-xs font-bold text-zinc-300 flex items-center gap-1.5 min-w-0">
                                 {(() => { const ColIcon = KANBAN_COL_ICON[col.id]; const colColor = KANBAN_COL_COLOR[col.id] || 'text-zinc-400'; return ColIcon ? <ColIcon className={`w-3.5 h-3.5 flex-shrink-0 ${colColor}`} /> : null; })()}
                                 <span className="truncate">{col.title}</span>
-                                <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                                <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400">
                                   {col.cards.length}
                                 </span>
                               </h4>
                               <button
                                 onClick={() => { setRenamingColId(col.id); setRenamingTitle(col.title); }}
-                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+                                className="flex-shrink-0 p-0.5 text-zinc-600 hover:text-zinc-400 transition-colors"
                                 title="Renomear coluna"
                               >
                                 <Pencil className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={() => deleteColumn(col.id)}
-                                className="flex-shrink-0 p-0.5 text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                className="flex-shrink-0 p-0.5 text-red-500 hover:text-red-400 transition-colors"
                                 title="Excluir coluna"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -1450,7 +1450,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                               <button
                                 onClick={() => moveColumn(col.id, 'left')}
                                 disabled={colIndex === 0}
-                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                className="flex-shrink-0 p-0.5 text-zinc-600 hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
                                 title="Mover coluna para a esquerda"
                               >
                                 <ChevronLeft className="w-3 h-3" />
@@ -1458,7 +1458,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                               <button
                                 onClick={() => moveColumn(col.id, 'right')}
                                 disabled={colIndex === visArr.length - 1}
-                                className="flex-shrink-0 p-0.5 text-zinc-300 dark:text-zinc-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                className="flex-shrink-0 p-0.5 text-zinc-600 hover:text-violet-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
                                 title="Mover coluna para a direita"
                               >
                                 <ChevronRight className="w-3 h-3" />
@@ -1473,7 +1473,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                               onClick={() => {
                                 if (confirm('Limpar todos os cards de "Finalizado"?')) clearColumn(col.id);
                               }}
-                              className="text-[9px] font-bold px-1.5 py-0.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              className="text-[9px] font-bold px-1.5 py-0.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-900/20 transition-colors"
                             >
                               Limpar
                             </button>
@@ -1496,8 +1496,8 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                             {...provided.droppableProps}
                             className={`flex-1 min-h-0 overflow-y-auto rounded-2xl p-2 flex flex-col gap-2 transition-colors ${
                               snapshot.isDraggingOver
-                                ? 'bg-violet-50 dark:bg-violet-900/20'
-                                : 'bg-zinc-50 dark:bg-zinc-800/30'
+                                ? 'bg-violet-900/20'
+                                : 'bg-zinc-800/30'
                             }`}
                           >
                             {col.cards.map((card, index) => {
@@ -1519,17 +1519,17 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
                                       onClick={() => setEditingCard({ card, colId: col.id })}
-                                      className={`bg-white dark:bg-zinc-800 border rounded-xl p-3 cursor-pointer select-none transition-all ${
+                                      className={`bg-zinc-800 border rounded-xl p-3 cursor-pointer select-none transition-all ${
                                         snapshot.isDragging
-                                          ? 'border-violet-400 dark:border-violet-600 shadow-lg shadow-violet-500/20 rotate-[1deg]'
+                                          ? 'border-violet-600 shadow-lg shadow-violet-500/20 rotate-[1deg]'
                                           : isOverdue
-                                          ? 'border-red-300 dark:border-red-700/60 hover:border-red-400 dark:hover:border-red-600'
+                                          ? 'border-red-700/60 hover:border-red-600'
                                           : isDueSoon
-                                          ? 'border-amber-300 dark:border-amber-700/60 hover:border-amber-400 dark:hover:border-amber-600'
-                                          : 'border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md'
+                                          ? 'border-amber-700/60 hover:border-amber-600'
+                                          : 'border-zinc-700 hover:border-violet-700 hover:shadow-md'
                                       }`}
                                     >
-                                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 leading-snug mb-2">
+                                      <p className="text-xs font-bold text-zinc-200 leading-snug mb-2">
                                         {card.title}
                                       </p>
 
@@ -1538,19 +1538,19 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                           {card.priority}
                                         </span>
                                         {isOverdue && (
-                                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-red-900/30 text-red-400">
                                             Atrasado
                                           </span>
                                         )}
                                         {isDueSoon && (
-                                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-400">
                                             Hoje/Amanhã
                                           </span>
                                         )}
                                       </div>
 
                                       {dateLabel && (
-                                        <div className={`flex items-center gap-1 text-[10px] ${isOverdue ? 'text-red-500 dark:text-red-400 font-bold' : 'text-zinc-400'}`}>
+                                        <div className={`flex items-center gap-1 text-[10px] ${isOverdue ? 'text-red-400 font-bold' : 'text-zinc-400'}`}>
                                           <Calendar className="w-3 h-3 flex-shrink-0" />
                                           {dateLabel}
                                         </div>
@@ -1571,7 +1571,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                                         return (
                                           <div className="flex justify-end mt-2">
                                             <div
-                                              className={`w-6 h-6 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-black ring-2 ring-white dark:ring-zinc-900`}
+                                              className={`w-6 h-6 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-black ring-2 ring-zinc-900`}
                                               title={fullName}
                                             >
                                               {initials}
@@ -1600,7 +1600,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                       {/* Add card button — pinned below the droppable */}
                       <button
                         onClick={() => setAddingToCol(col.id)}
-                        className="mt-2 w-full flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-500 transition-all text-[11px] font-bold flex-shrink-0"
+                        className="mt-2 w-full flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-dashed border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-500 transition-all text-[11px] font-bold flex-shrink-0"
                       >
                         <Plus className="w-3 h-3" /> Adicionar card
                       </button>
@@ -1621,7 +1621,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                           if (e.key === 'Escape') { setAddingCol(false); setNewColTitle(''); }
                         }}
                         placeholder="Nome da coluna..."
-                        className="w-full text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-violet-400 dark:border-violet-600 rounded-xl px-3 py-2 text-zinc-800 dark:text-white focus:outline-none placeholder:text-zinc-400"
+                        className="w-full text-xs font-bold bg-zinc-800 border border-violet-600 rounded-xl px-3 py-2 text-white focus:outline-none placeholder:text-zinc-400"
                       />
                       <div className="flex gap-1.5">
                         <button
@@ -1632,7 +1632,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                         </button>
                         <button
                           onClick={() => { setAddingCol(false); setNewColTitle(''); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-zinc-700 text-zinc-500 text-xs font-bold hover:bg-zinc-800 transition-colors"
                         >
                           <X className="w-3 h-3" /> Cancelar
                         </button>
@@ -1641,7 +1641,7 @@ const ClientWorkflowTab: React.FC<{ client: Client }> = ({ client }) => {
                   ) : (
                     <button
                       onClick={() => setAddingCol(true)}
-                      className="w-52 flex-shrink-0 h-16 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-500 dark:hover:border-violet-600 dark:hover:text-violet-400 transition-all text-xs font-bold self-start"
+                      className="w-52 flex-shrink-0 h-16 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-400 transition-all text-xs font-bold self-start"
                     >
                       <Plus className="w-4 h-4" /> Adicionar Coluna
                     </button>
@@ -1785,17 +1785,17 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
       <aside className="lg:w-60 flex-shrink-0 space-y-3">
 
         {/* Mini Calendar */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
 
           {/* Month navigation */}
           <div className="flex items-center justify-between mb-3">
-            <button onClick={prevCalMonth} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+            <button onClick={prevCalMonth} className="p-1 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+            <span className="text-xs font-bold text-zinc-300">
               {MONTHS_PT[calMonth]} {calYear}
             </span>
-            <button onClick={nextCalMonth} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+            <button onClick={nextCalMonth} className="p-1 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -1824,18 +1824,18 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
                   <div
                     className={`w-7 h-7 flex items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
                       isSelected
-                        ? 'ring-2 ring-violet-500 ring-offset-1 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300'
+                        ? 'ring-2 ring-violet-500 ring-offset-1 bg-violet-900/40 text-violet-300'
                         : isToday
                         ? 'bg-violet-600 text-white'
                         : hasEvent
-                        ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                        ? 'bg-violet-900/30 text-violet-300'
+                        : 'text-zinc-400 hover:bg-zinc-800'
                     }`}
                   >
                     {day}
                   </div>
                   {hasEvent && (
-                    <div className={`w-1 h-1 rounded-full mt-0.5 ${isToday ? 'bg-violet-300' : 'bg-violet-400 dark:bg-violet-500'}`} />
+                    <div className={`w-1 h-1 rounded-full mt-0.5 ${isToday ? 'bg-violet-300' : 'bg-violet-500'}`} />
                   )}
                 </div>
               );
@@ -1846,7 +1846,7 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
           {selectedDay && (
             <button
               onClick={() => setSelectedDay(null)}
-              className="mt-3 w-full text-center text-xs font-bold text-violet-600 dark:text-violet-400 py-1.5 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl transition-colors border border-violet-200 dark:border-violet-800/50"
+              className="mt-3 w-full text-center text-xs font-bold text-violet-400 py-1.5 hover:bg-violet-900/20 rounded-xl transition-colors border border-violet-800/50"
             >
               Ver todos ✕
             </button>
@@ -1854,7 +1854,7 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
         </div>
 
         {/* Filter buttons */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-2 mb-2">Filtrar por</p>
           <div className="space-y-1">
             {AGENDA_FILTERS.map(btn => (
@@ -1863,8 +1863,8 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
                 onClick={() => setActiveFilter(btn.id)}
                 className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                   activeFilter === btn.id
-                    ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                    ? 'bg-violet-900/30 text-violet-400'
+                    : 'text-zinc-400 hover:bg-zinc-800'
                 }`}
               >
                 {btn.label}
@@ -1879,13 +1879,13 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
       <div className="flex-1 min-w-0 space-y-3">
 
         {/* View toggle */}
-        <div className="flex bg-zinc-100 dark:bg-zinc-800/60 rounded-xl p-1 gap-1">
+        <div className="flex bg-zinc-800/60 rounded-xl p-1 gap-1">
           <button
             onClick={() => setViewMode('list')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'list'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                ? 'bg-zinc-700 text-white shadow-sm'
+                : 'text-zinc-400 hover:hover:text-zinc-300'
             }`}
           >
             📄 Visão em Lista
@@ -1894,8 +1894,8 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
             onClick={() => setViewMode('grid')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'grid'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                ? 'bg-zinc-700 text-white shadow-sm'
+                : 'text-zinc-400 hover:hover:text-zinc-300'
             }`}
           >
             📅 Visão Mensal
@@ -1915,13 +1915,13 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
           <>
             {/* Selected day indicator */}
             {selectedDay && (
-              <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 rounded-xl">
-                <span className="text-xs font-bold text-violet-700 dark:text-violet-400">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-violet-900/20 border border-violet-800/50 rounded-xl">
+                <span className="text-xs font-bold text-violet-400">
                   📅 {new Date(selectedDay + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
                 </span>
                 <button
                   onClick={() => setSelectedDay(null)}
-                  className="text-[10px] font-black text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                  className="text-[10px] font-black text-violet-500 hover:text-violet-300 transition-colors"
                 >
                   Limpar ✕
                 </button>
@@ -1930,12 +1930,12 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
 
             {/* Empty state */}
             {filteredEvents.length === 0 && (
-              <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center">
+              <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-8 text-center">
                 <div className="text-4xl mb-3">📅</div>
-                <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+                <p className="text-sm font-bold text-zinc-400">
                   {selectedDay ? 'Nenhum evento neste dia' : 'Nenhum evento encontrado'}
                 </p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   {selectedDay
                     ? 'Selecione outro dia ou clique em "Ver todos".'
                     : 'Clique em "Novo Evento" para adicionar.'}
@@ -1955,12 +1955,12 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
                 <div
                   key={event.id}
                   onClick={() => setEditingEvent(event)}
-                  className={`bg-white dark:bg-zinc-900 border rounded-2xl p-4 flex gap-4 transition-all hover:shadow-md cursor-pointer ${
+                  className={`bg-zinc-900 border rounded-2xl p-4 flex gap-4 transition-all hover:shadow-md cursor-pointer ${
                     isToday
-                      ? 'border-indigo-400 dark:border-indigo-600/70 shadow-sm shadow-indigo-500/10'
+                      ? 'border-indigo-600/70 shadow-sm shadow-indigo-500/10'
                       : isTomorrow
-                      ? 'border-amber-300 dark:border-amber-700/50'
-                      : 'border-zinc-200 dark:border-zinc-800'
+                      ? 'border-amber-700/50'
+                      : 'border-zinc-800'
                   }`}
                 >
                   {/* Date block */}
@@ -1976,34 +1976,34 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
                     {(isToday || isTomorrow) && (
                       <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full ${
                         isToday
-                          ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                          : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                          ? 'bg-indigo-900/30 text-indigo-400'
+                          : 'bg-amber-900/30 text-amber-400'
                       }`}>
                         {isToday ? '🚨 Ocorre Hoje!' : '⏰ Amanhã'}
                       </span>
                     )}
 
                     {/* Title */}
-                    <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug">
+                    <h4 className="text-sm font-bold text-white leading-snug">
                       {event.title}
                     </h4>
 
                     {/* Time + type + location badges */}
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                      <span className="text-[11px] font-bold text-zinc-400">
                         {event.startTime} — {event.endTime}
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
                         {style.emoji} {event.type}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-zinc-800 text-zinc-400 border-zinc-700">
                         {locLabel.emoji} {locLabel.label}
                       </span>
                     </div>
 
                     {/* Address */}
                     {event.address && (
-                      <div className="flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <div className="flex items-center gap-1 text-[11px] text-zinc-400">
                         <MapPin className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">{event.address}</span>
                       </div>
@@ -2011,7 +2011,7 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
 
                     {/* Equipment notes */}
                     {event.notes && (
-                      <div className="flex items-start gap-1 text-[11px] text-zinc-400 dark:text-zinc-500 italic">
+                      <div className="flex items-start gap-1 text-[11px] text-zinc-500 italic">
                         <Briefcase className="w-3 h-3 flex-shrink-0 mt-0.5" />
                         <span className="line-clamp-2">{event.notes}</span>
                       </div>
@@ -2026,23 +2026,23 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
 
         {/* ══ GRID VIEW ══ */}
         {viewMode === 'grid' && (
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
             {/* Grid month header — synced with mini-calendar */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 dark:border-zinc-800">
-              <button onClick={prevCalMonth} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800">
+              <button onClick={prevCalMonth} className="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+              <span className="text-sm font-bold text-zinc-200">
                 {MONTHS_PT[calMonth]} {calYear}
               </span>
-              <button onClick={nextCalMonth} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
+              <button onClick={nextCalMonth} className="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
             {/* DOW header */}
-            <div className="grid grid-cols-7 border-b border-zinc-100 dark:border-zinc-800">
+            <div className="grid grid-cols-7 border-b border-zinc-800">
               {DOW_FULL_PT.map(d => (
                 <div key={d} className="py-2 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
                   {d}
@@ -2057,7 +2057,7 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
                 if (!day) return (
                   <div
                     key={i}
-                    className={`min-h-24 border-b border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/60 dark:bg-zinc-950/40 ${!isLastCol ? 'border-r' : ''}`}
+                    className={`min-h-24 border-b border-zinc-800/60 bg-zinc-950/40 ${!isLastCol ? 'border-r' : ''}`}
                   />
                 );
                 const ds      = toDayStr(day);
@@ -2066,10 +2066,10 @@ const ClientAgendaTab: React.FC<ClientAgendaTabProps> = ({ client, pendingEventT
                 return (
                   <div
                     key={i}
-                    className={`min-h-24 border-b border-zinc-100 dark:border-zinc-800/60 p-1.5 ${!isLastCol ? 'border-r' : ''} ${isToday ? 'bg-violet-50/60 dark:bg-violet-950/20' : ''}`}
+                    className={`min-h-24 border-b border-zinc-800/60 p-1.5 ${!isLastCol ? 'border-r' : ''} ${isToday ? 'bg-violet-950/20' : ''}`}
                   >
                     <div className={`w-6 h-6 flex items-center justify-center rounded-full text-[11px] font-bold mb-1 ${
-                      isToday ? 'bg-violet-600 text-white' : 'text-zinc-500 dark:text-zinc-400'
+                      isToday ? 'bg-violet-600 text-white' : 'text-zinc-400'
                     }`}>
                       {day}
                     </div>
@@ -2155,7 +2155,7 @@ const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => v
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Acervo de Backups</h3>
+          <h3 className="text-sm font-bold text-white">Acervo de Backups</h3>
           <p className="text-xs text-zinc-400 mt-0.5">
             {displayItems.length === 0
               ? 'Nenhum backup vinculado a este cliente'
@@ -2195,7 +2195,7 @@ const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => v
 
               {/* Title */}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">
+                <p className="font-bold text-sm text-white leading-tight line-clamp-2">
                   {rec.title}
                 </p>
                 {rec.summary && (
@@ -2240,12 +2240,12 @@ const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => v
 
       {/* ── Empty state ── */}
       {displayItems.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
-          <HardDrive className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-          <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+        <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-10 text-center">
+          <HardDrive className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+          <p className="text-sm font-bold text-zinc-400">
             Nenhum backup registrado para este cliente ainda.
           </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 max-w-xs mx-auto mb-5">
+          <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto mb-5">
             Faça um ingest no Hub de Arquivos e vincule este cliente no campo &quot;Cliente Relacionado&quot;.
           </p>
           {onNavigateToArquivos && (
@@ -2285,17 +2285,17 @@ const DELIVERABLE_STATUS_CONFIG: Record<DeliverableStatus, { label: string; Icon
   'aguardando': {
     label: 'Aguardando Aprovação',
     Icon: Clock,
-    badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50',
+    badge: 'bg-amber-900/20 text-amber-400 border-amber-800/50',
   },
   'aprovado': {
     label: 'Aprovado',
     Icon: CheckCircle,
-    badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+    badge: 'bg-emerald-900/20 text-emerald-400 border-emerald-800/50',
   },
   'alteracao': {
     label: 'Pedido de Alteração',
     Icon: RotateCcw,
-    badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50',
+    badge: 'bg-orange-900/20 text-orange-400 border-orange-800/50',
   },
 };
 
@@ -2349,17 +2349,17 @@ interface ScriptPackage {
 const SCRIPT_STATUS_CYCLE: ScriptStatus[] = ['Rascunho', 'Aprovado', 'Gravado'];
 
 const SCRIPT_STATUS_STYLES: Record<ScriptStatus, string> = {
-  'Rascunho': 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
-  'Aprovado': 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/50',
-  'Gravado':  'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+  'Rascunho': 'bg-zinc-800 text-zinc-400 border-zinc-700',
+  'Aprovado': 'bg-sky-900/30 text-sky-400 border-sky-800/50',
+  'Gravado':  'bg-emerald-900/30 text-emerald-400 border-emerald-800/50',
 };
 
 type PortalScriptStatus = NonNullable<ScriptDocument['portalStatus']>;
 
 const PORTAL_SCRIPT_STATUS_CONFIG: Record<PortalScriptStatus, { label: string; badge: string }> = {
-  aguardando_cliente: { label: 'Aguardando Cliente', badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
-  aprovado_cliente:   { label: 'Aprovado',           badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
-  refacao:            { label: 'Refação',             badge: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' },
+  aguardando_cliente: { label: 'Aguardando Cliente', badge: 'bg-amber-900/20 text-amber-400 border-amber-800/50' },
+  aprovado_cliente:   { label: 'Aprovado',           badge: 'bg-emerald-900/20 text-emerald-400 border-emerald-800/50' },
+  refacao:            { label: 'Refação',             badge: 'bg-orange-900/20 text-orange-400 border-orange-800/50' },
 };
 
 const buildDefaultScriptPackages = (): ScriptPackage[] => [
@@ -2691,7 +2691,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             {hasChildren ? (
               <button
                 onClick={() => toggleFolderExpanded(pkg.id)}
-                className="p-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0"
+                className="p-0.5 text-zinc-400 hover:text-zinc-300 transition-colors flex-shrink-0"
               >
                 <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
               </button>
@@ -2702,8 +2702,8 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
               onClick={() => setSelectedPkgId(pkg.id)}
               className={`flex-1 flex items-center gap-2 px-2 py-2.5 rounded-xl text-sm font-bold transition-all text-left min-w-0 ${
                 isSelected
-                  ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  ? 'bg-violet-900/30 text-violet-300'
+                  : 'text-zinc-400 hover:bg-zinc-800'
               }`}
             >
               <Folder className="w-3.5 h-3.5 flex-shrink-0" />
@@ -2712,7 +2712,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             </button>
             <button
               onClick={() => { setAddingSubFolderFor(pkg.id); setNewSubFolderTitle(''); }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-violet-500 transition-all rounded-lg flex-shrink-0"
+              className="opacity-0 group-hover:opacity-100 p-1 text-zinc-700 hover:text-violet-500 transition-all rounded-lg flex-shrink-0"
               title="Nova subpasta"
             >
               <FolderPlus className="w-3 h-3" />
@@ -2722,7 +2722,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
               className={`opacity-0 group-hover:opacity-100 p-1 transition-all rounded-lg flex-shrink-0 ${
                 pkg.isPinnedToTimeline
                   ? 'text-amber-500 opacity-100'
-                  : 'text-zinc-300 dark:text-zinc-700 hover:text-amber-500'
+                  : 'text-zinc-700 hover:text-amber-500'
               }`}
               title="Destacar na Timeline"
             >
@@ -2730,7 +2730,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             </button>
             <button
               onClick={() => { if (confirm(`Excluir pasta "${pkg.title}"?`)) deletePackage(pkg.id); }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
+              className="opacity-0 group-hover:opacity-100 p-1 text-zinc-700 hover:text-red-500 transition-all rounded-lg flex-shrink-0"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -2748,7 +2748,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   if (e.key === 'Escape') { setAddingSubFolderFor(null); setNewSubFolderTitle(''); }
                 }}
                 placeholder="Nome da subpasta…"
-                className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
+                className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
               />
               <button onClick={() => addSubFolder(pkg.id)} className="p-1.5 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors">
                 <Check className="w-3 h-3" />
@@ -2774,26 +2774,26 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
         const archived = collectArchivedScripts(packages);
         return (
           <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
-              <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+              <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Archive className="w-4 h-4 text-violet-500" />
                   <div>
-                    <h2 className="text-base font-bold text-zinc-900 dark:text-white">Roteiros Arquivados</h2>
+                    <h2 className="text-base font-bold text-white">Roteiros Arquivados</h2>
                     <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
                       Itens na lixeira são excluídos permanentemente após 15 dias.
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setShowScriptArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+                <button onClick={() => setShowScriptArchiveModal(false)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto px-4 py-4">
                 {archived.length === 0 ? (
                   <div className="py-12 flex flex-col items-center text-center">
-                    <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <Archive className="w-8 h-8 text-zinc-600 mb-3" />
                     <p className="text-sm text-zinc-500">Nenhum roteiro arquivado.</p>
                   </div>
                 ) : (
@@ -2804,9 +2804,9 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                         ? Math.ceil((ARCHIVE_RETENTION_MS - (Date.now() - archivedDate.getTime())) / (24 * 60 * 60 * 1000))
                         : null;
                       return (
-                        <div key={script.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                        <div key={script.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-800/40">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{script.title || 'Sem título'}</p>
+                            <p className="text-sm font-bold text-zinc-300 truncate">{script.title || 'Sem título'}</p>
                             <p className="text-xs text-zinc-400 mt-0.5">{pkgTitle}</p>
                             {archivedDate && (
                               <p className={`text-[10px] mt-0.5 font-bold ${daysLeft !== null && daysLeft <= 3 ? 'text-red-400' : 'text-zinc-400'}`}>
@@ -2816,7 +2816,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                           </div>
                           <button
                             onClick={() => restoreScript(pkgId, script.id)}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-800/50 text-violet-400 hover:bg-violet-900/20 transition-all"
                           >
                             <RotateCcw className="w-3 h-3" /> Restaurar
                           </button>
@@ -2849,12 +2849,12 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
       {/* ── Sidebar: Packages ── */}
       <aside className="w-full lg:w-56 xl:w-64 flex-shrink-0">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 lg:sticky lg:top-4">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 lg:sticky lg:top-4">
           <div className="flex items-center justify-between px-2 py-2 mb-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pacotes</span>
             <button
               onClick={() => setIsAddingPkg(true)}
-              className="p-1 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/30 text-violet-500 transition-colors"
+              className="p-1 rounded-lg hover:bg-violet-900/30 text-violet-500 transition-colors"
               title="Nova Pasta"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -2873,7 +2873,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   if (e.key === 'Escape') { setIsAddingPkg(false); setNewPkgTitle(''); }
                 }}
                 placeholder="Ex: Março 2026"
-                className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
+                className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500 placeholder:text-zinc-400"
               />
               <button onClick={addPackage} className="p-1.5 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors">
                 <Check className="w-3 h-3" />
@@ -2902,7 +2902,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
             {/* Top bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="font-black text-lg text-zinc-900 dark:text-white flex items-center gap-2">
+                <h2 className="font-black text-lg text-white flex items-center gap-2">
                   <Folder className="w-5 h-5 text-violet-500 flex-shrink-0" />
                   {selectedPkg.title}
                 </h2>
@@ -2916,20 +2916,20 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
               {(() => { const count = collectArchivedScripts(packages).length; return (
                 <button
                   onClick={() => setShowScriptArchiveModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-zinc-700 text-zinc-400 hover:text-violet-400 hover:border-violet-700 transition-all"
                 >
                   <Archive className="w-3.5 h-3.5" />
                   Ver Arquivados
-                  {count > 0 && <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">{count}</span>}
+                  {count > 0 && <span className="px-1.5 py-0.5 rounded-full bg-violet-900/30 text-violet-400 text-[10px] font-black">{count}</span>}
                 </button>
               ); })()}
-              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1 gap-1">
+              <div className="flex items-center bg-zinc-800 rounded-xl p-1 gap-1">
                 <button
                   onClick={() => setViewMode('edicao')}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                     viewMode === 'edicao'
-                      ? 'bg-white dark:bg-zinc-700 text-violet-700 dark:text-violet-300 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                      ? 'bg-zinc-700 text-violet-300 shadow-sm'
+                      : 'text-zinc-400 hover:hover:text-zinc-200'
                   }`}
                 >
                   <PenLine className="w-3.5 h-3.5" />
@@ -2939,8 +2939,8 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                   onClick={() => setViewMode('shotlist')}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                     viewMode === 'shotlist'
-                      ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-300 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                      ? 'bg-zinc-700 text-indigo-300 shadow-sm'
+                      : 'text-zinc-400 hover:hover:text-zinc-200'
                   }`}
                 >
                   <Film className="w-3.5 h-3.5" />
@@ -2960,10 +2960,10 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
             {/* Empty state */}
             {selectedPkg.scripts.filter(s => !s.isArchived).length === 0 && (
-              <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
-                <FileText className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-                <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum roteiro neste pacote.</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Clique em "+ Criar Roteiro" para começar.</p>
+              <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-10 text-center">
+                <FileText className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+                <p className="text-sm font-bold text-zinc-400">Nenhum roteiro neste pacote.</p>
+                <p className="text-xs text-zinc-500 mt-1">Clique em "+ Criar Roteiro" para começar.</p>
               </div>
             )}
 
@@ -2975,15 +2975,15 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
               return (
                 <div
                   key={script.id}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-violet-200 dark:hover:border-violet-800/50"
+                  className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-violet-800/50"
                 >
                   {/* ── Accordion Header ── */}
                   <div
-                    className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-zinc-800/50 transition-colors"
                     onClick={() => setExpandedId(isOpen ? null : script.id)}
                   >
                     <ChevronDown className={`w-4 h-4 text-zinc-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                    <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center text-[10px] font-black flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-violet-900/40 text-violet-300 flex items-center justify-center text-[10px] font-black flex-shrink-0">
                       {idx + 1}
                     </div>
                     <input
@@ -2991,7 +2991,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       value={script.title}
                       onChange={e => { e.stopPropagation(); updateScript(selectedPkg.id, { ...script, title: e.target.value }); }}
                       onClick={e => e.stopPropagation()}
-                      className="flex-1 min-w-0 bg-transparent font-bold text-sm text-zinc-900 dark:text-white focus:outline-none placeholder:text-zinc-400 cursor-text"
+                      className="flex-1 min-w-0 bg-transparent font-bold text-sm text-white focus:outline-none placeholder:text-zinc-400 cursor-text"
                       placeholder="Título do roteiro…"
                     />
                     {viewMode === 'shotlist' && script.scenes.length > 0 && (
@@ -3020,7 +3020,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                     {!script.portalStatus && (
                       <button
                         onClick={e => { e.stopPropagation(); sendToPortal(selectedPkg.id, script); }}
-                        className="flex-shrink-0 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                        className="flex-shrink-0 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border border-violet-800 text-violet-400 hover:bg-violet-900/20 transition-all"
                         title="Enviar para aprovação do cliente"
                       >
                         <UploadCloud className="w-3 h-3" /> Enviar
@@ -3031,8 +3031,8 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                       disabled={!!script.inWorkflow}
                       className={`flex-shrink-0 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all ${
                         script.inWorkflow
-                          ? 'border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 cursor-not-allowed opacity-70'
-                          : 'border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
+                          ? 'border-emerald-800 text-emerald-400 bg-emerald-900/10 cursor-not-allowed opacity-70'
+                          : 'border-indigo-800 text-indigo-400 hover:bg-indigo-900/20'
                       }`}
                       title={script.inWorkflow ? 'Já está no Workflow' : 'Enviar para o Workflow'}
                     >
@@ -3043,7 +3043,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); if (confirm(`Excluir "${script.title}"?`)) deleteScript(selectedPkg.id, script.id); }}
-                      className="flex-shrink-0 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded-lg"
+                      className="flex-shrink-0 p-1 text-zinc-700 hover:text-red-500 transition-colors rounded-lg"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -3051,7 +3051,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
                   {/* ── Accordion Body ── */}
                   {isOpen && (
-                    <div className="border-t border-zinc-100 dark:border-zinc-800 px-5 py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="border-t border-zinc-800 px-5 py-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
 
                       {/* ── Global storyboard action ── */}
                       <div className="flex flex-wrap items-center gap-3">
@@ -3061,10 +3061,10 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                           disabled={storyboardUsed >= STORYBOARD_LIMIT || !!generatingStoryboard}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black transition-all ${
                             storyboardUsed >= STORYBOARD_LIMIT
-                              ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
+                              ? 'border-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
                               : generatingStoryboard === script.id
-                                ? 'border-indigo-300 dark:border-indigo-700 text-indigo-400 animate-pulse cursor-wait'
-                                : 'border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400'
+                                ? 'border-indigo-700 text-indigo-400 animate-pulse cursor-wait'
+                                : 'border-indigo-800 text-indigo-400 hover:bg-indigo-900/20 hover:border-indigo-400'
                           }`}
                         >
                           {generatingStoryboard === script.id
@@ -3088,13 +3088,13 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                           {/* Writing mode toggle */}
                           <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Formato</span>
-                            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5 gap-0.5">
+                            <div className="flex items-center bg-zinc-800 rounded-lg p-0.5 gap-0.5">
                               <button
                                 onClick={() => updateScript(selectedPkg.id, { ...script, writingMode: 'structured' })}
                                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-black transition-all ${
                                   wMode === 'structured'
-                                    ? 'bg-white dark:bg-zinc-700 text-violet-700 dark:text-violet-300 shadow-sm'
-                                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                                    ? 'bg-zinc-700 text-violet-300 shadow-sm'
+                                    : 'text-zinc-400 hover:hover:text-zinc-200'
                                 }`}
                               >
                                 <LayoutDashboard className="w-3 h-3" /> Layout Estruturado
@@ -3103,8 +3103,8 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                 onClick={() => updateScript(selectedPkg.id, { ...script, writingMode: 'free' })}
                                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-black transition-all ${
                                   wMode === 'free'
-                                    ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-300 shadow-sm'
-                                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                                    ? 'bg-zinc-700 text-indigo-300 shadow-sm'
+                                    : 'text-zinc-400 hover:hover:text-zinc-200'
                                 }`}
                               >
                                 <PenLine className="w-3 h-3" /> Escrita Livre
@@ -3151,13 +3151,13 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                   <div className="flex items-center gap-3">
                                     <button
                                       onClick={() => addScene(selectedPkg.id, script)}
-                                      className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                                      className="flex items-center gap-1 text-xs font-bold text-violet-500 hover:text-violet-300 transition-colors"
                                     >
                                       <Plus className="w-3 h-3" /> Cena
                                     </button>
                                     <button
                                       onClick={() => addFreeTextBlock(selectedPkg.id, script)}
-                                      className="flex items-center gap-1 text-xs font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                                      className="flex items-center gap-1 text-xs font-bold text-zinc-400 hover:text-zinc-300 transition-colors"
                                     >
                                       <AlignLeft className="w-3 h-3" /> Bloco Livre
                                     </button>
@@ -3168,7 +3168,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                     scene.type === 'free_text' ? (
                                       <div
                                         key={scene.id}
-                                        className="bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-4 space-y-2"
+                                        className="bg-zinc-950 border border-dashed border-zinc-700 rounded-xl p-4 space-y-2"
                                       >
                                         <div className="flex items-center justify-between">
                                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
@@ -3191,7 +3191,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                             </button>
                                             <button
                                               onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
-                                              className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                              className="p-1 text-zinc-700 hover:text-red-500 transition-colors rounded"
                                             >
                                               <X className="w-3 h-3" />
                                             </button>
@@ -3208,7 +3208,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                     ) : (
                                     <div
                                       key={scene.id}
-                                      className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3"
+                                      className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3"
                                     >
                                       <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Cena {sIdx + 1}</span>
@@ -3230,7 +3230,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                           {script.scenes.length > 1 && (
                                             <button
                                               onClick={() => deleteScene(selectedPkg.id, script, scene.id)}
-                                              className="p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-colors rounded"
+                                              className="p-1 text-zinc-700 hover:text-red-500 transition-colors rounded"
                                             >
                                               <X className="w-3 h-3" />
                                             </button>
@@ -3287,9 +3287,9 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                         /* ─── SHOTLIST MODE ─── */
                         <>
                           {script.gancho && (
-                            <div className="flex gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl">
+                            <div className="flex gap-3 px-4 py-3 bg-indigo-900/20 border border-indigo-800/50 rounded-xl">
                               <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
-                              <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300 italic leading-relaxed">
+                              <p className="text-sm font-bold text-indigo-300 italic leading-relaxed">
                                 &ldquo;{script.gancho}&rdquo;
                               </p>
                             </div>
@@ -3322,15 +3322,15 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                 <div
                                   className={`flex items-start gap-4 px-4 py-4 rounded-xl border-2 transition-all cursor-pointer ${
                                     scene.isChecked
-                                      ? 'border-emerald-300 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/10 opacity-60'
-                                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700'
+                                      ? 'border-emerald-700/50 bg-emerald-900/10 opacity-60'
+                                      : 'border-zinc-800 bg-zinc-900 hover:border-indigo-700'
                                   }`}
                                   onClick={() => toggleSceneCheck(selectedPkg.id, script, scene.id)}
                                 >
                                   <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
                                     scene.isChecked
                                       ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-zinc-300 dark:border-zinc-600'
+                                      : 'border-zinc-600'
                                   }`}>
                                     {scene.isChecked && <Check className="w-3 h-3 text-white" />}
                                   </div>
@@ -3338,11 +3338,11 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                     <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${scene.isChecked ? 'text-emerald-500' : 'text-indigo-400'}`}>
                                       CENA {sIdx + 1}
                                     </p>
-                                    <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                                    <p className={`text-sm font-bold leading-relaxed ${scene.isChecked ? 'line-through text-zinc-600' : 'text-zinc-200'}`}>
                                       {scene.visual || '(sem descrição visual)'}
                                     </p>
                                     {scene.audio && (
-                                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 italic leading-relaxed">
+                                      <p className="text-xs text-zinc-400 mt-1 italic leading-relaxed">
                                         &ldquo;{scene.audio}&rdquo;
                                       </p>
                                     )}
@@ -3359,7 +3359,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                                 <span className="text-[10px] font-bold text-zinc-400">Progresso no Set</span>
                                 <span className="text-[10px] font-black text-zinc-500 tabular-nums">{checkedCount}/{script.scenes.length} cenas</span>
                               </div>
-                              <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                                 <div
                                   className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
                                   style={{ width: `${(checkedCount / script.scenes.length) * 100}%` }}
@@ -3393,13 +3393,13 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
                               .map((sc, i) => {
                                 const structuredIdx = script.scenes.filter(s => !s.type || s.type === 'scene').findIndex(s => s.id === sc.id);
                                 return (
-                                  <div key={sc.id} className="rounded-xl overflow-hidden border border-indigo-200 dark:border-indigo-800/50">
+                                  <div key={sc.id} className="rounded-xl overflow-hidden border border-indigo-800/50">
                                     <img
                                       src={sc.storyboardUrl}
                                       alt={`Storyboard cena ${i + 1}`}
                                       className="w-full h-auto object-cover"
                                     />
-                                    <p className="px-2 py-1.5 text-[10px] font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 uppercase tracking-wider">
+                                    <p className="px-2 py-1.5 text-[10px] font-black text-indigo-500 bg-indigo-900/20 uppercase tracking-wider">
                                       Cena {structuredIdx + 1}
                                     </p>
                                   </div>
@@ -3411,11 +3411,11 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
                       {/* ── Client feedback from portal ── */}
                       {script.portalStatus === 'refacao' && script.clientFeedback && (
-                        <div className="px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40">
+                        <div className="px-4 py-3 rounded-xl bg-orange-900/10 border border-orange-800/40">
                           <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1.5 flex items-center gap-1.5">
                             <AlertTriangle className="w-3 h-3" /> Feedback do Cliente (Portal)
                           </p>
-                          <p className="text-xs text-zinc-700 dark:text-zinc-300 italic leading-relaxed">
+                          <p className="text-xs text-zinc-300 italic leading-relaxed">
                             &ldquo;{script.clientFeedback}&rdquo;
                           </p>
                         </div>
@@ -3423,7 +3423,7 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
 
                       {/* ── Portal rating ── */}
                       {script.portalStatus === 'aprovado_cliente' && !!script.rating && script.rating > 0 && (
-                        <div className="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40">
+                        <div className="px-4 py-3 rounded-xl bg-amber-900/10 border border-amber-800/40">
                           <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-1.5">
                             <Star className="w-3 h-3" style={{ fill: '#f59e0b', stroke: '#f59e0b' }} /> Avaliação do Cliente (Portal)
                           </p>
@@ -3460,20 +3460,20 @@ const HOW_TO_USE_STEPS = [
 
 const HowToUseModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+    <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-800">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">Como Usar — Ideias Infinitas</h2>
+            <h2 className="text-base font-black text-white">Como Usar — Ideias Infinitas</h2>
             <p className="text-xs text-zinc-400">5 passos para gerar conteúdo de alto impacto</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+        <button onClick={onClose} className="p-2 text-zinc-400 hover:hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -3482,22 +3482,22 @@ const HowToUseModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
         {HOW_TO_USE_STEPS.map((step, i) => (
           <div key={i} className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-sm font-black flex-shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-full bg-violet-900/40 text-violet-400 flex items-center justify-center text-sm font-black flex-shrink-0 mt-0.5">
               {i + 1}
             </div>
             <div>
-              <p className="font-bold text-sm text-zinc-900 dark:text-white">{step.title}</p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed">{step.desc}</p>
+              <p className="font-bold text-sm text-white">{step.title}</p>
+              <p className="text-sm text-zinc-400 mt-0.5 leading-relaxed">{step.desc}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Expert tip + close */}
-      <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl px-4 py-3">
-          <p className="text-xs font-black text-amber-700 dark:text-amber-400 mb-1">💡 Dica de Especialista</p>
-          <p className="text-xs text-amber-700/80 dark:text-amber-400/80 leading-relaxed">
+      <div className="px-6 py-4 border-t border-zinc-800 space-y-3">
+        <div className="bg-amber-900/20 border border-amber-800/50 rounded-2xl px-4 py-3">
+          <p className="text-xs font-black text-amber-400 mb-1">💡 Dica de Especialista</p>
+          <p className="text-xs text-amber-400/80 leading-relaxed">
             Gere ideias em lotes temáticos — 4 a 6 ideias sobre o mesmo tema criam uma série com alta retenção de audiência.
           </p>
         </div>
@@ -3604,22 +3604,22 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-800">
           <div className="flex-1 min-w-0 pr-4">
             <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">Roteiro Completo</span>
-            <h2 className="text-base font-black text-zinc-900 dark:text-white leading-snug mt-1">{currentIdea.title}</h2>
+            <h2 className="text-base font-black text-white leading-snug mt-1">{currentIdea.title}</h2>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {currentIdea.tags.map(tag => (
-                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-900/40 text-violet-300 border border-violet-800/50">
                   {tag}
                 </span>
               ))}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0">
+          <button onClick={onClose} className="p-2 text-zinc-400 hover:hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -3629,39 +3629,39 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
 
           {/* Loading overlay for variation */}
           {isGeneratingVariation && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-900/20 border border-violet-800/50 animate-in fade-in duration-200">
               <Loader2 className="w-4 h-4 text-violet-500 animate-spin flex-shrink-0" />
-              <p className="text-xs font-bold text-violet-700 dark:text-violet-300">Gerando variação com IA… aguarde um instante.</p>
+              <p className="text-xs font-bold text-violet-300">Gerando variação com IA… aguarde um instante.</p>
             </div>
           )}
 
           {/* Workflow toast */}
           {workflowToast && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-900/20 border border-emerald-800/50 animate-in fade-in duration-200">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✅ Card criado no Workflow de Produção!</p>
+              <p className="text-xs font-bold text-emerald-300">✅ Card criado no Workflow de Produção!</p>
             </div>
           )}
 
           {/* Roteiros save toast */}
           {roteirosSaveToast && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-900/20 border border-violet-800/50 animate-in fade-in duration-200">
               <CheckCircle2 className="w-4 h-4 text-violet-500 flex-shrink-0" />
-              <p className="text-xs font-bold text-violet-700 dark:text-violet-300">✅ Roteiro salvo na Sala de Roteiros!</p>
+              <p className="text-xs font-bold text-violet-300">✅ Roteiro salvo na Sala de Roteiros!</p>
             </div>
           )}
           {roteirosError && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-900/20 border border-red-800/50 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-xs font-bold text-red-700 dark:text-red-300">{roteirosError}</p>
+              <p className="text-xs font-bold text-red-300">{roteirosError}</p>
             </div>
           )}
 
           {/* Hook */}
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">🎣 Hook (Gancho)</p>
-            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed">&ldquo;{currentIdea.gancho}&rdquo;</p>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3">
+              <p className="text-sm text-zinc-300 italic leading-relaxed">&ldquo;{currentIdea.gancho}&rdquo;</p>
             </div>
           </div>
 
@@ -3671,17 +3671,17 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
             <div className="space-y-3">
               {currentIdea.script.slides.map((slide, i) => (
                 <div key={i} className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
                     {i + 1}
                   </div>
-                  <div className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl px-3 py-2.5 space-y-1.5">
+                  <div className="flex-1 min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 space-y-1.5">
                     <div className="flex items-start gap-1.5">
                       <span className="text-[10px] font-black text-violet-500 mt-0.5 flex-shrink-0">📷 Visual:</span>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{slide.visual}</p>
+                      <p className="text-xs text-zinc-400 leading-relaxed">{slide.visual}</p>
                     </div>
                     <div className="flex items-start gap-1.5">
-                      <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0">🎙 Áudio:</span>
-                      <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed">&ldquo;{slide.audio}&rdquo;</p>
+                      <span className="text-[10px] font-black text-emerald-400 mt-0.5 flex-shrink-0">🎙 Áudio:</span>
+                      <p className="text-xs font-medium text-zinc-200 leading-relaxed">&ldquo;{slide.audio}&rdquo;</p>
                     </div>
                   </div>
                 </div>
@@ -3692,29 +3692,29 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
           {/* CTA */}
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">📣 CTA</p>
-            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
-              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{currentIdea.cta}</p>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3">
+              <p className="text-sm font-bold text-zinc-200">{currentIdea.cta}</p>
             </div>
           </div>
 
           {/* Caption + Hashtags */}
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">💬 Legenda & Hashtags</p>
-            <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 rounded-2xl px-4 py-4 space-y-3">
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">{currentIdea.script.caption}</p>
-              <div className="h-px bg-violet-200 dark:bg-violet-800/50" />
-              <p className="text-xs font-bold text-violet-600 dark:text-violet-400 leading-relaxed">{currentIdea.script.hashtags}</p>
+            <div className="bg-violet-900/20 border border-violet-800/50 rounded-2xl px-4 py-4 space-y-3">
+              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">{currentIdea.script.caption}</p>
+              <div className="h-px bg-violet-800/50" />
+              <p className="text-xs font-bold text-violet-400 leading-relaxed">{currentIdea.script.hashtags}</p>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+        <div className="px-6 py-4 border-t border-zinc-800 space-y-3">
           <div className="flex gap-2">
             <button
               onClick={handleGenerateVariation}
               disabled={isGeneratingVariation}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-2 border-zinc-700 rounded-xl text-xs font-bold text-zinc-400 hover:border-violet-600 hover:text-violet-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGeneratingVariation
                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando…</>
@@ -3723,17 +3723,17 @@ const ScriptModal: React.FC<ScriptModalProps> = ({ idea, onClose, onSendToWorkfl
             </button>
             <button
               onClick={copyAll}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 transition-all"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-2 border-zinc-700 rounded-xl text-xs font-bold text-zinc-400 hover:border-zinc-500 transition-all"
             >
               {copiedAll ? (
-                <span className="text-emerald-600 dark:text-emerald-400">✓ Copiado!</span>
+                <span className="text-emerald-400">✓ Copiado!</span>
               ) : (
                 <><Copy className="w-3.5 h-3.5" /> 📋 Copiar Tudo</>
               )}
             </button>
           </div>
 
-          <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+          <div className="rounded-2xl bg-zinc-950 border border-zinc-800 p-3 space-y-2">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">⚡ Ações do Creator Flow</p>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -3829,7 +3829,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
       {/* ══ NOVA ENTREGA ══ */}
       <section>
         <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Nova Entrega de Vídeo</h2>
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
           {/* Drag-and-drop area */}
           <div
@@ -3838,19 +3838,19 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
             onDrop={e => { e.preventDefault(); setIsDragging(false); }}
             className={`flex flex-col items-center justify-center gap-3 px-6 py-10 border-b border-dashed transition-all ${
               isDragging
-                ? 'border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/10'
-                : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30'
+                ? 'border-violet-600 bg-violet-900/10'
+                : 'border-zinc-700 bg-zinc-800/30'
             }`}
           >
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
               isDragging
-                ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-500'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
+                ? 'bg-violet-900/40 text-violet-500'
+                : 'bg-zinc-800 text-zinc-400'
             }`}>
               <UploadCloud className="w-6 h-6" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Arraste o vídeo finalizado</p>
+              <p className="text-sm font-bold text-zinc-300">Arraste o vídeo finalizado</p>
               <p className="text-xs text-zinc-400 mt-0.5">ou cole o link (Drive / Vimeo) abaixo</p>
             </div>
           </div>
@@ -3893,7 +3893,7 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
                     className={`flex-1 py-2.5 rounded-xl text-xs font-black border transition-all ${
                       formExpiry === days
                         ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/25'
-                        : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300'
+                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-300'
                     }`}
                   >
                     {days}d
@@ -3903,9 +3903,9 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
             </div>
 
             {genLinkToast && (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 animate-in fade-in duration-200">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-900/20 border border-emerald-800/50 animate-in fade-in duration-200">
                 <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Link de aprovação gerado e copiado!</p>
+                <p className="text-xs font-bold text-emerald-300">Link de aprovação gerado e copiado!</p>
               </div>
             )}
 
@@ -3926,16 +3926,16 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Vídeos Enviados</h2>
           {deliverables.length > 0 && (
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400">
               {deliverables.length}
             </span>
           )}
         </div>
 
         {deliverables.length === 0 && (
-          <div className="py-16 text-center rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800">
-            <Film className="w-10 h-10 mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
-            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Nenhum vídeo enviado ainda</p>
+          <div className="py-16 text-center rounded-2xl border-2 border-dashed border-zinc-800">
+            <Film className="w-10 h-10 mx-auto mb-3 text-zinc-700" />
+            <p className="text-sm font-bold text-zinc-400">Nenhum vídeo enviado ainda</p>
             <p className="text-xs text-zinc-400 mt-1">Gere o primeiro link seguro acima.</p>
           </div>
         )}
@@ -3946,18 +3946,18 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
             return (
               <div
                 key={d.id}
-                className={`group relative flex flex-col gap-4 p-5 bg-white dark:bg-zinc-900 border rounded-2xl transition-all hover:shadow-md ${
+                className={`group relative flex flex-col gap-4 p-5 bg-zinc-900 border rounded-2xl transition-all hover:shadow-md ${
                   d.status === 'alteracao'
-                    ? 'border-orange-300/60 dark:border-orange-600/30'
+                    ? 'border-orange-600/30'
                     : d.status === 'aprovado'
-                    ? 'border-emerald-300/60 dark:border-emerald-600/30'
-                    : 'border-zinc-200 dark:border-zinc-800'
+                    ? 'border-emerald-600/30'
+                    : 'border-zinc-800'
                 }`}
               >
                 {/* Delete btn */}
                 <button
                   onClick={() => handleDelete(d.id)}
-                  className="absolute top-3 right-3 p-1.5 text-zinc-300 dark:text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  className="absolute top-3 right-3 p-1.5 text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                   aria-label="Remover entrega"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -3965,18 +3965,18 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
 
                 {/* Header */}
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-violet-900/30 text-violet-400">
                     <Film className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-sm text-zinc-900 dark:text-white leading-tight pr-6 line-clamp-2">
+                    <p className="font-black text-sm text-white leading-tight pr-6 line-clamp-2">
                       {d.title}
                     </p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[10px] text-zinc-400 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" /> Enviado {sentAgoLabel(d.sentAt)}
                       </span>
-                      <span className="text-[10px] text-zinc-300 dark:text-zinc-600">·</span>
+                      <span className="text-[10px] text-zinc-600">·</span>
                       <span className="text-[10px] text-zinc-400">Expira em {d.expiresInDays} dias</span>
                     </div>
                   </div>
@@ -3996,19 +3996,19 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
                         className={`w-4 h-4 ${
                           i < d.rating!
                             ? 'fill-amber-400 text-amber-400'
-                            : 'fill-zinc-100 dark:fill-zinc-800 text-zinc-300 dark:text-zinc-600'
+                            : 'fill-zinc-800 text-zinc-600'
                         }`}
                       />
                     ))}
-                    <span className="text-xs font-black text-zinc-500 dark:text-zinc-400 ml-1.5">{d.rating}/5</span>
+                    <span className="text-xs font-black text-zinc-400 ml-1.5">{d.rating}/5</span>
                   </div>
                 )}
 
                 {/* Client feedback — alteracao only */}
                 {d.status === 'alteracao' && d.feedback && (
-                  <div className="px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40">
+                  <div className="px-4 py-3 rounded-xl bg-orange-900/10 border border-orange-800/40">
                     <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1.5">Feedback do Cliente</p>
-                    <p className="text-xs text-zinc-700 dark:text-zinc-300 italic leading-relaxed">
+                    <p className="text-xs text-zinc-300 italic leading-relaxed">
                       &ldquo;{d.feedback}&rdquo;
                     </p>
                   </div>
@@ -4019,8 +4019,8 @@ const ClientEntregasTab: React.FC<{ client: Client }> = ({ client }) => {
                   onClick={() => handleCopyLink(d)}
                   className={`mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border text-xs font-bold transition-all ${
                     linkCopiedId === d.id
-                      ? 'border-emerald-400 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10'
-                      : 'border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400'
+                      ? 'border-emerald-400 text-emerald-400 bg-emerald-900/10'
+                      : 'border-zinc-700 text-zinc-400 hover:border-violet-600 hover:text-violet-400'
                   }`}
                 >
                   {linkCopiedId === d.id
@@ -4545,9 +4545,9 @@ const FOLLOWER_MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set
 const FOLLOWER_MONTH_OPTIONS = [2025, 2026].flatMap(y => FOLLOWER_MONTHS_PT.map(m => `${m}/${y}`));
 
 const INVOICE_STATUS_STYLES: Record<Invoice['status'], { label: string; badge: string }> = {
-  pendente: { label: 'Pendente',  badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
-  pago:     { label: 'Pago',      badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
-  atrasado: { label: 'Atrasado',  badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50' },
+  pendente: { label: 'Pendente',  badge: 'bg-amber-900/20 text-amber-400 border-amber-800/50' },
+  pago:     { label: 'Pago',      badge: 'bg-emerald-900/20 text-emerald-400 border-emerald-800/50' },
+  atrasado: { label: 'Atrasado',  badge: 'bg-red-900/20 text-red-400 border-red-800/50' },
 };
 
 // ─────────────────────────────────────────────
@@ -4935,7 +4935,7 @@ const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
   );
 };
 
-const INPUT_CLS = 'w-full text-sm px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all';
+const INPUT_CLS = 'w-full text-sm px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-all';
 
 const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
   // ── Metrics (persisted via API) ──
@@ -5011,26 +5011,26 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
     <div className="space-y-8">
 
       {/* ══ EVOLUÇÃO DE SEGUIDORES ══ */}
-      <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3">
+      <section className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-zinc-800 dark:text-zinc-100">Evolução de Seguidores</h2>
+              <h2 className="text-sm font-black text-zinc-100">Evolução de Seguidores</h2>
               <p className="text-xs text-zinc-500 mt-0.5">Histórico mensal exibido no portal do cliente</p>
             </div>
           </div>
           {growthPct !== null && (
-            <span className="flex-shrink-0 text-xs font-black px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+            <span className="flex-shrink-0 text-xs font-black px-3 py-1 rounded-full bg-emerald-900/20 text-emerald-400 border border-emerald-800/50">
               +{growthPct}% total
             </span>
           )}
         </div>
 
         {/* Add record form */}
-        <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="px-6 py-4 border-b border-zinc-800">
           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">Registrar mês</p>
           <div className="flex gap-2 items-end">
             <div className="flex-1 space-y-1">
@@ -5082,18 +5082,18 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
                 return (
                   <div key={record.month} className="group flex items-center gap-3">
                     <span className="w-20 flex-shrink-0 text-xs font-black text-zinc-500 tabular-nums text-right">{record.month}</span>
-                    <div className="flex-1 h-6 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden relative">
+                    <div className="flex-1 h-6 bg-zinc-800 rounded-lg overflow-hidden relative">
                       <div
-                        className={`h-full rounded-lg transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-violet-400 dark:bg-violet-600'}`}
+                        className={`h-full rounded-lg transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-violet-600'}`}
                         style={{ width: `${barPct}%` }}
                       />
-                      <span className="absolute inset-0 flex items-center px-2.5 text-[10px] font-black text-zinc-700 dark:text-zinc-200">
+                      <span className="absolute inset-0 flex items-center px-2.5 text-[10px] font-black text-zinc-200">
                         {record.count.toLocaleString('pt-BR')}
                       </span>
                     </div>
                     <button
                       onClick={() => removeFollowerRecord(record.month)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 dark:text-zinc-700 hover:text-red-500 transition-all rounded flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-700 hover:text-red-500 transition-all rounded flex-shrink-0"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -5109,12 +5109,12 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-black text-zinc-800 dark:text-zinc-100">Cobranças</h2>
+            <h2 className="text-sm font-black text-zinc-100">Cobranças</h2>
             <p className="text-xs text-zinc-500 mt-0.5">Faturas visíveis no portal do cliente</p>
           </div>
           <button
             onClick={() => setFormOpen(p => !p)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-xs font-black hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-violet-800 text-violet-400 text-xs font-black hover:bg-violet-900/20 transition-all"
           >
             <Plus className="w-3.5 h-3.5" /> Nova Cobrança
           </button>
@@ -5122,8 +5122,8 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
 
         {/* New invoice form */}
         {formOpen && (
-          <div className="mb-4 bg-white dark:bg-zinc-900 rounded-2xl border border-violet-200 dark:border-violet-800/60 p-5 space-y-4 animate-in fade-in duration-200">
-            <p className="text-[10px] font-black uppercase tracking-widest text-violet-600 dark:text-violet-400">Nova Cobrança</p>
+          <div className="mb-4 bg-zinc-900 rounded-2xl border border-violet-800/60 p-5 space-y-4 animate-in fade-in duration-200">
+            <p className="text-[10px] font-black uppercase tracking-widest text-violet-400">Nova Cobrança</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Título</label>
@@ -5155,7 +5155,7 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
               </div>
             </div>
             <div className="flex gap-3 pt-1">
-              <button onClick={() => setFormOpen(false)} className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-xs font-black hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+              <button onClick={() => setFormOpen(false)} className="px-4 py-2 rounded-xl border border-zinc-700 text-zinc-500 text-xs font-black hover:bg-zinc-800 transition-all">
                 Cancelar
               </button>
               <button
@@ -5171,7 +5171,7 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
 
         {/* Invoice list */}
         {invoices.length === 0 ? (
-          <div className="text-center py-16 text-zinc-400 dark:text-zinc-600">
+          <div className="text-center py-16 text-zinc-600">
             <DollarSign className="w-8 h-8 mx-auto mb-3 opacity-40" />
             <p className="text-sm font-bold">Nenhuma cobrança cadastrada</p>
             <p className="text-xs mt-1 opacity-70">Clique em "Nova Cobrança" para começar.</p>
@@ -5181,10 +5181,10 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
             {invoices.map(inv => {
               const cfg = INVOICE_STATUS_STYLES[inv.status];
               return (
-                <div key={inv.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center gap-4">
+                <div key={inv.id} className="bg-zinc-900 rounded-2xl border border-zinc-800 px-5 py-4 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-black text-zinc-800 dark:text-zinc-100 truncate">{inv.title}</p>
+                      <p className="text-sm font-black text-zinc-100 truncate">{inv.title}</p>
                       <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${cfg.badge}`}>{cfg.label}</span>
                     </div>
                     <p className="text-xs text-zinc-500 mt-0.5">
@@ -5195,7 +5195,7 @@ const ClientFinanceiroTab: React.FC<{ client: Client }> = ({ client }) => {
                     <select
                       value={inv.status}
                       onChange={e => updateStatus(inv.id, e.target.value as Invoice['status'])}
-                      className="text-xs px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 focus:outline-none transition-all"
+                      className="text-xs px-2 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-300 focus:outline-none transition-all"
                     >
                       <option value="pendente">Pendente</option>
                       <option value="pago">Pago</option>
@@ -5375,8 +5375,8 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-black text-zinc-900 dark:text-white">🤝 Reuniões</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <h2 className="text-lg font-black text-white">🤝 Reuniões</h2>
+          <p className="text-sm text-zinc-400 mt-0.5">
             {activeMeetings.length > 0
               ? `${activeMeetings.length} reunião${activeMeetings.length > 1 ? 'ões' : ''} registrada${activeMeetings.length > 1 ? 's' : ''}`
               : 'Registre reuniões e extraia resumos com IA'}
@@ -5386,7 +5386,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
           {archivedMeetings.length > 0 && (
             <button
               onClick={() => setShowMeetingArchiveModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-700 text-zinc-400 hover:bg-zinc-800 text-xs font-bold transition-all"
             >
               <Trash2 className="w-3.5 h-3.5" /> Ver Arquivados ({archivedMeetings.length})
             </button>
@@ -5404,12 +5404,12 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
 
       {/* ── Create form ── */}
       {formOpen && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-2 duration-200">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-2 duration-200">
 
           {/* Form header */}
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-zinc-900 dark:text-white">Nova Reunião</h3>
-            <button onClick={() => { setFormOpen(false); resetForm(); }} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
+            <h3 className="text-sm font-black text-white">Nova Reunião</h3>
+            <button onClick={() => { setFormOpen(false); resetForm(); }} className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -5422,7 +5422,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                 value={formTitle}
                 onChange={e => setFormTitle(e.target.value)}
                 placeholder="Ex: Alinhamento de Conteúdo – Fevereiro"
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 placeholder:text-zinc-400 transition-all"
+                className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 placeholder:text-zinc-400 transition-all"
               />
             </div>
             <div className="space-y-1.5">
@@ -5431,7 +5431,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                 type="date"
                 value={formDate}
                 onChange={e => setFormDate(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
           </div>
@@ -5446,7 +5446,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
               onChange={e => setFormTranscript(e.target.value)}
               placeholder="Cole aqui a transcrição da reunião para que a IA extraia automaticamente o resumo e as tarefas…"
               rows={6}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 placeholder:text-zinc-400 resize-none transition-all"
+              className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 placeholder:text-zinc-400 resize-none transition-all"
             />
           </div>
 
@@ -5468,27 +5468,27 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
             <div className="space-y-5 animate-in fade-in duration-300">
 
               {/* Success banner */}
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-900/20 border border-emerald-800/40">
                 <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Resumo extraído com sucesso! Revise e edite antes de salvar.</p>
+                <p className="text-xs font-bold text-emerald-400">Resumo extraído com sucesso! Revise e edite antes de salvar.</p>
               </div>
 
               {/* 1. Resumo Executivo */}
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-400">
                   <FileText className="w-3.5 h-3.5" /> 📝 Resumo Executivo
                 </label>
                 <textarea
                   value={editSummary}
                   onChange={e => setEditSummary(e.target.value)}
                   rows={3}
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 resize-none transition-all"
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 resize-none transition-all"
                 />
               </div>
 
               {/* 2. Decisões Tomadas */}
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-400">
                   <Users className="w-3.5 h-3.5" /> 🤝 Decisões Tomadas
                 </label>
                 <div className="space-y-2">
@@ -5501,11 +5501,11 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                           updated[i] = e.target.value;
                           setEditDecisions(updated);
                         }}
-                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                        className="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                       />
                       <button
                         onClick={() => setEditDecisions(prev => prev.filter((_, idx) => idx !== i))}
-                        className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
+                        className="p-2.5 hover:bg-red-900/20 rounded-xl text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -5513,7 +5513,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                   ))}
                   <button
                     onClick={() => setEditDecisions(prev => [...prev, ''])}
-                    className="flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Adicionar decisão
                   </button>
@@ -5522,7 +5522,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
 
               {/* 3. Próximos Passos */}
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-400">
                   <CheckCircle className="w-3.5 h-3.5" /> ✅ Próximos Passos
                 </label>
                 <div className="space-y-2">
@@ -5535,7 +5535,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                           updated[i] = { ...updated[i], text: e.target.value };
                           setEditNextSteps(updated);
                         }}
-                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                        className="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                       />
                       <button
                         onClick={() => {
@@ -5545,15 +5545,15 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                         }}
                         className={`flex-shrink-0 px-3 py-2.5 rounded-xl border text-[11px] font-black transition-all ${
                           step.assignedTo === 'agencia'
-                            ? 'border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400'
-                            : 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                            ? 'border-violet-800 bg-violet-900/20 text-violet-400'
+                            : 'border-emerald-800 bg-emerald-900/20 text-emerald-400'
                         }`}
                       >
                         {step.assignedTo === 'agencia' ? '🏢 Agência' : '👤 Cliente'}
                       </button>
                       <button
                         onClick={() => setEditNextSteps(prev => prev.filter((_, idx) => idx !== i))}
-                        className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
+                        className="p-2.5 hover:bg-red-900/20 rounded-xl text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -5561,7 +5561,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                   ))}
                   <button
                     onClick={() => setEditNextSteps(prev => [...prev, { text: '', assignedTo: 'agencia' }])}
-                    className="flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Adicionar próximo passo
                   </button>
@@ -5573,7 +5573,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                 <button
                   onClick={handleExtract}
                   disabled={isExtracting}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-xs font-black hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-violet-800 text-violet-400 text-xs font-black hover:bg-violet-900/20 transition-all disabled:opacity-50"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> Regerar
                 </button>
@@ -5592,9 +5592,9 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
 
       {/* ── Empty state ── */}
       {activeMeetings.length === 0 && !formOpen && (
-        <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-12 text-center">
+        <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-12 text-center">
           <div className="text-4xl mb-4">🤝</div>
-          <h3 className="text-sm font-black text-zinc-700 dark:text-zinc-300 mb-1">Nenhuma reunião registrada</h3>
+          <h3 className="text-sm font-black text-zinc-300 mb-1">Nenhuma reunião registrada</h3>
           <p className="text-sm text-zinc-400 max-w-xs mx-auto">
             Registre suas reuniões e deixe a IA extrair o resumo, decisões e próximos passos automaticamente.
           </p>
@@ -5605,13 +5605,13 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
       {/* ── Archive modal ── */}
       {showMeetingArchiveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
               <div>
-                <h3 className="text-sm font-black text-zinc-900 dark:text-white">Lixeira de Reuniões</h3>
+                <h3 className="text-sm font-black text-white">Lixeira de Reuniões</h3>
                 <p className="text-xs text-zinc-400 mt-0.5">Os itens são eliminados permanentemente após 15 dias.</p>
               </div>
-              <button onClick={() => setShowMeetingArchiveModal(false)} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
+              <button onClick={() => setShowMeetingArchiveModal(false)} className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -5623,9 +5623,9 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                   const msLeft = MEETING_ARCHIVE_RETENTION_MS - (Date.now() - new Date(m.archivedAt!).getTime());
                   const daysLeft = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
                   return (
-                    <div key={m.id} className="flex items-center justify-between gap-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-3">
+                    <div key={m.id} className="flex items-center justify-between gap-3 bg-zinc-800/50 rounded-xl px-4 py-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 truncate">{m.title}</p>
+                        <p className="text-sm font-bold text-zinc-200 truncate">{m.title}</p>
                         <p className="text-xs text-zinc-400 mt-0.5">{formatMeetingDate(m.date)} · Arquivada em {new Date(m.archivedAt!).toLocaleDateString('pt-BR')}</p>
                         <p className={`text-xs font-bold mt-0.5 ${daysLeft <= 3 ? 'text-red-500' : 'text-zinc-400'}`}>
                           {daysLeft <= 3 ? `⚠️ Expira em ${daysLeft} dia${daysLeft !== 1 ? 's' : ''}` : `Expira em ${daysLeft} dias`}
@@ -5633,7 +5633,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                       </div>
                       <button
                         onClick={() => setMeetings(prev => prev.map(x => x.id === m.id ? { ...x, isArchived: false, archivedAt: undefined } : x))}
-                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all flex-shrink-0"
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-900/30 text-violet-400 hover:bg-violet-900/50 transition-all flex-shrink-0"
                       >
                         <RotateCcw className="w-3 h-3" /> Restaurar
                       </button>
@@ -5653,19 +5653,19 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
             const agencySteps  = meeting.nextSteps.filter(s => s.assignedTo === 'agencia');
             const clientSteps  = meeting.nextSteps.filter(s => s.assignedTo === 'cliente');
             return (
-              <div key={meeting.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden transition-all">
+              <div key={meeting.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden transition-all">
 
                 {/* Card header */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : meeting.id)}
-                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-zinc-800/40 transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 flex-shrink-0 rounded-xl bg-violet-500/10 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/40 flex items-center justify-center text-base select-none">
+                    <div className="w-9 h-9 flex-shrink-0 rounded-xl bg-violet-900/20 border border-violet-800/40 flex items-center justify-center text-base select-none">
                       🤝
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-black text-zinc-900 dark:text-white truncate">{meeting.title}</p>
+                      <p className="text-sm font-black text-white truncate">{meeting.title}</p>
                       <p className="text-xs text-zinc-400 mt-0.5">{formatMeetingDate(meeting.date)} · {meeting.nextSteps.length} próximo{meeting.nextSteps.length !== 1 ? 's passos' : ' passo'}</p>
                     </div>
                   </div>
@@ -5674,14 +5674,14 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
 
                 {/* Expanded body */}
                 {isExpanded && (
-                  <div className="border-t border-zinc-100 dark:border-zinc-800 px-5 py-5 space-y-5">
+                  <div className="border-t border-zinc-800 px-5 py-5 space-y-5">
 
                     {/* Resumo */}
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-1.5">
                         <FileText className="w-3 h-3" /> 📝 Resumo Executivo
                       </p>
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{meeting.executiveSummary}</p>
+                      <p className="text-sm text-zinc-300 leading-relaxed">{meeting.executiveSummary}</p>
                     </div>
 
                     {/* Decisões */}
@@ -5692,8 +5692,8 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                         </p>
                         <ul className="space-y-1.5">
                           {meeting.decisions.map((d, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                              <span className="w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+                            <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                              <span className="w-4 h-4 rounded-full bg-violet-900/30 text-violet-400 flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5">{i + 1}</span>
                               {d}
                             </li>
                           ))}
@@ -5710,10 +5710,10 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                         <div className="grid sm:grid-cols-2 gap-4">
                           {agencySteps.length > 0 && (
                             <div>
-                              <p className="text-[10px] font-black text-violet-500 dark:text-violet-400 mb-2">🏢 Agência</p>
+                              <p className="text-[10px] font-black text-violet-400 mb-2">🏢 Agência</p>
                               <ul className="space-y-1.5">
                                 {agencySteps.map(s => (
-                                  <li key={s.id} className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                  <li key={s.id} className="flex items-start gap-2 text-xs text-zinc-400">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
                                     {s.text}
                                   </li>
@@ -5723,10 +5723,10 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                           )}
                           {clientSteps.length > 0 && (
                             <div>
-                              <p className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 mb-2">👤 Cliente</p>
+                              <p className="text-[10px] font-black text-emerald-400 mb-2">👤 Cliente</p>
                               <ul className="space-y-1.5">
                                 {clientSteps.map(s => (
-                                  <li key={s.id} className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                  <li key={s.id} className="flex items-start gap-2 text-xs text-zinc-400">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
                                     {s.text}
                                   </li>
@@ -5749,7 +5749,7 @@ const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
                           ));
                           setExpandedId(null);
                         }}
-                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-xl transition-all"
+                        className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-900/20 px-3 py-1.5 rounded-xl transition-all"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> Excluir
                       </button>
@@ -6315,13 +6315,13 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
               {/* Sub-nav + Como Usar */}
               <div className="flex items-center justify-between flex-wrap gap-2 -mb-2">
-                <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                <div className="flex items-center gap-1 p-1 bg-zinc-800 rounded-xl">
                   <button
                     onClick={() => setIdeasView('generator')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
                       ideasView === 'generator'
-                        ? 'bg-white dark:bg-zinc-900 shadow text-violet-600 dark:text-violet-400'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                        ? 'bg-zinc-900 shadow text-violet-400'
+                        : 'text-zinc-400 hover:hover:text-zinc-200'
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" /> Gerador com IA
@@ -6330,13 +6330,13 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     onClick={() => setIdeasView('banco')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
                       ideasView === 'banco'
-                        ? 'bg-white dark:bg-zinc-900 shadow text-amber-500 dark:text-amber-400'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                        ? 'bg-zinc-900 shadow text-amber-400'
+                        : 'text-zinc-400 hover:hover:text-zinc-200'
                     }`}
                   >
                     <Bookmark className="w-3.5 h-3.5" /> Banco de Ideias
                     {savedIdeas.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black">
+                      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">
                         {savedIdeas.length}
                       </span>
                     )}
@@ -6344,7 +6344,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                 </div>
                 <button
                   onClick={() => setIsHowToUseOpen(true)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 px-3 py-1.5 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-violet-400 px-3 py-1.5 rounded-xl hover:bg-violet-900/20 transition-all"
                 >
                   <BookOpen className="w-3.5 h-3.5" /> Como Usar
                 </button>
@@ -6352,9 +6352,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
               {/* Saved toast */}
               {savedIdeaToast && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 animate-in fade-in duration-200">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-900/20 border border-amber-800/50 animate-in fade-in duration-200">
                   <BookmarkCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <p className="text-xs font-bold text-amber-700 dark:text-amber-300">✅ Ideia salva no Banco de Ideias!</p>
+                  <p className="text-xs font-bold text-amber-300">✅ Ideia salva no Banco de Ideias!</p>
                 </div>
               )}
 
@@ -6373,11 +6373,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
               </div>
 
               {/* Etapa 1 */}
-              <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xs font-black flex-shrink-0">1</div>
+              <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-violet-900/40 text-violet-400 flex items-center justify-center text-xs font-black flex-shrink-0">1</div>
                   <div>
-                    <h2 className="font-bold text-sm text-zinc-900 dark:text-white">A Matéria-Prima</h2>
+                    <h2 className="font-bold text-sm text-white">A Matéria-Prima</h2>
                     <p className="text-xs text-zinc-400">Defina os temas que o conteúdo vai abordar</p>
                   </div>
                 </div>
@@ -6385,12 +6385,12 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                 <div className="px-6 py-5 space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {client.niche && (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-900/20 text-emerald-400 border border-emerald-800/50">
                         <Target className="w-3 h-3" /> {client.niche}
                       </span>
                     )}
                     {client.idealClient && (
-                      <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 max-w-[260px] truncate">
+                      <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700 max-w-[260px] truncate">
                         👤 {client.idealClient}
                       </span>
                     )}
@@ -6405,12 +6405,12 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                         onChange={e => setThemeInput(e.target.value)}
                         onKeyDown={handleThemeKeyDown}
                         placeholder="Ex: Dicas de confeitaria, Bastidores… (Enter para adicionar)"
-                        className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400"
+                        className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400"
                       />
                       <button
                         onClick={() => { addTheme(themeInput); setThemeInput(''); }}
                         disabled={!themeInput.trim()}
-                        className="p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-600 dark:text-zinc-400 transition-colors disabled:opacity-40"
+                        className="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-400 transition-colors disabled:opacity-40"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -6420,9 +6420,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   {themes.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {themes.map(t => (
-                        <span key={t} className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                        <span key={t} className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-violet-900/40 text-violet-300 border border-violet-800/50">
                           {t}
-                          <button onClick={() => removeTheme(t)} className="text-violet-400 hover:text-violet-700 dark:hover:text-violet-200 transition-colors">
+                          <button onClick={() => removeTheme(t)} className="text-violet-400 hover:text-violet-200 transition-colors">
                             <X className="w-3 h-3" />
                           </button>
                         </span>
@@ -6434,7 +6434,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     <button
                       onClick={handleSuggestThemes}
                       disabled={isSuggestingThemes}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-sm font-bold disabled:opacity-60"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-violet-700 text-violet-400 hover:bg-violet-900/20 transition-all text-sm font-bold disabled:opacity-60"
                     >
                       {isSuggestingThemes ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Sugerindo temas…</>
@@ -6450,7 +6450,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">Sugestões da IA — clique para adicionar</p>
                       {suggestedThemeGroups.map(group => (
                         <div key={group.label} className="space-y-2">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                             {group.emoji} {group.label}
                           </p>
                           <div className="flex flex-wrap gap-2">
@@ -6462,8 +6462,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                                   onClick={() => toggleSuggestedTheme(t)}
                                   className={`text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-all ${
                                     selected
-                                      ? 'border-violet-500 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300'
-                                      : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700 hover:text-violet-600 dark:hover:text-violet-400'
+                                      ? 'border-violet-500 bg-violet-900/40 text-violet-300'
+                                      : 'border-zinc-700 text-zinc-400 hover:border-violet-700 hover:text-violet-400'
                                   }`}
                                 >
                                   {selected ? '✓ ' : '+ '}{t}
@@ -6479,11 +6479,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
               </section>
 
               {/* Etapa 2 */}
-              <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xs font-black flex-shrink-0">2</div>
+              <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-violet-900/40 text-violet-400 flex items-center justify-center text-xs font-black flex-shrink-0">2</div>
                   <div>
-                    <h2 className="font-bold text-sm text-zinc-900 dark:text-white">A Multiplicação</h2>
+                    <h2 className="font-bold text-sm text-white">A Multiplicação</h2>
                     <p className="text-xs text-zinc-400">Escolha os formatos e ângulos editoriais</p>
                   </div>
                 </div>
@@ -6496,7 +6496,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                         const sel = selectedFormats.includes(f);
                         return (
                           <button key={f} onClick={() => toggleFormat(f)}
-                            className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all ${sel ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'}`}
+                            className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all ${sel ? 'border-violet-500 bg-violet-900/20 text-violet-300' : 'border-zinc-800 text-zinc-400 hover:border-violet-700'}`}
                           >
                             {f}
                           </button>
@@ -6505,7 +6505,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     </div>
                   </div>
 
-                  <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="h-px bg-zinc-800" />
 
                   <div>
                     <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3 block">🎯 Ângulos Editoriais</label>
@@ -6514,7 +6514,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                         const sel = selectedAngles.includes(a);
                         return (
                           <button key={a} onClick={() => toggleAngle(a)}
-                            className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all text-left ${sel ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'}`}
+                            className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all text-left ${sel ? 'border-violet-500 bg-violet-900/20 text-violet-300' : 'border-zinc-800 text-zinc-400 hover:border-violet-700'}`}
                           >
                             {a}
                           </button>
@@ -6523,7 +6523,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                     </div>
                   </div>
 
-                  <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="h-px bg-zinc-800" />
 
                   {/* Quantidade de Ideias */}
                   <div>
@@ -6537,8 +6537,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                           onClick={() => setQuantidadeIdeias(n)}
                           className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-black transition-all ${
                             quantidadeIdeias === n
-                              ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                              : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-700'
+                              ? 'border-violet-500 bg-violet-900/20 text-violet-300'
+                              : 'border-zinc-800 text-zinc-400 hover:border-violet-700'
                           }`}
                         >
                           {n}
@@ -6556,7 +6556,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       <select
                         value={selectedMeetingId}
                         onChange={e => setSelectedMeetingId(e.target.value)}
-                        className="w-full appearance-none text-sm px-3 py-2.5 pr-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all cursor-pointer"
+                        className="w-full appearance-none text-sm px-3 py-2.5 pr-8 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all cursor-pointer"
                       >
                         <option value="">Selecione uma reuniao...</option>
                         {availableMeetings
@@ -6605,9 +6605,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
               {ideas.length > 0 && (
                 <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-black flex-shrink-0">3</div>
+                    <div className="w-7 h-7 rounded-full bg-amber-900/40 text-amber-400 flex items-center justify-center text-xs font-black flex-shrink-0">3</div>
                     <div>
-                      <h2 className="font-bold text-sm text-zinc-900 dark:text-white">O Ouro</h2>
+                      <h2 className="font-bold text-sm text-white">O Ouro</h2>
                       <p className="text-xs text-zinc-400">{ideas.length} ideias geradas para {client.brandName}</p>
                     </div>
                   </div>
@@ -6615,14 +6615,14 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   {ideas.map((idea, idx) => (
                     <div
                       key={idea.id}
-                      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 transition-all hover:shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300"
+                      className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-violet-700 transition-all hover:shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300"
                       style={{ animationDelay: `${idx * 100}ms` }}
                     >
-                      <div className="px-5 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-                        <h3 className="font-black text-base text-zinc-900 dark:text-white leading-snug mb-3">{idea.title}</h3>
+                      <div className="px-5 pt-5 pb-4 border-b border-zinc-800">
+                        <h3 className="font-black text-base text-white leading-snug mb-3">{idea.title}</h3>
                         <div className="flex flex-wrap gap-1.5">
                           {idea.tags.map(tag => (
-                            <span key={tag} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                            <span key={tag} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-violet-900/40 text-violet-300 border border-violet-800/50">
                               {tag}
                             </span>
                           ))}
@@ -6632,24 +6632,24 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       <div className="px-5 py-4 space-y-4">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">🎣 Gancho</p>
-                          <p className="text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed">&ldquo;{idea.gancho}&rdquo;</p>
+                          <p className="text-sm text-zinc-300 italic leading-relaxed">&ldquo;{idea.gancho}&rdquo;</p>
                         </div>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                        <div className="h-px bg-zinc-800" />
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">📋 Estrutura</p>
                           <ul className="space-y-1.5">
                             {idea.estrutura.map((item, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                              <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
                                 <ChevronRight className="w-3.5 h-3.5 text-violet-500 flex-shrink-0 mt-0.5" />
                                 {item}
                               </li>
                             ))}
                           </ul>
                         </div>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                        <div className="h-px bg-zinc-800" />
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">📣 CTA</p>
-                          <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{idea.cta}</p>
+                          <p className="text-sm font-bold text-zinc-200">{idea.cta}</p>
                         </div>
                       </div>
 
@@ -6658,8 +6658,8 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                           onClick={() => toggleSaveIdea(idea)}
                           className={`p-2.5 rounded-xl border transition-all flex-shrink-0 ${
                             savedIdeas.some(s => s.id === idea.id)
-                              ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-500'
-                              : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-500'
+                              ? 'border-amber-400 bg-amber-900/20 text-amber-500'
+                              : 'border-zinc-700 text-zinc-400 hover:border-amber-700 hover:text-amber-500'
                           }`}
                           title="Salvar no Banco de Ideias"
                         >
@@ -6669,10 +6669,10 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                         </button>
                         <button
                           onClick={() => copyStructure(idea)}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-xl font-bold text-xs text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 transition-all"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-zinc-700 rounded-xl font-bold text-xs text-zinc-400 hover:border-zinc-500 transition-all"
                         >
                           {copiedId === idea.id ? (
-                            <span className="text-emerald-600 dark:text-emerald-400">✓ Copiado!</span>
+                            <span className="text-emerald-400">✓ Copiado!</span>
                           ) : (
                             <><Copy className="w-3.5 h-3.5" /> 📋 Copiar Estrutura</>
                           )}
@@ -6690,7 +6690,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   <button
                     onClick={handleGenerate}
                     disabled={isGenerating}
-                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 rounded-2xl font-bold text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-violet-700 text-violet-400 rounded-2xl font-bold text-sm hover:bg-violet-900/20 transition-all disabled:opacity-50"
                   >
                     <Sparkles className="w-4 h-4" /> Gerar Mais Ideias
                   </button>
@@ -6707,7 +6707,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       <Bookmark className="w-4 h-4" />
                     </div>
                     <div>
-                      <h2 className="font-bold text-sm text-zinc-900 dark:text-white">Banco de Ideias</h2>
+                      <h2 className="font-bold text-sm text-white">Banco de Ideias</h2>
                       <p className="text-xs text-zinc-400">
                         {savedIdeas.length} {savedIdeas.length === 1 ? 'ideia salva' : 'ideias salvas'}
                       </p>
@@ -6715,9 +6715,9 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                   </div>
 
                   {savedIdeas.length === 0 ? (
-                    <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
+                    <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-10 text-center">
                       <div className="text-4xl mb-3">⭐</div>
-                      <h3 className="font-bold text-zinc-700 dark:text-zinc-300 mb-1">Nenhuma ideia salva ainda</h3>
+                      <h3 className="font-bold text-zinc-300 mb-1">Nenhuma ideia salva ainda</h3>
                       <p className="text-sm text-zinc-400 mb-4">
                         Use o Gerador com IA para começar e salve suas favoritas aqui.
                       </p>
@@ -6733,16 +6733,16 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                       {savedIdeas.map(idea => (
                         <div
                           key={idea.id}
-                          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden hover:border-amber-300 dark:hover:border-amber-700 transition-all hover:shadow-lg"
+                          className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-amber-700 transition-all hover:shadow-lg"
                         >
-                          <div className="px-5 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                          <div className="px-5 pt-5 pb-4 border-b border-zinc-800">
                             <div className="flex items-start justify-between gap-3">
-                              <h3 className="font-black text-base text-zinc-900 dark:text-white leading-snug">
+                              <h3 className="font-black text-base text-white leading-snug">
                                 {idea.title}
                               </h3>
                               <button
                                 onClick={() => removeFromBank(idea.id)}
-                                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-all"
                                 title="Remover do Banco de Ideias"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -6750,7 +6750,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                             </div>
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {idea.tags.map(tag => (
-                                <span key={tag} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                                <span key={tag} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-900/40 text-amber-300 border border-amber-800/50">
                                   {tag}
                                 </span>
                               ))}
@@ -6760,24 +6760,24 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
                           <div className="px-5 py-4 space-y-4">
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">🎣 Gancho</p>
-                              <p className="text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed">&ldquo;{idea.gancho}&rdquo;</p>
+                              <p className="text-sm text-zinc-300 italic leading-relaxed">&ldquo;{idea.gancho}&rdquo;</p>
                             </div>
-                            <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                            <div className="h-px bg-zinc-800" />
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">📋 Estrutura</p>
                               <ul className="space-y-1.5">
                                 {idea.estrutura.map((item, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
                                     <ChevronRight className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
                                     {item}
                                   </li>
                                 ))}
                               </ul>
                             </div>
-                            <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                            <div className="h-px bg-zinc-800" />
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">📣 CTA</p>
-                              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{idea.cta}</p>
+                              <p className="text-sm font-bold text-zinc-200">{idea.cta}</p>
                             </div>
                           </div>
 

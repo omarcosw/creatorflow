@@ -359,15 +359,15 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 onClick={() => toggleDevice(name)}
                 className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${
                   sel
-                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700'
+                    ? 'border-violet-500 bg-violet-900/20'
+                    : 'border-zinc-800 hover:border-violet-700'
                 }`}
               >
-                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-violet-600 border-violet-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-violet-600 border-violet-600' : 'border-zinc-600'}`}>
                   {sel && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                 </div>
                 <span className="text-base">{emoji}</span>
-                <span className={`font-bold text-sm truncate flex-1 ${sel ? 'text-violet-700 dark:text-violet-300' : 'text-zinc-700 dark:text-zinc-300'}`}>{name}</span>
+                <span className={`font-bold text-sm truncate flex-1 ${sel ? 'text-violet-300' : 'text-zinc-300'}`}>{name}</span>
               </button>
             );
           })}
@@ -409,7 +409,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
   // ── Shared input classes ──────────────────
   const inputCls =
-    'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 text-sm';
+    'w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 text-sm';
 
   const labelCls = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
 
@@ -417,7 +417,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   // RENDER
   // ─────────────────────────────────────────
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+    <div className="flex flex-col min-h-screen bg-zinc-950 animate-in fade-in duration-300">
 
       {/* ── Success Toast ── */}
       {toast && (
@@ -430,26 +430,26 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       {/* ── HDD Archive Modal ── */}
       {showHDDArchiveModal && (
         <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
-            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+          <div className="bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Archive className="w-4 h-4 text-violet-500" />
                 <div>
-                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">HDs Arquivados</h2>
+                  <h2 className="text-base font-bold text-white">HDs Arquivados</h2>
                   <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
                     Itens na lixeira são excluídos permanentemente após 15 dias.
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowHDDArchiveModal(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+              <button onClick={() => setShowHDDArchiveModal(false)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {archivedHdds.length === 0 ? (
                 <div className="py-12 flex flex-col items-center text-center">
-                  <Archive className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" />
+                  <Archive className="w-8 h-8 text-zinc-600 mb-3" />
                   <p className="text-sm text-zinc-500">Nenhum HD arquivado.</p>
                 </div>
               ) : (
@@ -461,10 +461,10 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       : null;
                     const usedIn = localRecordings.filter(r => r.hddIds.includes(hdd.id)).length;
                     return (
-                      <div key={hdd.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
+                      <div key={hdd.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-800/40">
                         <div className="text-xl flex-shrink-0">💾</div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 truncate">{hdd.name}</p>
+                          <p className="text-sm font-bold text-zinc-300 truncate">{hdd.name}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">{usedIn} ingest{usedIn !== 1 ? 's' : ''}</p>
                           {archivedDate && (
                             <p className={`text-[10px] mt-0.5 font-bold ${daysLeft !== null && daysLeft <= 3 ? 'text-red-400' : 'text-zinc-400'}`}>
@@ -474,7 +474,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                         </div>
                         <button
                           onClick={() => { onRestoreHDD(hdd.id); }}
-                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-800/50 text-violet-400 hover:bg-violet-900/20 transition-all"
                         >
                           <RotateCcw className="w-3 h-3" /> Restaurar
                         </button>
@@ -489,21 +489,21 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       )}
 
       {/* ══ Header ══ */}
-      <header className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm shadow-sm">
+      <header className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur-sm shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="p-2 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
+              className="p-2 -ml-1 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-xl border border-violet-500/20">
+              <div className="p-2 bg-violet-500/10 text-violet-400 rounded-xl border border-violet-500/20">
                 <Archive className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white leading-tight">
+                <h1 className="text-base sm:text-lg font-bold text-white leading-tight">
                   Gestor de Acervo e HDs
                 </h1>
                 <p className="text-xs text-zinc-400 hidden sm:block">
@@ -532,16 +532,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
           {/* Loading skeleton */}
           {dataLoading && (
             <div className="space-y-4 animate-pulse">
-              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-24" />
+              <div className="h-4 bg-zinc-800 rounded-full w-24" />
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="aspect-square bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
+                  <div key={i} className="aspect-square bg-zinc-800/60 rounded-2xl" />
                 ))}
               </div>
-              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-32 mt-6" />
+              <div className="h-4 bg-zinc-800 rounded-full w-32 mt-6" />
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-40 bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
+                  <div key={i} className="h-40 bg-zinc-800/60 rounded-2xl" />
                 ))}
               </div>
             </div>
@@ -549,16 +549,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
           {/* Empty state */}
           {isEmpty && (
-            <div className="rounded-3xl border-2 border-dashed border-violet-200 dark:border-violet-900/40 bg-violet-50/40 dark:bg-violet-950/10 p-10 text-center">
+            <div className="rounded-3xl border-2 border-dashed border-violet-900/40 bg-violet-950/10 p-10 text-center">
               <div className="text-5xl mb-4">💾</div>
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Seu acervo está vazio</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-sm mx-auto mb-6">
+              <h2 className="text-xl font-bold text-white mb-2">Seu acervo está vazio</h2>
+              <p className="text-zinc-400 text-sm max-w-sm mx-auto mb-6">
                 Cadastre seus HDs e registre seus primeiros ingests. Nunca mais perca rastro do seu material!
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => setIsAddHDDOpen(true)}
-                  className="px-5 py-2.5 rounded-xl border border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 font-bold text-sm hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-all"
+                  className="px-5 py-2.5 rounded-xl border border-violet-700 text-violet-400 font-bold text-sm hover:bg-violet-900/20 transition-all"
                 >
                   💾 Adicionar Primeiro HD
                 </button>
@@ -583,16 +583,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 {archivedHdds.length > 0 && (
                   <button
                     onClick={() => setShowHDDArchiveModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 text-zinc-400 hover:text-violet-400 hover:border-violet-700 transition-all"
                   >
                     <Archive className="w-3 h-3" />
                     Ver Arquivados
-                    <span className="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-black">{archivedHdds.length}</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-violet-900/30 text-violet-400 text-[10px] font-black">{archivedHdds.length}</span>
                   </button>
                 )}
                 <button
                   onClick={() => setIsAddHDDOpen(true)}
-                  className="flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline"
+                  className="flex items-center gap-1 text-xs font-bold text-violet-400 hover:underline"
                 >
                   <Plus className="w-3.5 h-3.5" /> Adicionar HD
                 </button>
@@ -602,7 +602,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
             {activeHdds.length === 0 ? (
               <button
                 onClick={() => setIsAddHDDOpen(true)}
-                className="w-full flex items-center justify-center gap-3 p-5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-500 transition-all group"
+                className="w-full flex items-center justify-center gap-3 p-5 border-2 border-dashed border-zinc-800 rounded-2xl text-zinc-400 hover:border-violet-600 hover:text-violet-500 transition-all group"
               >
                 <HardDrive className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span className="font-bold text-sm">Cadastrar primeiro HD</span>
@@ -615,7 +615,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <div key={hdd.id} className="group relative flex flex-col gap-2 p-4 bg-zinc-800/60 border border-zinc-700/40 rounded-2xl hover:border-violet-500/50 transition-all aspect-square">
                       <div className="w-9 h-9 flex items-center justify-center bg-violet-500/15 text-lg rounded-xl flex-shrink-0">💾</div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">{hdd.name}</p>
+                        <p className="font-bold text-sm text-white leading-tight line-clamp-2">{hdd.name}</p>
                         <p className="text-[11px] text-zinc-400 mt-0.5">{usedIn} {usedIn === 1 ? 'ingest' : 'ingests'}</p>
                       </div>
                       <button
@@ -648,7 +648,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
                     Últimos Ingests
                   </h2>
-                  <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full">
                     {filteredRecordings.length}
                   </span>
                 </div>
@@ -659,7 +659,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Buscar por cliente, HD, equipamento, data…"
-                    className="w-full pl-9 pr-4 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                    className="w-full pl-9 pr-4 py-2.5 text-sm bg-zinc-900 border border-zinc-800 rounded-xl focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 text-white placeholder:text-zinc-400"
                   />
                   {searchQuery && (
                     <button
@@ -674,10 +674,10 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
               {/* Cards */}
               {filteredRecordings.length === 0 ? (
-                <div className="py-12 text-center text-zinc-400 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                <div className="py-12 text-center text-zinc-400 border-2 border-dashed border-zinc-800 rounded-2xl">
                   <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
                   <p className="text-sm font-medium">Nenhum ingest encontrado para "{searchQuery}"</p>
-                  <button onClick={() => setSearchQuery('')} className="mt-2 text-xs text-violet-600 dark:text-violet-400 font-bold hover:underline">
+                  <button onClick={() => setSearchQuery('')} className="mt-2 text-xs text-violet-400 font-bold hover:underline">
                     Limpar busca
                   </button>
                 </div>
@@ -702,7 +702,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
                       {/* Title */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">
+                        <p className="font-bold text-sm text-white leading-tight line-clamp-2">
                           {rec.clientName || rec.title}
                         </p>
                         {rec.clientName && (
@@ -762,10 +762,10 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       ══════════════════════════════════════ */}
       {isAddHDDOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-300">
+          <div className="bg-zinc-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-white">💾 Cadastrar HD</h3>
-              <button onClick={() => setIsAddHDDOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
+              <h3 className="text-xl font-bold text-white">💾 Cadastrar HD</h3>
+              <button onClick={() => setIsAddHDDOpen(false)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -782,7 +782,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 <p className="text-xs text-zinc-400 mt-2">"SSD-02 Sandisk 1TB Vermelho" ou "HD Backup Escritório"</p>
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setIsAddHDDOpen(false)} className="flex-1 px-4 py-3 text-zinc-500 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl transition-colors">Cancelar</button>
+                <button onClick={() => setIsAddHDDOpen(false)} className="flex-1 px-4 py-3 text-zinc-500 font-bold text-sm hover:bg-zinc-800 rounded-xl transition-colors">Cancelar</button>
                 <button
                   onClick={addHDD} disabled={!newHDDName.trim()}
                   className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold shadow-lg shadow-violet-500/20 py-3 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
@@ -800,33 +800,33 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       ══════════════════════════════════════ */}
       {selectedRecording && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+          <div className="bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
             {/* Header */}
-            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+            <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 flex items-center justify-center bg-violet-50 dark:bg-violet-900/20 text-lg rounded-xl flex-shrink-0">🎬</div>
+                  <div className="w-10 h-10 flex items-center justify-center bg-violet-900/20 text-lg rounded-xl flex-shrink-0">🎬</div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-lg text-zinc-900 dark:text-white leading-tight truncate">
+                    <h3 className="font-bold text-lg text-white leading-tight truncate">
                       {selectedRecording.clientName || selectedRecording.title}
                     </h3>
                     {selectedRecording.clientName && (
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{selectedRecording.title}</p>
+                      <p className="text-sm text-zinc-400 truncate">{selectedRecording.title}</p>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedRecording(null)}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors flex-shrink-0"
+                  className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors flex-shrink-0"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               {selectedRecording.hasPendingTakes && (
-                <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl">
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-800/50 rounded-xl">
                   <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <p className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                  <p className="text-xs font-bold text-amber-300">
                     Ingest com pendências de gravação
                     {selectedRecording.pendingTakesDescription && ` — ${selectedRecording.pendingTakesDescription}`}
                   </p>
@@ -838,17 +838,17 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
               {/* Datas e Sumário */}
-              <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 divide-y divide-zinc-100 dark:divide-zinc-800 overflow-hidden text-sm">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950 divide-y divide-zinc-800 overflow-hidden text-sm">
                 <div className="px-4 py-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-zinc-400 flex-shrink-0" />
                   <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Data</span>
-                  <span className="text-zinc-700 dark:text-zinc-300 font-medium">{formatDate(selectedRecording.recordedAt)}</span>
+                  <span className="text-zinc-300 font-medium">{formatDate(selectedRecording.recordedAt)}</span>
                 </div>
                 {selectedRecording.lastUpdated && (
                   <div className="px-4 py-3 flex items-center gap-2">
                     <RefreshCw className="w-4 h-4 text-indigo-400 flex-shrink-0" />
                     <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Atualizado</span>
-                    <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                    <span className="text-indigo-400 font-medium">
                       {new Date(selectedRecording.lastUpdated).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
@@ -857,7 +857,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   <div className="px-4 py-3 flex items-center gap-2">
                     <Archive className="w-4 h-4 text-zinc-400 flex-shrink-0" />
                     <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Tamanho</span>
-                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">{selectedRecording.sizeGB} GB</span>
+                    <span className="text-zinc-300 font-medium">{selectedRecording.sizeGB} GB</span>
                   </div>
                 )}
                 {selectedRecording.summary && (
@@ -865,7 +865,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 block mb-1">Resumo</span>
-                      <p className="text-zinc-600 dark:text-zinc-400">{selectedRecording.summary}</p>
+                      <p className="text-zinc-400">{selectedRecording.summary}</p>
                     </div>
                   </div>
                 )}
@@ -880,7 +880,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   {selectedRecording.hddIds.map(id => {
                     const hdd = localHdds.find(h => h.id === id);
                     return (
-                      <span key={id} className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-xl font-medium border border-violet-100 dark:border-violet-900/40">
+                      <span key={id} className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-violet-900/20 text-violet-300 rounded-xl font-medium border border-violet-900/40">
                         💾 {hdd?.name ?? 'HD Desconhecido'}
                       </span>
                     );
@@ -900,7 +900,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      className="flex items-center gap-2 text-sm text-violet-600 dark:text-violet-400 font-medium hover:underline break-all"
+                      className="flex items-center gap-2 text-sm text-violet-400 font-medium hover:underline break-all"
                     >
                       <ExternalLink className="w-4 h-4 flex-shrink-0" />
                       {selectedRecording.scriptUrl}
@@ -908,7 +908,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   ) : selectedRecording.scriptLocation === 'external' ? (
                     <p className="text-sm text-zinc-500">🔗 Link externo (sem URL registrada)</p>
                   ) : (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">🗂️ Salvo no CreatorFlow</p>
+                    <p className="text-sm text-zinc-400">🗂️ Salvo no CreatorFlow</p>
                   )}
                 </div>
               )}
@@ -922,20 +922,20 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   {selectedRecording.mediaDevices && selectedRecording.mediaDevices.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {selectedRecording.mediaDevices.map(d => (
-                        <span key={d} className="text-sm px-3 py-1.5 bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 rounded-xl font-medium border border-sky-100 dark:border-sky-900/40">
+                        <span key={d} className="text-sm px-3 py-1.5 bg-sky-900/20 text-sky-300 rounded-xl font-medium border border-sky-900/40">
                           {DEVICE_EMOJIS[d] || '📷'} {DEVICE_LABELS[d] ?? d}
                         </span>
                       ))}
                     </div>
                   )}
                   {selectedRecording.cameraModels && (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                    <p className="text-sm text-zinc-400 flex items-center gap-1.5">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Modelos:</span>
                       {selectedRecording.cameraModels}
                     </p>
                   )}
                   {selectedRecording.otherEquipmentDetails && (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 flex items-center gap-1.5">
+                    <p className="text-sm text-zinc-400 mt-1 flex items-center gap-1.5">
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Outros:</span>
                       {selectedRecording.otherEquipmentDetails}
                     </p>
@@ -949,8 +949,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-1.5">
                     <StickyNote className="w-3.5 h-3.5 text-amber-500" /> Obs. Técnicas
                   </p>
-                  <div className="rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 px-4 py-3">
-                    <p className="text-sm text-amber-800 dark:text-amber-300 whitespace-pre-line">{selectedRecording.technicalNotes}</p>
+                  <div className="rounded-xl bg-amber-900/10 border border-amber-900/30 px-4 py-3">
+                    <p className="text-sm text-amber-300 whitespace-pre-line">{selectedRecording.technicalNotes}</p>
                   </div>
                 </div>
               )}
@@ -959,12 +959,12 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               <div>
                 <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Status de Gravação</p>
                 {selectedRecording.hasPendingTakes === false && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-sm font-bold rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-900/20 text-emerald-300 text-sm font-bold rounded-xl border border-emerald-900/40">
                     ✅ Tudo gravado!
                   </span>
                 )}
                 {selectedRecording.hasPendingTakes === true && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm font-bold rounded-xl border border-amber-100 dark:border-amber-900/40">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-900/20 text-amber-300 text-sm font-bold rounded-xl border border-amber-900/40">
                     ⚠️ Pendências registradas
                   </span>
                 )}
@@ -972,10 +972,10 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+            <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
               <button
                 onClick={() => setSelectedRecording(null)}
-                className="flex-1 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
               >
                 Fechar
               </button>
@@ -986,7 +986,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     setSelectedRecording(null);
                   }
                 }}
-                className="px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/50 text-red-500 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 transition-all flex items-center gap-2"
+                className="px-4 py-3 rounded-xl border border-red-900/50 text-red-500 font-bold text-sm hover:bg-red-900/10 transition-all flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" /> Excluir
               </button>
@@ -1000,7 +1000,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       ══════════════════════════════════════ */}
       {isQuizOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+          <div className="bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
             {/* ── Quiz: Header (fixo) ── */}
             <div className="px-6 pt-6 pb-4 flex-shrink-0">
@@ -1012,11 +1012,11 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
                       Registrar Ingest
                     </span>
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
+                    <h3 className="text-xl font-bold text-white">
                       Tipo de Operação
                     </h3>
                   </div>
-                  <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
+                  <button onClick={closeQuiz} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -1029,12 +1029,12 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
                       Backup Existente
                     </span>
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
                       <History className="w-5 h-5 text-violet-500" />
                       Continuar Backup
                     </h3>
                   </div>
-                  <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
+                  <button onClick={closeQuiz} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -1044,7 +1044,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               {quizMode === 'novo' && (
                 <>
                   {/* Barra de progresso */}
-                  <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full mb-4 overflow-hidden">
+                  <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500"
                       style={{ width: `${((currentStep + 1) / TOTAL_STEPS) * 100}%` }}
@@ -1059,8 +1059,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                           idx === currentStep
                             ? 'w-6 bg-violet-500'
                             : idx < currentStep
-                            ? 'w-1.5 bg-violet-300 dark:bg-violet-700'
-                            : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'
+                            ? 'w-1.5 bg-violet-700'
+                            : 'w-1.5 bg-zinc-700'
                         }`}
                       />
                     ))}
@@ -1070,12 +1070,12 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-1 block">
                         Passo {currentStep + 1} de {TOTAL_STEPS}
                       </span>
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <h3 className="text-xl font-bold text-white flex items-center gap-2">
                         <span>{STEP_ICONS[currentStep]}</span>
                         {STEP_LABELS[currentStep]}
                       </h3>
                     </div>
-                    <button onClick={closeQuiz} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
+                    <button onClick={closeQuiz} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors -mt-1 flex-shrink-0">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
@@ -1096,13 +1096,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   {/* Criar Novo */}
                   <button
                     onClick={() => setQuizMode('novo')}
-                    className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-violet-400 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all text-left group"
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-800 hover:border-violet-600 hover:bg-violet-900/10 transition-all text-left group"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 transition-colors">
+                    <div className="w-11 h-11 rounded-xl bg-violet-900/20 border border-violet-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-900/30 transition-colors">
                       <FolderPlus className="w-5 h-5 text-violet-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-zinc-900 dark:text-white">Criar Novo Registro</p>
+                      <p className="font-bold text-sm text-white">Criar Novo Registro</p>
                       <p className="text-xs text-zinc-400 mt-0.5">Preencha o quiz completo para um novo ingest de material.</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-violet-500 transition-colors flex-shrink-0" />
@@ -1112,13 +1112,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   <button
                     onClick={() => localRecordings.length > 0 ? setQuizMode('continuar') : undefined}
                     disabled={localRecordings.length === 0}
-                    className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all text-left group disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-800 hover:border-indigo-600 hover:bg-indigo-900/10 transition-all text-left group disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                    <div className="w-11 h-11 rounded-xl bg-indigo-900/20 border border-indigo-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-900/30 transition-colors">
                       <History className="w-5 h-5 text-indigo-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-zinc-900 dark:text-white">Continuar Backup Existente</p>
+                      <p className="font-bold text-sm text-white">Continuar Backup Existente</p>
                       <p className="text-xs text-zinc-400 mt-0.5">
                         {localRecordings.length === 0
                           ? 'Nenhum registro encontrado ainda.'
@@ -1160,11 +1160,11 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
                     {/* Current info card */}
                     {target && (
-                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 divide-y divide-zinc-100 dark:divide-zinc-800 overflow-hidden text-sm animate-in fade-in duration-200">
+                      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 divide-y divide-zinc-800 overflow-hidden text-sm animate-in fade-in duration-200">
                         <div className="px-4 py-3 flex items-center gap-2">
                           <HardDrive className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">HDs</span>
-                          <span className="text-zinc-600 dark:text-zinc-300 text-xs">
+                          <span className="text-zinc-300 text-xs">
                             {target.hddIds.length > 0
                               ? target.hddIds.map(id => localHdds.find(h => h.id === id)?.name ?? 'Desconhecido').join(', ')
                               : 'Sem HD'}
@@ -1174,19 +1174,19 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                           <div className="px-4 py-3 flex items-center gap-2">
                             <Archive className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">Tamanho</span>
-                            <span className="text-zinc-600 dark:text-zinc-300 text-xs">{target.sizeGB} GB</span>
+                            <span className="text-zinc-300 text-xs">{target.sizeGB} GB</span>
                           </div>
                         )}
                         {target.technicalNotes && (
                           <div className="px-4 py-3 flex items-start gap-2">
                             <StickyNote className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-3">{target.technicalNotes}</p>
+                            <p className="text-xs text-zinc-400 line-clamp-3">{target.technicalNotes}</p>
                           </div>
                         )}
                         {target.hasPendingTakes && (
                           <div className="px-4 py-3 flex items-center gap-2">
                             <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Pendencias de gravacao registradas</span>
+                            <span className="text-xs font-bold text-amber-400">Pendencias de gravacao registradas</span>
                           </div>
                         )}
                       </div>
@@ -1241,13 +1241,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                               <button
                                 key={hdd.id}
                                 onClick={() => toggleContinueHdd(hdd.id)}
-                                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${sel ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700'}`}
+                                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${sel ? 'border-indigo-500 bg-indigo-900/20' : 'border-zinc-800 hover:border-indigo-700'}`}
                               >
-                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-indigo-600 border-indigo-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-indigo-600 border-indigo-600' : 'border-zinc-600'}`}>
                                   {sel && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                                 </div>
                                 <HardDrive className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-                                <span className={`font-bold text-sm flex-1 ${sel ? 'text-indigo-700 dark:text-indigo-300' : 'text-zinc-700 dark:text-zinc-300'}`}>{hdd.name}</span>
+                                <span className={`font-bold text-sm flex-1 ${sel ? 'text-indigo-300' : 'text-zinc-300'}`}>{hdd.name}</span>
                               </button>
                             );
                           })}
@@ -1263,16 +1263,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                           onClick={() => setContinuePendingDone(p => p === false ? null : false)}
                           className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                             continuePendingDone === false
-                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                              : 'border-zinc-200 dark:border-zinc-800 hover:border-emerald-300 dark:hover:border-emerald-700'
+                              ? 'border-emerald-500 bg-emerald-900/20'
+                              : 'border-zinc-800 hover:border-emerald-700'
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${continuePendingDone === false ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${continuePendingDone === false ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600'}`}>
                             {continuePendingDone === false && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                           </div>
                           <Check className="w-4 h-4 text-zinc-400 flex-shrink-0" />
                           <div>
-                            <p className={`font-bold text-sm ${continuePendingDone === false ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                            <p className={`font-bold text-sm ${continuePendingDone === false ? 'text-emerald-300' : 'text-zinc-300'}`}>
                               Pendencias resolvidas nesta sessao
                             </p>
                             <p className="text-xs text-zinc-400 mt-0.5">Marque se tudo que estava pendente foi gravado agora.</p>
@@ -1366,16 +1366,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       onClick={() => setQuizForm(p => ({ ...p, scriptLocation: 'external' }))}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                         quizForm.scriptLocation === 'external'
-                          ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700'
+                          ? 'border-violet-500 bg-violet-900/20'
+                          : 'border-zinc-800 hover:border-violet-700'
                       }`}
                     >
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.scriptLocation === 'external' ? 'border-violet-600 bg-violet-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.scriptLocation === 'external' ? 'border-violet-600 bg-violet-600' : 'border-zinc-600'}`}>
                         {quizForm.scriptLocation === 'external' && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                       <Link className="w-4 h-4 text-zinc-500 flex-shrink-0" />
                       <div>
-                        <p className="font-bold text-sm text-zinc-900 dark:text-white">Link Externo</p>
+                        <p className="font-bold text-sm text-white">Link Externo</p>
                         <p className="text-xs text-zinc-400">Notion, Google Docs, Frame.io…</p>
                       </div>
                     </button>
@@ -1385,16 +1385,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       onClick={() => setQuizForm(p => ({ ...p, scriptLocation: 'creatorflow' }))}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                         quizForm.scriptLocation === 'creatorflow'
-                          ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700'
+                          ? 'border-violet-500 bg-violet-900/20'
+                          : 'border-zinc-800 hover:border-violet-700'
                       }`}
                     >
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.scriptLocation === 'creatorflow' ? 'border-violet-600 bg-violet-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.scriptLocation === 'creatorflow' ? 'border-violet-600 bg-violet-600' : 'border-zinc-600'}`}>
                         {quizForm.scriptLocation === 'creatorflow' && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                       <FileText className="w-4 h-4 text-zinc-500 flex-shrink-0" />
                       <div>
-                        <p className="font-bold text-sm text-zinc-900 dark:text-white">No CreatorFlow</p>
+                        <p className="font-bold text-sm text-white">No CreatorFlow</p>
                         <p className="text-xs text-zinc-400">Roteiro salvo no app</p>
                       </div>
                     </button>
@@ -1404,16 +1404,16 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       onClick={() => setQuizForm(p => ({ ...p, scriptLocation: null, scriptUrl: '', scriptId: '' }))}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                         quizForm.scriptLocation === null
-                          ? 'border-zinc-400 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/60'
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                          ? 'border-zinc-600 bg-zinc-800/60'
+                          : 'border-zinc-800 hover:hover:border-zinc-700'
                       }`}
                     >
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.scriptLocation === null ? 'border-zinc-500 bg-zinc-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.scriptLocation === null ? 'border-zinc-500 bg-zinc-500' : 'border-zinc-600'}`}>
                         {quizForm.scriptLocation === null && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                       <span className="text-zinc-400 text-sm flex-shrink-0">—</span>
                       <div>
-                        <p className="font-bold text-sm text-zinc-700 dark:text-zinc-300">Sem Roteiro</p>
+                        <p className="font-bold text-sm text-zinc-300">Sem Roteiro</p>
                         <p className="text-xs text-zinc-400">Gravação sem script formal</p>
                       </div>
                     </button>
@@ -1436,9 +1436,9 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   {quizForm.scriptLocation === 'creatorflow' && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-200">
                       <label className={labelCls}>Roteiro Salvo</label>
-                      <div className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-zinc-400 text-sm flex items-center justify-between cursor-not-allowed">
+                      <div className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-400 text-sm flex items-center justify-between cursor-not-allowed">
                         <span>Selecionar roteiro… (em breve)</span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded-full">Em breve</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded-full">Em breve</span>
                       </div>
                       <p className="text-xs text-zinc-400 mt-2">Esta integração estará disponível na Fase 4 do app.</p>
                     </div>
@@ -1450,7 +1450,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               {quizMode === 'novo' && currentStep === 3 && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   {activeHdds.length === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                    <div className="text-center py-8 border-2 border-dashed border-zinc-800 rounded-2xl">
                       <div className="text-4xl mb-3">💾</div>
                       <p className="text-sm text-zinc-500 mb-4">Nenhum HD cadastrado ainda.</p>
                       <button
@@ -1469,19 +1469,19 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                           return (
                             <button
                               key={hdd.id} onClick={() => toggleHDD(hdd.id)}
-                              className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${sel ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700'}`}
+                              className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${sel ? 'border-violet-500 bg-violet-900/20' : 'border-zinc-800 hover:border-violet-700'}`}
                             >
-                              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-violet-600 border-violet-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? 'bg-violet-600 border-violet-600' : 'border-zinc-600'}`}>
                                 {sel && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                               </div>
                               <span className="text-base">💾</span>
-                              <span className={`font-bold text-sm flex-1 ${sel ? 'text-violet-700 dark:text-violet-300' : 'text-zinc-700 dark:text-zinc-300'}`}>{hdd.name}</span>
+                              <span className={`font-bold text-sm flex-1 ${sel ? 'text-violet-300' : 'text-zinc-300'}`}>{hdd.name}</span>
                             </button>
                           );
                         })}
                       </div>
                       {quizForm.selectedHddIds.length > 0 && (
-                        <p className="text-xs text-violet-600 dark:text-violet-400 font-bold pt-1">
+                        <p className="text-xs text-violet-400 font-bold pt-1">
                           ✓ {quizForm.selectedHddIds.length} HD{quizForm.selectedHddIds.length > 1 ? 's' : ''} selecionado{quizForm.selectedHddIds.length > 1 ? 's' : ''}
                         </p>
                       )}
@@ -1496,13 +1496,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
                   {/* Fallback: inventário vazio */}
                   {!hasInventory ? (
-                    <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                    <div className="text-center py-8 border-2 border-dashed border-zinc-800 rounded-2xl">
                       <p className="text-sm text-zinc-400 italic mb-1">
                         Nenhum equipamento cadastrado no Meu Estúdio.
                       </p>
                       <p className="text-xs text-zinc-400">
                         Configure seu inventário em{' '}
-                        <span className="font-bold text-violet-600 dark:text-violet-400">Meu Estúdio</span>
+                        <span className="font-bold text-violet-400">Meu Estúdio</span>
                         {' '}para agilizar futuros ingests.
                       </p>
                     </div>
@@ -1516,20 +1516,20 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   )}
 
                   {/* Outros — sempre disponível */}
-                  {hasInventory && <div className="h-px bg-zinc-100 dark:bg-zinc-800" />}
+                  {hasInventory && <div className="h-px bg-zinc-800" />}
                   <button
                     onClick={() => toggleDevice('outros')}
                     className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${
                       quizForm.mediaDevices.includes('outros')
-                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                        : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-700'
+                        ? 'border-violet-500 bg-violet-900/20'
+                        : 'border-zinc-800 hover:border-violet-700'
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.mediaDevices.includes('outros') ? 'bg-violet-600 border-violet-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${quizForm.mediaDevices.includes('outros') ? 'bg-violet-600 border-violet-600' : 'border-zinc-600'}`}>
                       {quizForm.mediaDevices.includes('outros') && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                     </div>
                     <span className="text-base">🎛️</span>
-                    <span className={`font-bold text-sm ${quizForm.mediaDevices.includes('outros') ? 'text-violet-700 dark:text-violet-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                    <span className={`font-bold text-sm ${quizForm.mediaDevices.includes('outros') ? 'text-violet-300' : 'text-zinc-300'}`}>
                       Outros Equipamentos
                     </span>
                   </button>
@@ -1574,13 +1574,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
               {quizMode === 'novo' && currentStep === 6 && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   {/* Destaque visual */}
-                  <div className="rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/10 p-4 flex items-start gap-3">
+                  <div className="rounded-2xl border border-amber-800/50 bg-amber-900/10 p-4 flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-sm text-amber-800 dark:text-amber-300 mb-0.5">
+                      <p className="font-bold text-sm text-amber-300 mb-0.5">
                         Faltou gravar algum take importante?
                       </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                      <p className="text-xs text-amber-400">
                         Registre agora para não perder o raciocínio. Isso gerará alertas futuros no Dashboard.
                       </p>
                     </div>
@@ -1592,8 +1592,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       onClick={() => setQuizForm(p => ({ ...p, hasPendingTakes: true }))}
                       className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 font-bold text-sm transition-all ${
                         quizForm.hasPendingTakes === true
-                          ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
-                          : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-amber-300 dark:hover:border-amber-700'
+                          ? 'border-amber-500 bg-amber-900/20 text-amber-300'
+                          : 'border-zinc-800 text-zinc-400 hover:border-amber-700'
                       }`}
                     >
                       <span className="text-2xl">😬</span>
@@ -1603,8 +1603,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       onClick={() => setQuizForm(p => ({ ...p, hasPendingTakes: false, pendingTakesDescription: '' }))}
                       className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 font-bold text-sm transition-all ${
                         quizForm.hasPendingTakes === false
-                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
-                          : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-emerald-300 dark:hover:border-emerald-700'
+                          ? 'border-emerald-500 bg-emerald-900/20 text-emerald-300'
+                          : 'border-zinc-800 text-zinc-400 hover:border-emerald-700'
                       }`}
                     >
                       <span className="text-2xl">✅</span>
@@ -1632,20 +1632,20 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                   <p className="text-xs text-zinc-400 uppercase tracking-widest font-bold mb-1">Confira antes de salvar:</p>
 
-                  <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 divide-y divide-zinc-100 dark:divide-zinc-800 overflow-hidden text-sm">
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950 divide-y divide-zinc-800 overflow-hidden text-sm">
 
                     {/* Projeto + Cliente */}
                     <div className="px-4 py-3">
                       <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">Projeto</span>
-                      <p className="font-bold text-zinc-900 dark:text-white">🎬 {quizForm.title}</p>
-                      {quizForm.clientName && <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5">Cliente: {quizForm.clientName}</p>}
+                      <p className="font-bold text-white">🎬 {quizForm.title}</p>
+                      {quizForm.clientName && <p className="text-xs text-violet-400 mt-0.5">Cliente: {quizForm.clientName}</p>}
                       {quizForm.summary && <p className="text-xs text-zinc-500 mt-1">{quizForm.summary}</p>}
                     </div>
 
                     {/* Data */}
                     <div className="px-4 py-3">
                       <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">Data</span>
-                      <p className="text-zinc-700 dark:text-zinc-300">📅 {formatDate(quizForm.recordedAt)}</p>
+                      <p className="text-zinc-300">📅 {formatDate(quizForm.recordedAt)}</p>
                     </div>
 
                     {/* Roteiro */}
@@ -1653,10 +1653,10 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       <div className="px-4 py-3">
                         <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">Roteiro</span>
                         {quizForm.scriptLocation === 'external' && (
-                          <p className="text-zinc-700 dark:text-zinc-300 truncate">🔗 {quizForm.scriptUrl || '(sem URL)'}</p>
+                          <p className="text-zinc-300 truncate">🔗 {quizForm.scriptUrl || '(sem URL)'}</p>
                         )}
                         {quizForm.scriptLocation === 'creatorflow' && (
-                          <p className="text-zinc-700 dark:text-zinc-300">🗂️ No CreatorFlow</p>
+                          <p className="text-zinc-300">🗂️ No CreatorFlow</p>
                         )}
                       </div>
                     )}
@@ -1664,7 +1664,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     {/* HDs */}
                     <div className="px-4 py-3">
                       <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">HDs ({quizForm.selectedHddIds.length})</span>
-                      <p className="text-violet-600 dark:text-violet-400 font-medium">💾 {getHDDNames(quizForm.selectedHddIds)}</p>
+                      <p className="text-violet-400 font-medium">💾 {getHDDNames(quizForm.selectedHddIds)}</p>
                     </div>
 
                     {/* Câmeras */}
@@ -1672,7 +1672,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       <div className="px-4 py-3">
                         <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">Câmeras e Mídia</span>
                         {quizForm.mediaDevices.length > 0 && (
-                          <p className="text-sky-600 dark:text-sky-400">🎥 {quizForm.mediaDevices.map(d => DEVICE_LABELS[d] ?? d).join(' · ')}</p>
+                          <p className="text-sky-400">🎥 {quizForm.mediaDevices.map(d => DEVICE_LABELS[d] ?? d).join(' · ')}</p>
                         )}
                         {quizForm.cameraModels && <p className="text-zinc-500 text-xs mt-0.5">Modelos: {quizForm.cameraModels}</p>}
                       </div>
@@ -1682,7 +1682,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     {quizForm.technicalNotes && (
                       <div className="px-4 py-3">
                         <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">Obs. Técnicas</span>
-                        <p className="text-amber-600 dark:text-amber-400">📝 {quizForm.technicalNotes}</p>
+                        <p className="text-amber-400">📝 {quizForm.technicalNotes}</p>
                       </div>
                     )}
 
@@ -1690,11 +1690,11 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <div className="px-4 py-3">
                       <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 block mb-1">Pendências</span>
                       {quizForm.hasPendingTakes === false && (
-                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">✅ Tudo gravado!</p>
+                        <p className="text-emerald-400 font-medium">✅ Tudo gravado!</p>
                       )}
                       {quizForm.hasPendingTakes === true && (
                         <>
-                          <p className="text-amber-600 dark:text-amber-400 font-medium">⚠️ Sim — faltou gravar</p>
+                          <p className="text-amber-400 font-medium">⚠️ Sim — faltou gravar</p>
                           {quizForm.pendingTakesDescription && (
                             <p className="text-xs text-zinc-500 mt-1">{quizForm.pendingTakesDescription}</p>
                           )}
@@ -1707,13 +1707,13 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
             </div>
 
             {/* ── Quiz: Footer (fixo) ── */}
-            <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+            <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
 
               {/* Mode null: sem footer (ações são nos cards) */}
               {quizMode === null && (
                 <button
                   onClick={closeQuiz}
-                  className="flex-1 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                  className="flex-1 px-5 py-3 rounded-xl border border-zinc-700 text-zinc-500 font-bold text-sm hover:bg-zinc-800 transition-all"
                 >
                   Cancelar
                 </button>
@@ -1724,7 +1724,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 <>
                   <button
                     onClick={() => setQuizMode(null)}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
                   >
                     <ChevronLeft className="w-4 h-4" /> Voltar
                   </button>
@@ -1744,14 +1744,14 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   {currentStep > 0 ? (
                     <button
                       onClick={prevStep}
-                      className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                      className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
                     >
                       <ChevronLeft className="w-4 h-4" /> Voltar
                     </button>
                   ) : (
                     <button
                       onClick={() => setQuizMode(null)}
-                      className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                      className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
                     >
                       <ChevronLeft className="w-4 h-4" /> Voltar
                     </button>
