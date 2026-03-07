@@ -2398,7 +2398,7 @@ const buildDefaultScriptPackages = (): ScriptPackage[] => [
 // ClientRoteirosTab sub-component
 // ─────────────────────────────────────────────
 const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
-  const { data: packages, setData: setPackages } = useClientData<ScriptPackage[]>(client.id, 'roteiros', buildDefaultScriptPackages());
+  const { data: packages, setData: setPackages, loading: pkgsLoading } = useClientData<ScriptPackage[]>(client.id, 'roteiros', buildDefaultScriptPackages());
   const [selectedPkgId, setSelectedPkgId]         = useState<string>(packages[0]?.id ?? '');
   const [viewMode, setViewMode]                   = useState<'edicao' | 'shotlist'>('edicao');
   const [expandedId, setExpandedId]               = useState<string | null>(null);
@@ -2449,11 +2449,16 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
     return result;
   };
 
-  // Purge expired archives on mount (lazy cleanup)
+  // Purge expired archives — runs once, AFTER API data has loaded, so that
+  // hasSavedRef in useClientData is not set before the fetch completes.
+  const purgedRef = useRef(false);
   useEffect(() => {
-    setPackages(prev => purgeExpiredArchived(prev));
+    if (!pkgsLoading && !purgedRef.current) {
+      purgedRef.current = true;
+      setPackages(prev => purgeExpiredArchived(prev));
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pkgsLoading]);
 
   // Sync selectedPkgId whenever packages changes from API load.
   // The initial useState uses the fallback UUID which differs from the UUID stored in the API.
