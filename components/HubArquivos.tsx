@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { fetchUserData, saveUserData } from '@/lib/clients-api';
 import {
   ArrowLeft,
   Plus,
@@ -158,7 +159,54 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
   const [continueNewHddIds, setContinueNewHddIds] = useState<string[]>([]);
   const [continuePendingDone, setContinuePendingDone] = useState<boolean | null>(null);
 
-  // ── Clients received via props from dashboard ──
+  // ── Internal state that overrides props once API data loads ────
+  const [localHdds, setLocalHdds]             = useState<HDD[]>(hdds);
+  const [localRecordings, setLocalRecordings] = useState<Recording[]>(recordings);
+  const [dataLoading, setDataLoading]         = useState(true);
+
+  // On mount: fetch fresh data from API. If API is empty but props have data, migrate props→API.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [apiHdds, apiRec] = await Promise.all([
+          fetchUserData<HDD[]>('hdds'),
+          fetchUserData<Recording[]>('recordings'),
+        ]);
+
+        if (cancelled) return;
+
+        const hasApiHdds = Array.isArray(apiHdds) && apiHdds.length > 0;
+        const hasApiRec  = Array.isArray(apiRec)  && apiRec.length  > 0;
+
+        // Prefer API data; fall back to props; migrate props→API if API is empty
+        if (hasApiHdds) {
+          setLocalHdds(apiHdds);
+        } else if (hdds.length > 0) {
+          setLocalHdds(hdds);
+          saveUserData('hdds', hdds).catch(() => {});
+        }
+
+        if (hasApiRec) {
+          setLocalRecordings(apiRec);
+        } else if (recordings.length > 0) {
+          setLocalRecordings(recordings);
+          saveUserData('recordings', recordings).catch(() => {});
+        }
+      } catch {
+        /* keep props data on error */
+        if (!cancelled) { setLocalHdds(hdds); setLocalRecordings(recordings); }
+      } finally {
+        if (!cancelled) setDataLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Keep local state in sync when parent props change (new saves) ─
+  useEffect(() => { if (!dataLoading) setLocalHdds(hdds); }, [hdds, dataLoading]);
+  useEffect(() => { if (!dataLoading) setLocalRecordings(recordings); }, [recordings, dataLoading]);
 
   // ── Quiz controls ──────────────────────────
   const openQuiz = () => {
@@ -202,7 +250,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
     );
 
   const continueBackup = () => {
-    const target = recordings.find(r => r.id === continueTargetId);
+    const target = localRecordings.find(r => r.id === continueTargetId);
     if (!target) return;
     const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
     const appendedNotes = continueNotes.trim()
@@ -269,7 +317,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
     }));
 
   const getHDDNames = (ids: string[]) =>
-    ids.map(id => hdds.find(h => h.id === id)?.name ?? 'HD Desconhecido').join(', ');
+    ids.map(id => localHdds.find(h => h.id === id)?.name ?? 'HD Desconhecido').join(', ');
 
   const formatDate = (d: string) =>
     new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
@@ -328,12 +376,22 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
     );
   };
 
-  const activeHdds = hdds.filter(h => !h.isArchived);
-  const archivedHdds = hdds.filter(h => h.isArchived && h.archivedAt &&
+  // Use localHdds/localRecordings (API-loaded, falls back to props)
+  const activeHdds    = localHdds.filter(h => !h.isArchived);
+  const archivedHdds  = localHdds.filter(h => h.isArchived && h.archivedAt &&
     Date.now() - new Date(h.archivedAt).getTime() <= HDD_ARCHIVE_RETENTION_MS);
-  const isEmpty = recordings.length === 0 && activeHdds.length === 0;
+  const isEmpty = !dataLoading && localRecordings.length === 0 && activeHdds.length === 0;
 
-  const filteredRecordings = [...recordings].reverse().filter(rec => {
+  // Enrich recordings with clientName resolved from the clients prop
+  const enrichedRecordings = localRecordings.map(rec => {
+    if (rec.clientId && !rec.clientName) {
+      const client = clients.find(c => c.id === rec.clientId);
+      return client ? { ...rec, clientName: client.brandName } : rec;
+    }
+    return rec;
+  });
+
+  const filteredRecordings = [...enrichedRecordings].reverse().filter(rec => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -345,7 +403,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       (rec.otherEquipmentDetails?.toLowerCase().includes(q) ?? false) ||
       (rec.mediaDevices?.some(d => (DEVICE_LABELS[d] ?? d).toLowerCase().includes(q)) ?? false) ||
       rec.recordedAt.includes(q) ||
-      rec.hddIds.some(id => (hdds.find(h => h.id === id)?.name ?? '').toLowerCase().includes(q))
+      rec.hddIds.some(id => (localHdds.find(h => h.id === id)?.name ?? '').toLowerCase().includes(q))
     );
   });
 
@@ -401,7 +459,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     const daysLeft = archivedDate
                       ? Math.ceil((HDD_ARCHIVE_RETENTION_MS - (Date.now() - archivedDate.getTime())) / (24 * 60 * 60 * 1000))
                       : null;
-                    const usedIn = recordings.filter(r => r.hddIds.includes(hdd.id)).length;
+                    const usedIn = localRecordings.filter(r => r.hddIds.includes(hdd.id)).length;
                     return (
                       <div key={hdd.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
                         <div className="text-xl flex-shrink-0">💾</div>
@@ -449,7 +507,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   Gestor de Acervo e HDs
                 </h1>
                 <p className="text-xs text-zinc-400 hidden sm:block">
-                  {recordings.length} {recordings.length === 1 ? 'ingest' : 'ingests'} &middot; {activeHdds.length}{' '}
+                  {localRecordings.length} {localRecordings.length === 1 ? 'ingest' : 'ingests'} &middot; {activeHdds.length}{' '}
                   {activeHdds.length === 1 ? 'HD' : 'HDs'}
                 </p>
               </div>
@@ -470,6 +528,22 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
       {/* ══ Main ══ */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+
+          {/* Loading skeleton */}
+          {dataLoading && (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-24" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-16 bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
+                ))}
+              </div>
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-32 mt-6" />
+              {[1, 2].map(i => (
+                <div key={i} className="h-28 bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
+              ))}
+            </div>
+          )}
 
           {/* Empty state */}
           {isEmpty && (
@@ -563,7 +637,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
           </section>
 
           {/* ── Seção 2: Últimos Ingests ── */}
-          {recordings.length > 0 && (
+          {localRecordings.length > 0 && (
             <section>
               {/* Header + search bar */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
@@ -616,6 +690,11 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                       {/* Top row: badges + delete */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-wrap gap-1.5">
+                          {rec.clientName && (
+                            <span className="text-[10px] font-black px-2 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full border border-violet-200 dark:border-violet-800/50">
+                              👤 {rec.clientName}
+                            </span>
+                          )}
                           {rec.hasPendingTakes && (
                             <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full flex items-center gap-1">
                               <AlertTriangle className="w-2.5 h-2.5" /> Pendências
@@ -647,7 +726,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                           {formatDate(rec.recordedAt)}
                         </span>
                         {rec.hddIds.map(id => {
-                          const hdd = hdds.find(h => h.id === id);
+                          const hdd = localHdds.find(h => h.id === id);
                           if (!hdd) return null;
                           return (
                             <span key={id} className="flex items-center gap-1 text-xs px-2 py-0.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-full font-medium border border-violet-100 dark:border-violet-900/40">
@@ -820,7 +899,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {selectedRecording.hddIds.map(id => {
-                    const hdd = hdds.find(h => h.id === id);
+                    const hdd = localHdds.find(h => h.id === id);
                     return (
                       <span key={id} className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-xl font-medium border border-violet-100 dark:border-violet-900/40">
                         💾 {hdd?.name ?? 'HD Desconhecido'}
@@ -1052,8 +1131,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
 
                   {/* Continuar Existente */}
                   <button
-                    onClick={() => recordings.length > 0 ? setQuizMode('continuar') : undefined}
-                    disabled={recordings.length === 0}
+                    onClick={() => localRecordings.length > 0 ? setQuizMode('continuar') : undefined}
+                    disabled={localRecordings.length === 0}
                     className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all text-left group disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
@@ -1062,7 +1141,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-zinc-900 dark:text-white">Continuar Backup Existente</p>
                       <p className="text-xs text-zinc-400 mt-0.5">
-                        {recordings.length === 0
+                        {localRecordings.length === 0
                           ? 'Nenhum registro encontrado ainda.'
                           : 'Vincule nova sessão a um backup já registrado, sem duplicar o registro.'}
                       </p>
@@ -1076,8 +1155,8 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   Tela: Continuar Backup Existente
               ───────────────────────────────────── */}
               {quizMode === 'continuar' && (() => {
-                const target = recordings.find(r => r.id === continueTargetId);
-                const availableHdds = hdds.filter(h => target ? !target.hddIds.includes(h.id) : true);
+                const target = localRecordings.find(r => r.id === continueTargetId);
+                const availableHdds = localHdds.filter(h => target ? !target.hddIds.includes(h.id) : true);
                 return (
                   <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-6 pt-2">
 
@@ -1090,7 +1169,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                         className={inputCls}
                       >
                         <option value="">— Escolha um registro —</option>
-                        {[...recordings]
+                        {[...localRecordings]
                           .sort((a, b) => (b.lastUpdated ?? b.createdAt) - (a.lastUpdated ?? a.createdAt))
                           .map(rec => (
                             <option key={rec.id} value={rec.id}>
@@ -1108,7 +1187,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 w-20 flex-shrink-0">HDs</span>
                           <span className="text-zinc-600 dark:text-zinc-300 text-xs">
                             {target.hddIds.length > 0
-                              ? target.hddIds.map(id => hdds.find(h => h.id === id)?.name ?? 'Desconhecido').join(', ')
+                              ? target.hddIds.map(id => localHdds.find(h => h.id === id)?.name ?? 'Desconhecido').join(', ')
                               : 'Sem HD'}
                           </span>
                         </div>
