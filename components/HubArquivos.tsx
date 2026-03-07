@@ -612,7 +612,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 {activeHdds.map(hdd => {
                   const usedIn = localRecordings.filter(r => r.hddIds.includes(hdd.id)).length;
                   return (
-                    <div key={hdd.id} className="group relative flex flex-col gap-2 p-4 bg-zinc-800/60 dark:bg-zinc-800/80 border border-zinc-700/40 dark:border-zinc-700/60 rounded-2xl hover:border-violet-500/50 transition-all aspect-square">
+                    <div key={hdd.id} className="group relative flex flex-col gap-2 p-4 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 rounded-2xl hover:border-violet-400 dark:hover:border-violet-500/50 transition-all aspect-square">
                       <div className="w-9 h-9 flex items-center justify-center bg-violet-500/15 text-lg rounded-xl flex-shrink-0">💾</div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">{hdd.name}</p>
@@ -629,7 +629,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 })}
                 <button
                   onClick={() => setIsAddHDDOpen(true)}
-                  className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-zinc-700/40 rounded-2xl text-zinc-500 hover:border-violet-500/50 hover:text-violet-400 transition-all aspect-square"
+                  className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700/40 rounded-2xl text-zinc-400 dark:text-zinc-500 hover:border-violet-400 dark:hover:border-violet-500/50 hover:text-violet-500 dark:hover:text-violet-400 transition-all aspect-square"
                 >
                   <Plus className="w-5 h-5" />
                   <span className="text-xs font-bold">Novo HD</span>
@@ -687,7 +687,7 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                     <div
                       key={rec.id}
                       onClick={() => setSelectedRecording(rec)}
-                      className="group relative flex flex-col gap-2.5 p-4 bg-zinc-800/60 dark:bg-zinc-800/80 border border-zinc-700/40 dark:border-zinc-700/60 rounded-2xl hover:border-violet-500/50 transition-all cursor-pointer min-h-[160px]"
+                      className="group relative flex flex-col gap-2.5 p-4 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 rounded-2xl hover:border-violet-400 dark:hover:border-violet-500/50 transition-all cursor-pointer min-h-[160px]"
                     >
                       {/* Header: icon + delete */}
                       <div className="flex items-start justify-between gap-1">

@@ -2179,7 +2179,7 @@ const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => v
           {displayItems.map(rec => (
             <div
               key={rec.id}
-              className="group relative flex flex-col gap-2.5 p-4 bg-zinc-800/60 dark:bg-zinc-800/80 border border-zinc-700/40 dark:border-zinc-700/60 rounded-2xl hover:border-violet-500/50 transition-all min-h-[160px]"
+              className="group relative flex flex-col gap-2.5 p-4 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 rounded-2xl hover:border-violet-400 dark:hover:border-violet-500/50 transition-all min-h-[160px]"
             >
               {/* Icon + pending badge */}
               <div className="flex items-start justify-between gap-1">
@@ -6113,7 +6113,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-950 animate-in fade-in duration-300">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-100 dark:bg-gray-950 animate-in fade-in duration-300">
 
       {/* ── Monthly report modal ── */}
       {showReport && (
@@ -6137,7 +6137,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           Mobile: overlay, slides in from left
          ══════════════════════════════════ */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-gray-950 border-r border-gray-800/50
+        fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-white dark:bg-gray-950 border-r border-zinc-200 dark:border-gray-800/50
         overflow-hidden
         transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0 lg:flex-shrink-0
@@ -6145,11 +6145,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
       `}>
 
         {/* ── Sidebar header ── */}
-        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-gray-800">
+        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-zinc-200 dark:border-gray-800">
 
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-gray-400 transition-colors mb-5"
+            className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-gray-600 hover:text-zinc-800 dark:hover:text-gray-400 transition-colors mb-5"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Voltar à lista
           </button>
@@ -6160,11 +6160,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
               {client.brandName.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-bold tracking-tight text-white truncate leading-tight">
+              <h1 className="text-sm font-bold tracking-tight text-zinc-900 dark:text-white truncate leading-tight">
                 {client.brandName}
               </h1>
               {(client.niche || client.subniche) && (
-                <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                <p className="text-[10px] text-zinc-400 dark:text-gray-500 truncate mt-0.5">
                   {[client.niche, client.subniche].filter(Boolean).join(' · ')}
                 </p>
               )}
@@ -6173,7 +6173,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
 
           {/* Voice tone badge */}
           {client.voiceTone && (
-            <span className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-violet-900/20 text-violet-300 border-violet-800/50">
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-violet-100 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800/50">
               <Mic className="w-3 h-3" /> {client.voiceTone}
             </span>
           )}
@@ -6181,15 +6181,15 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {/* Mini health bar */}
           <div className="mt-3 space-y-1.5">
             <div className="flex items-center justify-between min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-600 truncate">Saúde</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-gray-600 truncate">Saúde</span>
               <span className={`text-[10px] font-black flex-shrink-0 ${sidebarHealth < 34 ? 'text-red-400' : sidebarHealth < 67 ? 'text-amber-400' : 'text-emerald-400'}`}>
                 {sidebarHealth}%
               </span>
             </div>
-            <div className="relative h-1.5 rounded-full overflow-hidden bg-gray-800">
+            <div className="relative h-1.5 rounded-full overflow-hidden bg-zinc-200 dark:bg-gray-800">
               <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" />
               <div
-                className="absolute inset-y-0 right-0 bg-gray-950 transition-all duration-700"
+                className="absolute inset-y-0 right-0 bg-white dark:bg-gray-950 transition-all duration-700"
                 style={{ width: `${100 - sidebarHealth}%` }}
               />
             </div>
@@ -6198,7 +6198,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {/* ── Relatório Mensal button ── */}
           <button
             onClick={() => setShowReport(true)}
-            className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600/10 border border-indigo-600/20 text-indigo-400 hover:bg-indigo-600/20 hover:text-indigo-300 transition-all text-xs font-bold"
+            className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600/10 border border-indigo-600/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600/20 hover:text-indigo-700 dark:hover:text-indigo-300 transition-all text-xs font-bold"
           >
             <FileText className="w-3.5 h-3.5" /> Relatório Mensal
           </button>
@@ -6213,20 +6213,20 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
             return (
               <React.Fragment key={tab.id}>
                 {showSep && (
-                  <div className="mx-3 my-2 h-px bg-gray-800/70" />
+                  <div className="mx-3 my-2 h-px bg-zinc-200 dark:bg-gray-800/70" />
                 )}
                 <button
                   onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
                   className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
                     isActive
-                      ? 'bg-white/[0.07] text-white'
-                      : 'text-gray-500 hover:text-gray-200 hover:bg-white/[0.04]'
+                      ? 'bg-indigo-50 dark:bg-white/[0.07] text-indigo-700 dark:text-white'
+                      : 'text-zinc-500 dark:text-gray-500 hover:text-zinc-900 dark:hover:text-gray-200 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   {isActive && (
                     <span className="absolute left-0 inset-y-0 my-2 w-[2px] rounded-full bg-indigo-500" />
                   )}
-                  <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-600 group-hover:text-gray-400'}`} />
+                  <tab.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-500 dark:text-indigo-400' : 'text-zinc-400 dark:text-gray-600 group-hover:text-zinc-600 dark:group-hover:text-gray-400'}`} />
                   <span className="truncate">{tab.label}</span>
                   {tab.id === 'entregas' && (
                     <span className="ml-auto text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full flex-shrink-0">Em breve</span>
@@ -6244,36 +6244,36 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         {/* ── Mobile top bar (hamburger) ── */}
-        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-800 bg-gray-950 lg:hidden">
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-gray-800 bg-white dark:bg-gray-950 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-500 hover:text-gray-300 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-gray-800 text-zinc-500 dark:text-gray-500 hover:text-zinc-700 dark:hover:text-gray-300 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-white truncate">{client.brandName}</h1>
+            <h1 className="text-sm font-bold text-zinc-900 dark:text-white truncate">{client.brandName}</h1>
           </div>
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-wide truncate">
+          <span className="text-[10px] font-black text-zinc-400 dark:text-gray-500 uppercase tracking-wide truncate">
             {TABS.find(t => t.id === activeTab)?.label}
           </span>
         </div>
 
         {/* ── Desktop topbar ── */}
-        <div className="hidden lg:flex flex-shrink-0 items-center gap-4 px-6 py-2.5 border-b border-gray-800/50 bg-gray-950/80">
+        <div className="hidden lg:flex flex-shrink-0 items-center gap-4 px-6 py-2.5 border-b border-zinc-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
           <div className="flex-1 min-w-0 flex items-center gap-2 text-[11px]">
-            <span className="font-black text-gray-500 truncate">{client.brandName}</span>
-            <span className="text-gray-700">/</span>
-            <span className="font-black text-gray-400 truncate">
+            <span className="font-black text-zinc-500 dark:text-gray-500 truncate">{client.brandName}</span>
+            <span className="text-zinc-300 dark:text-gray-700">/</span>
+            <span className="font-black text-zinc-700 dark:text-gray-400 truncate">
               {TABS.find(t => t.id === activeTab)?.label}
             </span>
           </div>
           <div className="flex-shrink-0 flex items-center gap-2.5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700">Saúde</span>
-            <div className="relative w-20 h-1 rounded-full overflow-hidden bg-gray-800">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-gray-700">Saúde</span>
+            <div className="relative w-20 h-1 rounded-full overflow-hidden bg-zinc-200 dark:bg-gray-800">
               <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" />
               <div
-                className="absolute inset-y-0 right-0 bg-gray-950 transition-all duration-700"
+                className="absolute inset-y-0 right-0 bg-white dark:bg-gray-950 transition-all duration-700"
                 style={{ width: `${100 - sidebarHealth}%` }}
               />
             </div>
@@ -6284,7 +6284,7 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
         </div>
 
         {/* ── Content ── */}
-        <main className={`flex-1 bg-gray-900 ${activeTab === 'kanban' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
+        <main className={`flex-1 bg-zinc-50 dark:bg-gray-900 ${activeTab === 'kanban' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
           <div className={
             activeTab === 'kanban'
               ? 'flex flex-col flex-1 min-h-0 p-4'
