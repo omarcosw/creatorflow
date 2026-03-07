@@ -533,15 +533,17 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
           {dataLoading && (
             <div className="space-y-4 animate-pulse">
               <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-24" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-16 bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="aspect-square bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
                 ))}
               </div>
               <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-32 mt-6" />
-              {[1, 2].map(i => (
-                <div key={i} className="h-28 bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="h-40 bg-zinc-100 dark:bg-zinc-800/60 rounded-2xl" />
+                ))}
+              </div>
             </div>
           )}
 
@@ -606,31 +608,31 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                 <span className="font-bold text-sm">Cadastrar primeiro HD</span>
               </button>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                 {activeHdds.map(hdd => {
-                  const usedIn = recordings.filter(r => r.hddIds.includes(hdd.id)).length;
+                  const usedIn = localRecordings.filter(r => r.hddIds.includes(hdd.id)).length;
                   return (
-                    <div key={hdd.id} className="group flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-800 transition-all">
-                      <div className="w-10 h-10 flex items-center justify-center bg-violet-50 dark:bg-violet-900/20 text-lg rounded-xl flex-shrink-0">💾</div>
+                    <div key={hdd.id} className="group relative flex flex-col gap-2 p-4 bg-zinc-800/60 dark:bg-zinc-800/80 border border-zinc-700/40 dark:border-zinc-700/60 rounded-2xl hover:border-violet-500/50 transition-all aspect-square">
+                      <div className="w-9 h-9 flex items-center justify-center bg-violet-500/15 text-lg rounded-xl flex-shrink-0">💾</div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-zinc-900 dark:text-white truncate">{hdd.name}</p>
-                        <p className="text-xs text-zinc-400">{usedIn} {usedIn === 1 ? 'ingest' : 'ingests'}</p>
+                        <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">{hdd.name}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">{usedIn} {usedIn === 1 ? 'ingest' : 'ingests'}</p>
                       </div>
                       <button
                         onClick={() => { if (confirm(`Remover "${hdd.name}"?`)) onDeleteHDD(hdd.id); }}
-                        className="p-1.5 text-zinc-300 dark:text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute top-2 right-2 p-1.5 text-zinc-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   );
                 })}
                 <button
                   onClick={() => setIsAddHDDOpen(true)}
-                  className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 hover:border-violet-400 hover:text-violet-500 transition-all"
+                  className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-zinc-700/40 rounded-2xl text-zinc-500 hover:border-violet-500/50 hover:text-violet-400 transition-all aspect-square"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-sm font-bold">Novo HD</span>
+                  <Plus className="w-5 h-5" />
+                  <span className="text-xs font-bold">Novo HD</span>
                 </button>
               </div>
             )}
@@ -680,84 +682,61 @@ const HubArquivos: React.FC<HubArquivosProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredRecordings.map(rec => (
                     <div
                       key={rec.id}
                       onClick={() => setSelectedRecording(rec)}
-                      className="group relative flex flex-col gap-3 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-violet-300 dark:hover:border-violet-800 transition-all hover:shadow-lg cursor-pointer"
+                      className="group relative flex flex-col gap-2.5 p-4 bg-zinc-800/60 dark:bg-zinc-800/80 border border-zinc-700/40 dark:border-zinc-700/60 rounded-2xl hover:border-violet-500/50 transition-all cursor-pointer min-h-[160px]"
                     >
-                      {/* Top row: badges + delete */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {rec.clientName && (
-                            <span className="text-[10px] font-black px-2 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full border border-violet-200 dark:border-violet-800/50">
-                              👤 {rec.clientName}
-                            </span>
-                          )}
-                          {rec.hasPendingTakes && (
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full flex items-center gap-1">
-                              <AlertTriangle className="w-2.5 h-2.5" /> Pendências
-                            </span>
-                          )}
-                        </div>
+                      {/* Header: icon + delete */}
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="w-9 h-9 flex items-center justify-center bg-violet-500/15 text-base rounded-xl flex-shrink-0">🎬</div>
                         <button
                           onClick={e => { e.stopPropagation(); if (confirm(`Excluir "${rec.title}"?`)) onDeleteRecording(rec.id); }}
-                          className="p-1.5 text-zinc-300 dark:text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 -mr-1 -mt-1"
+                          className="p-1 text-zinc-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      {/* Title + optional subtitle */}
-                      <div>
-                        <h3 className="font-bold text-base text-zinc-900 dark:text-white leading-tight">
+                      {/* Title */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">
                           {rec.clientName || rec.title}
-                        </h3>
+                        </p>
                         {rec.clientName && (
-                          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">{rec.title}</p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{rec.title}</p>
                         )}
                       </div>
 
-                      {/* Date + HD badges */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="flex items-center gap-1 text-xs text-zinc-500">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(rec.recordedAt)}
-                        </span>
-                        {rec.hddIds.map(id => {
+                      {/* Date */}
+                      <div className="flex items-center gap-1 text-[11px] text-zinc-500">
+                        <Calendar className="w-3 h-3 flex-shrink-0" />
+                        <span>{formatDate(rec.recordedAt)}</span>
+                      </div>
+
+                      {/* HD badges + pending alert */}
+                      <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
+                        {rec.hasPendingTakes && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 bg-amber-900/30 text-amber-400 rounded-full flex items-center gap-0.5 border border-amber-800/50">
+                            <AlertTriangle className="w-2.5 h-2.5" /> Pendências
+                          </span>
+                        )}
+                        {rec.hddIds.slice(0, 2).map(id => {
                           const hdd = localHdds.find(h => h.id === id);
                           if (!hdd) return null;
                           return (
-                            <span key={id} className="flex items-center gap-1 text-xs px-2 py-0.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-full font-medium border border-violet-100 dark:border-violet-900/40">
+                            <span key={id} className="text-[9px] font-bold px-1.5 py-0.5 bg-violet-900/30 text-violet-300 rounded-full border border-violet-800/50 truncate max-w-[90px]">
                               💾 {hdd.name}
                             </span>
                           );
                         })}
-                      </div>
-
-                      {/* Device badges */}
-                      {rec.mediaDevices && rec.mediaDevices.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {rec.mediaDevices.map(d => (
-                            <span key={d} className="text-xs px-2 py-0.5 bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 rounded-full font-medium border border-sky-100 dark:border-sky-900/40">
-                              {DEVICE_EMOJIS[d] || '📷'} {DEVICE_LABELS[d] ?? d}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Technical notes preview */}
-                      {rec.technicalNotes && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 line-clamp-1 flex items-center gap-1">
-                          <StickyNote className="w-3 h-3 flex-shrink-0" />
-                          {rec.technicalNotes}
-                        </p>
-                      )}
-
-                      {/* "Ver detalhes" hint */}
-                      <div className="absolute bottom-4 right-5 text-[10px] font-bold text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest">
-                        Ver detalhes →
+                        {rec.hddIds.length > 2 && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-zinc-700/50 text-zinc-400 rounded-full border border-zinc-700/50">
+                            +{rec.hddIds.length - 2}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
