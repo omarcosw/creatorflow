@@ -929,21 +929,21 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
     <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
 
       {/* ══ Header ══ */}
-      <header className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm shadow-sm">
+      <header className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur-sm shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="p-2 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
+              className="p-2 -ml-1 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/20">
+              <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white leading-tight">
+                <h1 className="text-base sm:text-lg font-bold text-white leading-tight">
                   Hub de Clientes
                 </h1>
                 <p className="text-xs text-zinc-400 hidden sm:block">
@@ -957,7 +957,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
             {onOpenBudgetSheet && (
               <button
                 onClick={onOpenBudgetSheet}
-                className="hidden sm:flex items-center gap-2 px-3 py-2.5 border border-indigo-200 dark:border-indigo-800/50 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold text-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all"
+                className="hidden sm:flex items-center gap-2 px-3 py-2.5 border border-indigo-800/50 bg-indigo-900/20 text-indigo-400 rounded-xl font-bold text-sm hover:bg-indigo-900/30 transition-all"
               >
                 <FileText className="w-4 h-4" />
                 Gerar Proposta
@@ -965,7 +965,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
             )}
             <button
               onClick={() => setIsTeamOpen(true)}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 rounded-xl font-bold text-sm hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400 transition-all"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2.5 border border-zinc-700 bg-zinc-800/80 text-zinc-300 rounded-xl font-bold text-sm hover:border-violet-600 hover:text-violet-400 transition-all"
             >
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Minha Equipe</span>
@@ -987,15 +987,15 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
       <main className="flex-1 overflow-y-auto">
 
         {/* ── Hub view toggle ── */}
-        <div className="border-b border-zinc-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 sm:px-6 py-3">
+        <div className="border-b border-zinc-800 bg-zinc-950 px-4 sm:px-6 py-3">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-gray-900 border border-zinc-200 dark:border-gray-800 w-fit">
+            <div className="flex items-center p-1 rounded-xl bg-zinc-900 border border-zinc-800 w-fit">
               <button
                 onClick={() => setHubView('bi')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   hubView === 'bi'
-                    ? 'bg-white dark:bg-gray-700 text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 dark:text-gray-500 hover:text-zinc-700 dark:hover:text-gray-300'
+                    ? 'bg-zinc-700 text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
                 <BarChart3 className="w-4 h-4" /> Business Intelligence
@@ -1004,8 +1004,8 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
                 onClick={() => setHubView('clientes')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   hubView === 'clientes'
-                    ? 'bg-white dark:bg-gray-700 text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 dark:text-gray-500 hover:text-zinc-700 dark:hover:text-gray-300'
+                    ? 'bg-zinc-700 text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
                 <Users className="w-4 h-4" /> Gestão de Clientes
