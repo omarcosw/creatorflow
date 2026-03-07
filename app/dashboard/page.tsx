@@ -15,7 +15,7 @@ import CreatorStockView from '@/components/CreatorStockView';
 import ExecutiveAssistantView from '@/components/ExecutiveAssistantView';
 import StudioProfileModal from '@/components/StudioProfileModal';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator, User } from 'lucide-react';
+import { LayoutGrid, Sparkles, ChevronRight, Share2, Sun, Moon, ArrowLeft, Zap, BookOpen, Lock, Bug, MessageSquare, Send, X, Gift, Copy, Check, Twitter, MessageCircle, LogOut, Archive, AlertTriangle, Clapperboard, Users, BarChart3, BarChart2, PenTool, Briefcase, Library, FolderOpen, DollarSign, Image, Youtube, Instagram, Search, Calculator, User, Trash2 } from 'lucide-react';
 
 const STORAGE_KEY = 'creator_flow_history_v2';
 const PROFILES_KEY = 'creator_flow_ig_profiles';
@@ -210,6 +210,9 @@ export default function DashboardPage() {
 
   // Share link copied toast
   const [showLinkCopied, setShowLinkCopied] = useState(false);
+
+  // Client deleted toast
+  const [deletedClientName, setDeletedClientName] = useState<string | null>(null);
 
   useEffect(() => {
     if (window.location.search.includes('success=true')) {
@@ -562,12 +565,15 @@ export default function DashboardPage() {
 
   const handleDeleteClient = async (id: string) => {
     const backup = clients;
+    const name = clients.find(c => c.id === id)?.brandName ?? 'Cliente';
     // Optimistic update
     setClients(prev => prev.filter(c => c.id !== id));
     try {
       await deleteClientAPI(id);
       // Reload from server to stay in sync
       await reloadClients();
+      setDeletedClientName(name);
+      setTimeout(() => setDeletedClientName(null), 4000);
     } catch (err) {
       console.error('Failed to delete client:', err);
       // Revert on failure
@@ -742,6 +748,17 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/10 backdrop-blur-lg px-6 py-3 shadow-2xl">
             <Check className="h-4 w-4 text-violet-400" />
             <p className="text-sm font-medium text-white">Link copiado!</p>
+          </div>
+        </div>
+      )}
+      {/* Client deleted toast */}
+      {deletedClientName && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-zinc-900/95 backdrop-blur-lg px-6 py-3 shadow-2xl">
+            <Trash2 className="h-4 w-4 text-red-400 flex-shrink-0" />
+            <p className="text-sm font-medium text-white">
+              <span className="font-black">{deletedClientName}</span> foi excluído permanentemente.
+            </p>
           </div>
         </div>
       )}

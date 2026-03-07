@@ -869,6 +869,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
   const [portalClient, setPortalClient]     = useState<Client | null>(null);
   const [hubView, setHubView]               = useState<'bi' | 'clientes'>('bi');
   const [alertsCache, setAlertsCache]       = useState<Record<string, ClientAlerts>>({});
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
   // Load alerts for all clients from API
   useEffect(() => {
@@ -1063,9 +1064,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
                   >
                     {/* Delete btn */}
                     <button
-                      onClick={() => {
-                        if (confirm(`Excluir "${client.brandName}"?`)) onDeleteClient(client.id);
-                      }}
+                      onClick={() => setClientToDelete(client)}
                       className="absolute top-3 right-3 p-1.5 text-zinc-300 dark:text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                       aria-label={`Excluir ${client.brandName}`}
                     >
@@ -1170,6 +1169,55 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
         isOpen={isTeamOpen}
         onClose={() => setIsTeamOpen(false)}
       />
+
+      {/* ══ Modal: Confirmar exclusão de cliente ══ */}
+      {clientToDelete && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="flex items-start gap-4 mb-5">
+              <div className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/30">
+                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-zinc-900 dark:text-white leading-tight">
+                  Excluir Cliente Permanentemente?
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 mb-6 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              Você está prestes a apagar o cliente{' '}
+              <span className="font-black text-zinc-900 dark:text-white">"{clientToDelete.brandName}"</span>.
+              {' '}Todos os roteiros, tarefas, reuniões, backups e dados associados a este hub serão{' '}
+              <span className="font-black text-red-600 dark:text-red-400">destruídos para sempre</span>.
+              Deseja continuar?
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setClientToDelete(null)}
+                className="flex-1 px-4 py-3 rounded-2xl font-bold text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteClient(clientToDelete.id);
+                  setClientToDelete(null);
+                }}
+                className="flex-1 px-4 py-3 rounded-2xl font-black text-sm text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Sim, Excluir Cliente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
