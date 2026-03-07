@@ -67,6 +67,7 @@ import {
   ArrowRight,
   Pencil,
   User,
+  AlertCircle,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -6009,14 +6010,43 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
   const [pendingAgendaTitle, setPendingAgendaTitle] = useState<string | null>(null);
 
   // ── Workflow: add card to kanban via API ──────────
+  const [ideiaWorkflowToast, setIdeiaWorkflowToast] = useState<{ ok: boolean; msg: string } | null>(null);
+
   const addCardToWorkflow = async (title: string) => {
     try {
-      const current = await fetchClientData<KanbanColumn[]>(client.id, 'kanban');
-      const cols = Array.isArray(current) && current.length > 0 ? current : KANBAN_INITIAL_COLUMNS;
-      const newCard: KanbanCard = { id: crypto.randomUUID(), title, priority: 'Normal', startDate: '', dueDate: '', notes: '' };
-      const updated = cols.map(c => c.id === 'preproducao' ? { ...c, cards: [newCard, ...c.cards] } : c);
+      let cols: KanbanColumn[] = [];
+      try {
+        const fetched = await fetchClientData<KanbanColumn[]>(client.id, 'kanban');
+        if (Array.isArray(fetched) && fetched.length > 0) cols = fetched;
+      } catch { /* no kanban data yet */ }
+
+      if (cols.length === 0) {
+        cols = KANBAN_INITIAL_COLUMNS.map(c => ({ ...c, cards: [] as KanbanCard[] }));
+      } else {
+        cols = cols.map(c => ({ ...c, cards: Array.isArray(c.cards) ? c.cards : [] }));
+      }
+
+      const newCard: KanbanCard = {
+        id: crypto.randomUUID(),
+        title,
+        priority: 'Normal',
+        startDate: '',
+        dueDate: '',
+        notes: 'Criado automaticamente a partir de uma Ideia Infinita.',
+        assignedTo: '',
+      };
+
+      // Always target first column by index — never use a hardcoded ID
+      const updated = cols.map((col, idx) => idx === 0 ? { ...col, cards: [newCard, ...col.cards] } : col);
       await saveClientData(client.id, 'kanban', updated);
-    } catch { /* ignore */ }
+
+      const firstColTitle = cols[0]?.title || 'Workflow';
+      setIdeiaWorkflowToast({ ok: true, msg: `Ideia enviada para "${firstColTitle}" no Workflow!` });
+      setTimeout(() => setIdeiaWorkflowToast(null), 4000);
+    } catch {
+      setIdeiaWorkflowToast({ ok: false, msg: 'Erro ao enviar para o Workflow. Tente novamente.' });
+      setTimeout(() => setIdeiaWorkflowToast(null), 4000);
+    }
   };
 
   // ── Roteiros: convert IdeaCard → ScriptDocument and persist via API ──
@@ -6249,6 +6279,14 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
           {/* ══ TAB: Ideias Infinitas ══ */}
           {activeTab === 'ideias' && (
             <div className="space-y-6 animate-in fade-in duration-200">
+
+              {/* Workflow toast */}
+              {ideiaWorkflowToast && (
+                <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg ${ideiaWorkflowToast.ok ? 'bg-emerald-600' : 'bg-red-600'}`}>
+                  {ideiaWorkflowToast.ok ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  {ideiaWorkflowToast.msg}
+                </div>
+              )}
 
               {/* Sub-nav + Como Usar */}
               <div className="flex items-center justify-between flex-wrap gap-2 -mb-2">
