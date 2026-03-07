@@ -28,10 +28,10 @@ interface ClientsHubProps {
 // Voice tone badge colors
 // ─────────────────────────────────────────────
 const VOICE_TONE_COLORS: Record<Client['voiceTone'], string> = {
-  'Autoritário':  'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/50',
-  'Descontraído': 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/50',
-  'Educacional':  'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50',
-  'Agressivo':    'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/50',
+  'Autoritário':  'bg-red-900/20 text-red-300 border-red-800/50',
+  'Descontraído': 'bg-sky-900/20 text-sky-300 border-sky-800/50',
+  'Educacional':  'bg-emerald-900/20 text-emerald-300 border-emerald-800/50',
+  'Agressivo':    'bg-orange-900/20 text-orange-300 border-orange-800/50',
 };
 
 // ─────────────────────────────────────────────
@@ -131,11 +131,11 @@ interface TeamMember {
 }
 
 const ROLE_CONFIG: Record<MemberRole, { label: string; emoji: string; badge: string }> = {
-  'admin':      { label: 'Administrador',        emoji: '👑', badge: 'bg-violet-500/20 text-violet-600 dark:text-violet-400 border-violet-300/50 dark:border-violet-700/40' },
-  'roteirista': { label: 'Roteirista / Copy',     emoji: '✍️', badge: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300/50 dark:border-emerald-700/40' },
-  'videomaker': { label: 'Videomaker / Produção', emoji: '🎥', badge: 'bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-300/50 dark:border-sky-700/40' },
-  'editor':     { label: 'Editor / Pós-produção', emoji: '✂️', badge: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-300/50 dark:border-amber-700/40' },
-  'designer':   { label: 'Designer',              emoji: '🎨', badge: 'bg-pink-500/20 text-pink-600 dark:text-pink-400 border-pink-300/50 dark:border-pink-700/40' },
+  'admin':      { label: 'Administrador',        emoji: '👑', badge: 'bg-violet-500/20 text-violet-400 border-violet-700/40' },
+  'roteirista': { label: 'Roteirista / Copy',     emoji: '✍️', badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-700/40' },
+  'videomaker': { label: 'Videomaker / Produção', emoji: '🎥', badge: 'bg-sky-500/20 text-sky-400 border-sky-700/40' },
+  'editor':     { label: 'Editor / Pós-produção', emoji: '✂️', badge: 'bg-amber-500/20 text-amber-400 border-amber-700/40' },
+  'designer':   { label: 'Designer',              emoji: '🎨', badge: 'bg-pink-500/20 text-pink-400 border-pink-700/40' },
 };
 
 const ROLE_OPTIONS: { value: MemberRole; label: string }[] = [
@@ -153,7 +153,7 @@ const INITIAL_TEAM: TeamMember[] = [
 ];
 
 const LABEL_CLS  = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
-const INPUT_CLS  = 'w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400';
+const INPUT_CLS  = 'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-zinc-400';
 const SELECT_CLS = `${INPUT_CLS} cursor-pointer`;
 
 // ─────────────────────────────────────────────
@@ -175,13 +175,13 @@ const UpcomingScheduleSection: React.FC<UpcomingScheduleSectionProps> = ({ clien
     <section className="mb-8">
       <div className="flex items-center gap-2 mb-4">
         <Calendar className="w-4 h-4 text-violet-500" />
-        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">
           Próximos Compromissos
         </h2>
       </div>
 
       {events.length === 0 ? (
-        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
+        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/40">
           <Calendar className="w-4 h-4 text-zinc-400 flex-shrink-0" />
           <p className="text-sm text-zinc-400">
             Você não tem gravações agendadas para os próximos dias.
@@ -198,11 +198,11 @@ const UpcomingScheduleSection: React.FC<UpcomingScheduleSectionProps> = ({ clien
               <button
                 key={`${evt.clientId}-${evt.date}-${i}`}
                 onClick={() => client && onSelectClient(client)}
-                className="group flex-shrink-0 w-52 flex flex-col gap-2.5 p-4 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-violet-400 dark:hover:border-violet-700 hover:shadow-md transition-all text-left"
+                className="group flex-shrink-0 w-52 flex flex-col gap-2.5 p-4 rounded-2xl border bg-zinc-900 border-zinc-800 hover:border-violet-700 hover:shadow-md transition-all text-left"
               >
                 {/* Date + time row */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm font-black ${isToday ? 'text-violet-600 dark:text-violet-400' : 'text-zinc-900 dark:text-white'}`}>
+                  <span className={`text-sm font-black ${isToday ? 'text-violet-400' : 'text-white'}`}>
                     {dateLabel}
                   </span>
                   {evt.startTime && (
@@ -218,13 +218,13 @@ const UpcomingScheduleSection: React.FC<UpcomingScheduleSectionProps> = ({ clien
                   <span className={`mt-0.5 flex-shrink-0 text-zinc-400 group-hover:text-violet-500 transition-colors`}>
                     {getEventIcon(evt.type)}
                   </span>
-                  <p className="text-sm font-bold text-zinc-700 dark:text-zinc-200 leading-tight line-clamp-2">
+                  <p className="text-sm font-bold text-zinc-200 leading-tight line-clamp-2">
                     {evt.title}
                   </p>
                 </div>
 
                 {/* Client badge */}
-                <span className="self-start text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-300/40 dark:border-emerald-700/40 truncate max-w-full">
+                <span className="self-start text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-700/40 truncate max-w-full">
                   {evt.clientName}
                 </span>
               </button>
@@ -283,18 +283,18 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer panel */}
-      <div className="relative w-full max-w-lg h-full bg-white dark:bg-zinc-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 border-l border-zinc-200 dark:border-zinc-800">
+      <div className="relative w-full max-w-lg h-full bg-zinc-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 border-l border-zinc-800">
 
         {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-5 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+        <div className="px-6 pt-6 pb-5 border-b border-zinc-800 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Gestão de Equipe</h2>
+              <h2 className="text-lg font-bold text-white">Gestão de Equipe</h2>
               <p className="text-xs text-zinc-400 mt-0.5">Gerencie os acessos da sua produtora</p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+              className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -306,9 +306,9 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
 
           {/* Toast */}
           {inviteToast && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-900/20 border border-emerald-800/50 animate-in fade-in duration-200">
               <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">✅ Convite enviado para o membro!</p>
+              <p className="text-xs font-bold text-emerald-300">✅ Convite enviado para o membro!</p>
             </div>
           )}
 
@@ -316,17 +316,17 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
           {!isInviteOpen ? (
             <button
               onClick={() => setIsInviteOpen(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 font-bold text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-violet-700 text-violet-400 font-bold text-sm hover:bg-violet-900/20 transition-all"
             >
               <UserPlus className="w-4 h-4" /> + Convidar Membro
             </button>
           ) : (
-            <div className="rounded-2xl border border-violet-200 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-900/10 p-5 space-y-4">
+            <div className="rounded-2xl border border-violet-800/50 bg-violet-900/10 p-5 space-y-4">
               <div className="flex items-center justify-between mb-1">
-                <h3 className="text-sm font-black text-violet-700 dark:text-violet-400">Novo Convite</h3>
+                <h3 className="text-sm font-black text-violet-400">Novo Convite</h3>
                 <button
                   onClick={() => { setIsInviteOpen(false); setInviteEmail(''); }}
-                  className="p-1 hover:bg-violet-100 dark:hover:bg-violet-800/40 rounded-lg text-violet-400 transition-colors"
+                  className="p-1 hover:bg-violet-800/40 rounded-lg text-violet-400 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -380,7 +380,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
                 return (
                   <div
                     key={member.id}
-                    className="relative flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/60 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 hover:border-zinc-200 dark:hover:border-zinc-600/50 transition-colors"
+                    className="relative flex items-center gap-4 p-4 bg-zinc-800/60 rounded-2xl border border-zinc-700/50 hover:border-zinc-600/50 transition-colors"
                   >
                     {/* Avatar */}
                     <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-black select-none">
@@ -390,9 +390,9 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
                     {/* Name + email */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-black text-zinc-900 dark:text-white truncate">{member.name}</p>
+                        <p className="text-sm font-black text-white truncate">{member.name}</p>
                         {member.isOwner && (
-                          <span className="flex-shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 uppercase tracking-wider">
+                          <span className="flex-shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 border border-zinc-700 uppercase tracking-wider">
                             Você
                           </span>
                         )}
@@ -410,24 +410,24 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
                       <div className="relative flex-shrink-0">
                         <button
                           onClick={() => { setOpenMenuId(openMenuId === member.id ? null : member.id); setEditingId(null); }}
-                          className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg text-zinc-400 transition-colors"
+                          className="p-1.5 hover:bg-zinc-700/50 rounded-lg text-zinc-400 transition-colors"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
 
                         {/* Dropdown menu */}
                         {openMenuId === member.id && editingId !== member.id && (
-                          <div className="absolute right-0 top-9 z-20 w-44 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                          <div className="absolute right-0 top-9 z-20 w-44 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
                             <button
                               onClick={() => { setEditingId(member.id); setOpenMenuId(null); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
+                              className="w-full flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-zinc-300 hover:bg-zinc-700/50 transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5 text-zinc-400" /> Editar Cargo
                             </button>
-                            <div className="h-px bg-zinc-100 dark:bg-zinc-700" />
+                            <div className="h-px bg-zinc-700" />
                             <button
                               onClick={() => handleRemove(member.id)}
-                              className="w-full flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              className="w-full flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-900/20 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Remover Membro
                             </button>
@@ -436,7 +436,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
 
                         {/* Inline role editor */}
                         {editingId === member.id && (
-                          <div className="absolute right-0 top-9 z-20 w-52 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="absolute right-0 top-9 z-20 w-52 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-150">
                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 px-1">Alterar Cargo</p>
                             <div className="space-y-0.5">
                               {ROLE_OPTIONS.map(opt => (
@@ -445,8 +445,8 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
                                   onClick={() => handleChangeRole(member.id, opt.value)}
                                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all text-left ${
                                     member.role === opt.value
-                                      ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400'
-                                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-zinc-700 dark:text-zinc-300'
+                                      ? 'bg-violet-900/20 text-violet-400'
+                                      : 'hover:bg-zinc-700/50 text-zinc-300'
                                   }`}
                                 >
                                   {opt.label}
@@ -455,7 +455,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="mt-2 w-full text-[10px] font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1"
+                              className="mt-2 w-full text-[10px] font-bold text-zinc-400 hover:text-zinc-300 transition-colors py-1"
                             >
                               Cancelar
                             </button>
@@ -926,7 +926,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+    <div className="flex flex-col min-h-screen bg-zinc-950 animate-in fade-in duration-300">
 
       {/* ══ Header ══ */}
       <header className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur-sm shadow-sm">
@@ -1031,12 +1031,12 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
 
           {/* Empty state */}
           {clients.length === 0 && (
-            <div className="rounded-3xl border-2 border-dashed border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/10 p-10 text-center">
+            <div className="rounded-3xl border-2 border-dashed border-emerald-900/40 bg-emerald-950/10 p-10 text-center">
               <div className="text-5xl mb-4">🤝</div>
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+              <h2 className="text-xl font-bold text-white mb-2">
                 Nenhum cliente cadastrado
               </h2>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-sm mx-auto mb-6">
+              <p className="text-zinc-400 text-sm max-w-sm mx-auto mb-6">
                 Cadastre seus clientes para ter o briefing completo sempre à mão. Use a IA para extrair os dados de uma call!
               </p>
               <button
@@ -1056,16 +1056,16 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
                 return (
                   <div
                     key={client.id}
-                    className={`group relative flex flex-col gap-3 p-5 bg-white dark:bg-zinc-900 border rounded-2xl transition-all hover:shadow-lg ${
+                    className={`group relative flex flex-col gap-3 p-5 bg-zinc-900 border rounded-2xl transition-all hover:shadow-lg ${
                       alerts.hasOverdue
-                        ? 'border-red-400/60 dark:border-red-600/40 hover:border-red-500/70 dark:hover:border-red-600'
-                        : 'border-zinc-200 dark:border-zinc-800 hover:border-emerald-300 dark:hover:border-emerald-800'
+                        ? 'border-red-600/40 hover:border-red-600'
+                        : 'border-zinc-800 hover:border-emerald-800'
                     }`}
                   >
                     {/* Delete btn */}
                     <button
                       onClick={() => setClientToDelete(client)}
-                      className="absolute top-3 right-3 p-1.5 text-zinc-300 dark:text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                      className="absolute top-3 right-3 p-1.5 text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                       aria-label={`Excluir ${client.brandName}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1073,11 +1073,11 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
 
                     {/* Brand name + niche */}
                     <div>
-                      <h3 className="font-bold text-base text-zinc-900 dark:text-white leading-tight pr-6">
+                      <h3 className="font-bold text-base text-white leading-tight pr-6">
                         {client.brandName}
                       </h3>
                       {(client.niche || client.subniche) && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        <p className="text-xs text-zinc-400 mt-0.5">
                           {[client.niche, client.subniche].filter(Boolean).join(' · ')}
                         </p>
                       )}
@@ -1095,7 +1095,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
                         {alerts.hasToday && (
                           <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-yellow-500/15 border border-yellow-400/30">
                             <Calendar className="w-3 h-3 text-yellow-500" />
-                            <span className="text-[10px] font-black text-yellow-600 dark:text-yellow-400">Ocorre Hoje</span>
+                            <span className="text-[10px] font-black text-yellow-400">Ocorre Hoje</span>
                           </div>
                         )}
                       </div>
@@ -1118,13 +1118,13 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
                     {/* Action buttons */}
                     <div className="mt-auto flex gap-2">
                       <button
-                        className="flex-1 flex items-center justify-between px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:border-emerald-400 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"
+                        className="flex-1 flex items-center justify-between px-4 py-2.5 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-400 hover:border-emerald-700 hover:text-emerald-400 transition-all"
                         onClick={() => setSelectedClient(client)}
                       >
                         Entrar no Painel <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-500 hover:border-violet-400 dark:hover:border-violet-700 hover:text-violet-600 dark:hover:text-violet-400 transition-all"
+                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-500 hover:border-violet-700 hover:text-violet-400 transition-all"
                         onClick={() => setPortalClient(client)}
                         title="Ver Portal do Cliente"
                       >
@@ -1138,7 +1138,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
               {/* Add card */}
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 transition-all min-h-[180px]"
+                className="flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed border-zinc-800 rounded-2xl text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 transition-all min-h-[180px]"
               >
                 <Plus className="w-6 h-6" />
                 <span className="text-sm font-bold">Novo Cliente</span>
@@ -1173,26 +1173,26 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
       {/* ══ Modal: Confirmar exclusão de cliente ══ */}
       {clientToDelete && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 animate-in zoom-in-95 duration-300">
+          <div className="bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border border-zinc-800 p-6 animate-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="flex items-start gap-4 mb-5">
-              <div className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/30">
-                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-2xl bg-red-900/30">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
               </div>
               <div>
-                <h2 className="text-lg font-black text-zinc-900 dark:text-white leading-tight">
+                <h2 className="text-lg font-black text-white leading-tight">
                   Excluir Cliente Permanentemente?
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Esta ação não pode ser desfeita.</p>
+                <p className="text-xs text-zinc-400 mt-1">Esta ação não pode ser desfeita.</p>
               </div>
             </div>
 
             {/* Body */}
-            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 mb-6 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+            <div className="bg-red-950/20 border border-red-900/40 rounded-2xl p-4 mb-6 text-sm text-zinc-300 leading-relaxed">
               Você está prestes a apagar o cliente{' '}
-              <span className="font-black text-zinc-900 dark:text-white">"{clientToDelete.brandName}"</span>.
+              <span className="font-black text-white">"{clientToDelete.brandName}"</span>.
               {' '}Todos os roteiros, tarefas, reuniões, backups e dados associados a este hub serão{' '}
-              <span className="font-black text-red-600 dark:text-red-400">destruídos para sempre</span>.
+              <span className="font-black text-red-400">destruídos para sempre</span>.
               Deseja continuar?
             </div>
 
@@ -1200,7 +1200,7 @@ const ClientsHub: React.FC<ClientsHubProps> = ({
             <div className="flex gap-3">
               <button
                 onClick={() => setClientToDelete(null)}
-                className="flex-1 px-4 py-3 rounded-2xl font-bold text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                className="flex-1 px-4 py-3 rounded-2xl font-bold text-sm text-zinc-400 bg-zinc-800 hover:bg-zinc-700 transition-colors"
               >
                 Cancelar
               </button>

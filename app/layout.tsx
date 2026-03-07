@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className="dark" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="pt-BR" className="dark" style={{ colorScheme: 'dark' }} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <link rel="icon" href="/logo.png" type="image/png" />
         <link
@@ -20,7 +20,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased selection:bg-indigo-500 selection:text-white transition-colors duration-300">
+      <body className="bg-zinc-950 text-zinc-100 antialiased selection:bg-indigo-500 selection:text-white">
         {children}
       </body>
     </html>
