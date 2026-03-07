@@ -2455,6 +2455,16 @@ const ClientRoteirosTab: React.FC<{ client: Client }> = ({ client }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sync selectedPkgId whenever packages changes from API load.
+  // The initial useState uses the fallback UUID which differs from the UUID stored in the API.
+  // Without this, selectedPkg resolves to null and the scripts panel stays blank.
+  useEffect(() => {
+    if (packages.length > 0 && !findPkgDeep(packages, selectedPkgId)) {
+      setSelectedPkgId(packages[0].id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packages]);
+
   const sendToWorkflow = async (pkgId: string, script: ScriptDocument) => {
     try {
       let cols: KanbanColumn[] = [];
@@ -6081,8 +6091,11 @@ Retorne APENAS JSON válido, sem markdown, no formato exato:
     let pkgs = Array.isArray(current) && current.length > 0 ? current : [];
 
     if (pkgs.length === 0) {
-      pkgs = [{ id: crypto.randomUUID(), title: 'Roteiros Gerados', scripts: [], createdAt: Date.now() }];
+      // Use same structure as buildDefaultScriptPackages so the tab renders correctly
+      pkgs = [{ id: crypto.randomUUID(), title: 'Mês Atual', scripts: [], createdAt: Date.now() }];
     }
+    // Ensure all packages have valid scripts arrays (defensive)
+    pkgs = pkgs.map(p => ({ ...p, scripts: Array.isArray(p.scripts) ? p.scripts : [] }));
 
     const scenes: ScriptScene[] = idea.script.slides.map(slide => ({
       id: crypto.randomUUID(),
