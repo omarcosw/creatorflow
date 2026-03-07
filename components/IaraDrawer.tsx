@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   X,
   Send,
@@ -140,18 +139,11 @@ const INITIAL_MESSAGES: Message[] = [
 // ─── Action Card ──────────────────────────────────────────────────────────────
 
 function ActionCard({ data, onUndo }: { data: ActionData; onUndo: () => void }) {
-  const { close } = useIara();
-  const router = useRouter();
   const [undone, setUndone] = useState(false);
 
   const handleUndo = () => {
     setUndone(true);
     onUndo();
-  };
-
-  const handleViewAgenda = () => {
-    close();
-    router.push('/dashboard');
   };
 
   if (undone) {
@@ -189,13 +181,6 @@ function ActionCard({ data, onUndo }: { data: ActionData; onUndo: () => void }) 
         >
           <Undo2 className="w-3 h-3" />
           Desfazer
-        </button>
-        <button
-          onClick={handleViewAgenda}
-          className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-900/40 bg-emerald-900/10 hover:bg-emerald-900/20 transition-all font-medium"
-        >
-          <CalendarDays className="w-3 h-3" />
-          Ver na Agenda
         </button>
       </div>
     </div>
