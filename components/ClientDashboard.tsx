@@ -5250,21 +5250,26 @@ interface MeetingExtract {
 const MEETING_ARCHIVE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 
 const ClientReuniaoTab: React.FC<{ client: Client }> = ({ client }) => {
-  const { data: meetings, setData: setMeetings } = useClientData<Meeting[]>(client.id, 'meetings', []);
+  const { data: meetings, setData: setMeetings, loading: meetingsLoading } = useClientData<Meeting[]>(client.id, 'meetings', []);
 
   const [formOpen, setFormOpen]                   = useState(false);
   const [expandedId, setExpandedId]               = useState<string | null>(null);
   const [showMeetingArchiveModal, setShowMeetingArchiveModal] = useState(false);
 
-  // Lazy cleanup: purge expired archived meetings on mount
+  // Purge expired archived meetings — runs once, AFTER API data has loaded, so
+  // hasSavedRef in useClientData is not set before the fetch completes.
+  const meetingPurgedRef = useRef(false);
   useEffect(() => {
-    const now = Date.now();
-    setMeetings(prev => prev.filter(m =>
-      !m.isArchived || !m.archivedAt ||
-      now - new Date(m.archivedAt).getTime() <= MEETING_ARCHIVE_RETENTION_MS
-    ));
+    if (!meetingsLoading && !meetingPurgedRef.current) {
+      meetingPurgedRef.current = true;
+      const now = Date.now();
+      setMeetings(prev => prev.filter(m =>
+        !m.isArchived || !m.archivedAt ||
+        now - new Date(m.archivedAt).getTime() <= MEETING_ARCHIVE_RETENTION_MS
+      ));
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [meetingsLoading]);
 
   // ── Form fields ──────────────────────────────
   const [formTitle, setFormTitle]           = useState('');
