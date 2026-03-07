@@ -324,7 +324,7 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     if (selectedSoftware) {
         // DETAIL VIEW (Drill-down)
         return (
-            <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+            <div className="flex flex-col h-full bg-zinc-950 animate-in fade-in duration-300">
                 {/* Header */}
                 <header className={`p-6 md:p-10 text-white relative overflow-hidden bg-gradient-to-br ${selectedSoftware.bgGradient}`}>
                     <div className="relative z-10 flex items-start justify-between gap-4">
@@ -346,16 +346,16 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-5xl mx-auto p-4 md:p-8">
                         {/* Tab Navigation */}
-                        <div className="flex gap-4 border-b border-zinc-200 dark:border-zinc-800 mb-8">
+                        <div className="flex gap-4 border-b border-zinc-800 mb-8">
                             <button 
                                 onClick={() => setActiveTab('shortcuts')} 
-                                className={`pb-3 px-2 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'shortcuts' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                                className={`pb-3 px-2 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'shortcuts' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-300'}`}
                             >
                                 <div className="flex items-center gap-2"><Keyboard className="w-4 h-4"/> Atalhos Essenciais</div>
                             </button>
                             <button 
                                 onClick={() => setActiveTab('tutorials')} 
-                                className={`pb-3 px-2 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'tutorials' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                                className={`pb-3 px-2 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'tutorials' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-300'}`}
                             >
                                 <div className="flex items-center gap-2"><PlayCircle className="w-4 h-4"/> Tutoriais e Técnicas</div>
                             </button>
@@ -363,26 +363,26 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                         {/* Shortcuts Table View */}
                         {activeTab === 'shortcuts' && (
-                            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-2 duration-300">
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-2 duration-300">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+                                    <thead className="bg-zinc-950 border-b border-zinc-800">
                                         <tr>
-                                            <th className="px-6 py-4 text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest w-1/2">Ação / Função</th>
-                                            <th className="px-6 py-4 text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Windows</th>
-                                            <th className="px-6 py-4 text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Mac OS</th>
+                                            <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest w-1/2">Ação / Função</th>
+                                            <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">Windows</th>
+                                            <th className="px-6 py-4 text-xs font-black text-zinc-500 uppercase tracking-widest">Mac OS</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                    <tbody className="divide-y divide-zinc-800">
                                         {selectedSoftware.shortcuts.map((shortcut, idx) => (
-                                            <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                                <td className="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-200">{shortcut.action}</td>
+                                            <tr key={idx} className="hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-6 py-4 text-sm font-bold text-zinc-200">{shortcut.action}</td>
                                                 <td className="px-6 py-4">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-mono font-bold border border-blue-100 dark:border-blue-900/30">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-900/20 text-blue-300 text-xs font-mono font-bold border border-blue-900/30">
                                                         {shortcut.win}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs font-mono font-bold border border-purple-100 dark:border-purple-900/30">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-purple-900/20 text-purple-300 text-xs font-mono font-bold border border-purple-900/30">
                                                         {shortcut.mac}
                                                     </span>
                                                 </td>
@@ -397,7 +397,7 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         {activeTab === 'tutorials' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-2 duration-300">
                                 {selectedSoftware.tutorials.map((tutorial, idx) => (
-                                    <div key={idx} className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                                    <div key={idx} className="group flex flex-col bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                                         <div className="relative h-48 overflow-hidden">
                                             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors z-10" />
                                             <img src={tutorial.thumbnail} alt={tutorial.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -406,9 +406,9 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             </div>
                                         </div>
                                         <div className="p-5 flex-1 flex flex-col">
-                                            <h3 className="font-bold text-lg text-zinc-900 dark:text-white mb-2 leading-tight">{tutorial.title}</h3>
-                                            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">{tutorial.description}</p>
-                                            <button className="mt-auto w-full py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-bold uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-indigo-600 transition-colors">
+                                            <h3 className="font-bold text-lg text-white mb-2 leading-tight">{tutorial.title}</h3>
+                                            <p className="text-sm text-zinc-400 leading-relaxed mb-4">{tutorial.description}</p>
+                                            <button className="mt-auto w-full py-2.5 rounded-xl border border-zinc-700 text-xs font-bold uppercase tracking-widest text-zinc-500 hover:bg-zinc-800 hover:text-indigo-400 transition-colors">
                                                 Assistir Aula
                                             </button>
                                         </div>
@@ -424,15 +424,15 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // LIST VIEW (Main Hub)
     return (
-        <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
-            <header className="p-6 md:p-10 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="flex flex-col h-full bg-zinc-950 animate-in fade-in duration-300">
+            <header className="p-6 md:p-10 border-b border-zinc-800 bg-zinc-900">
                 <div className="max-w-5xl mx-auto w-full">
-                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-6 transition-colors">
+                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-6 transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                         <span>Voltar ao Dashboard</span>
                     </button>
-                    <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-3">Hub de Edição</h1>
-                    <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-lg">Selecione seu software para acessar atalhos profissionais e técnicas avançadas de workflow.</p>
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Hub de Edição</h1>
+                    <p className="text-zinc-400 max-w-2xl text-lg">Selecione seu software para acessar atalhos profissionais e técnicas avançadas de workflow.</p>
                 </div>
             </header>
             
@@ -442,27 +442,27 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <button 
                             key={soft.id}
                             onClick={() => setSelectedSoftware(soft)}
-                            className="group relative flex flex-col p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl hover:border-indigo-500 dark:hover:border-indigo-500 transition-all duration-300 text-left shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
+                            className="group relative flex flex-col p-8 bg-zinc-900 border border-zinc-800 rounded-3xl hover:border-indigo-500 transition-all duration-300 text-left shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
                         >
                             {/* Decorative Gradient Background on Hover */}
                             <div className={`absolute inset-0 bg-gradient-to-br ${soft.bgGradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
                             
                             <div className="flex items-start justify-between mb-6 relative z-10">
-                                <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 group-hover:scale-110 transition-transform duration-300">
-                                    <Layers className="w-8 h-8 text-zinc-700 dark:text-zinc-300" style={{ color: soft.color }} />
+                                <div className="p-4 rounded-2xl bg-zinc-800 group-hover:scale-110 transition-transform duration-300">
+                                    <Layers className="w-8 h-8 text-zinc-300" style={{ color: soft.color }} />
                                 </div>
-                                <div className="p-2 rounded-full bg-zinc-50 dark:bg-zinc-800 text-zinc-300 group-hover:text-indigo-500 transition-colors">
+                                <div className="p-2 rounded-full bg-zinc-800 text-zinc-300 group-hover:text-indigo-500 transition-colors">
                                     <ChevronRight className="w-6 h-6" />
                                 </div>
                             </div>
                             
                             <div className="relative z-10">
-                                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{soft.name}</h2>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-2">{soft.description}</p>
+                                <h2 className="text-2xl font-bold text-white mb-2">{soft.name}</h2>
+                                <p className="text-sm text-zinc-400 leading-relaxed mb-6 line-clamp-2">{soft.description}</p>
                                 
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
                                     <span className="flex items-center gap-1.5"><Keyboard className="w-3 h-3" /> {soft.shortcuts.length} Atalhos</span>
-                                    <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                                    <span className="w-1 h-1 rounded-full bg-zinc-700" />
                                     <span className="flex items-center gap-1.5"><PlayCircle className="w-3 h-3" /> {soft.tutorials.length} Técnicas</span>
                                 </div>
                             </div>
@@ -477,29 +477,29 @@ const EditingKnowledgeHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 // --- NEW COMPONENT: EDITING TECHNIQUES GALLERY ---
 const EditingTechniquesGallery: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     return (
-        <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
-            <header className="p-6 md:p-10 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="flex flex-col h-full bg-zinc-950 animate-in fade-in duration-300">
+            <header className="p-6 md:p-10 border-b border-zinc-800 bg-zinc-900">
                 <div className="max-w-6xl mx-auto w-full">
-                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-6 transition-colors">
+                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-6 transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                         <span>Voltar ao Dashboard</span>
                     </button>
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                        <div className="p-2.5 bg-indigo-900/20 text-indigo-400 rounded-xl">
                             <Film className="w-8 h-8" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white">Técnicas Famosas</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white">Técnicas Famosas</h1>
                     </div>
-                    <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-lg">Galeria visual de conceitos de edição para elevar a narrativa dos seus vídeos.</p>
+                    <p className="text-zinc-400 max-w-2xl text-lg">Galeria visual de conceitos de edição para elevar a narrativa dos seus vídeos.</p>
                 </div>
             </header>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-10">
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {TECHNIQUES_DATA.map((technique) => (
-                        <div key={technique.id} className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                        <div key={technique.id} className="group flex flex-col bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                             {/* Preview Image Area */}
-                            <div className="relative aspect-video w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                            <div className="relative aspect-video w-full overflow-hidden bg-zinc-800">
                                 <img 
                                     src={technique.previewImage} 
                                     alt={technique.title} 
@@ -520,12 +520,12 @@ const EditingTechniquesGallery: React.FC<{ onBack: () => void }> = ({ onBack }) 
                             {/* Content */}
                             <div className="p-6 flex-1 flex flex-col">
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight">{technique.title}</h3>
-                                    <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-md border border-zinc-200 dark:border-zinc-700">
+                                    <h3 className="text-xl font-bold text-white leading-tight">{technique.title}</h3>
+                                    <span className="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-md border border-zinc-700">
                                         {technique.difficulty}
                                     </span>
                                 </div>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6">
+                                <p className="text-sm text-zinc-400 leading-relaxed mb-6">
                                     {technique.description}
                                 </p>
                                 
@@ -533,7 +533,7 @@ const EditingTechniquesGallery: React.FC<{ onBack: () => void }> = ({ onBack }) 
                                     href={technique.tutorialLink} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="mt-auto flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-zinc-600 dark:text-zinc-300 font-bold text-sm rounded-xl transition-all"
+                                    className="mt-auto flex items-center justify-center gap-2 w-full py-3 bg-zinc-800 border border-zinc-700 hover:border-indigo-500 hover:text-indigo-400 text-zinc-300 font-bold text-sm rounded-xl transition-all"
                                 >
                                     <span>Ver Tutorial</span>
                                     <ExternalLink className="w-4 h-4" />
@@ -552,20 +552,20 @@ const LightingEducationHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [selectedTechnique, setSelectedTechnique] = useState<typeof LIGHTING_DATA[0] | null>(null);
 
     return (
-        <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300 relative">
-            <header className="p-6 md:p-10 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="flex flex-col h-full bg-zinc-950 animate-in fade-in duration-300 relative">
+            <header className="p-6 md:p-10 border-b border-zinc-800 bg-zinc-900">
                 <div className="max-w-6xl mx-auto w-full">
-                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-6 transition-colors">
+                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-6 transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                         <span>Voltar ao Dashboard</span>
                     </button>
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-xl">
+                        <div className="p-2.5 bg-orange-900/20 text-orange-400 rounded-xl">
                             <Lightbulb className="w-8 h-8" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white">Iluminações Famosas</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white">Iluminações Famosas</h1>
                     </div>
-                    <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-lg">Enciclopédia visual de setups de luz. Clique para ver diagramas técnicos.</p>
+                    <p className="text-zinc-400 max-w-2xl text-lg">Enciclopédia visual de setups de luz. Clique para ver diagramas técnicos.</p>
                 </div>
             </header>
 
@@ -575,9 +575,9 @@ const LightingEducationHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <div 
                             key={tech.id} 
                             onClick={() => setSelectedTechnique(tech)}
-                            className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                            className="group flex flex-col bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
                         >
-                            <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                            <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-800">
                                 <img 
                                     src={tech.resultImage} 
                                     alt={tech.title} 
@@ -591,13 +591,13 @@ const LightingEducationHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <div className="p-6">
                                 <div className="flex flex-wrap gap-2 mb-3">
                                     {tech.tags.slice(0,2).map(tag => (
-                                        <span key={tag} className="px-2 py-1 bg-orange-50 dark:bg-orange-900/10 text-orange-600 dark:text-orange-400 text-[10px] font-bold uppercase tracking-wider rounded-md">
+                                        <span key={tag} className="px-2 py-1 bg-orange-900/10 text-orange-400 text-[10px] font-bold uppercase tracking-wider rounded-md">
                                             {tag}
                                         </span>
                                     ))}
                                 </div>
-                                <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{tech.title}</h3>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{tech.description}</p>
+                                <h3 className="text-xl font-bold text-white mb-2">{tech.title}</h3>
+                                <p className="text-sm text-zinc-400 line-clamp-2">{tech.description}</p>
                             </div>
                         </div>
                     ))}
@@ -608,7 +608,7 @@ const LightingEducationHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             {selectedTechnique && (
                 <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
                     <div className="min-h-screen p-4 md:p-10 flex flex-col items-center">
-                        <div className="w-full max-w-6xl bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden relative animate-in zoom-in-95 duration-300">
+                        <div className="w-full max-w-6xl bg-zinc-950 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden relative animate-in zoom-in-95 duration-300">
                             {/* Modal Header */}
                             <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-10 bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
                                 <div className="pointer-events-auto">
@@ -637,20 +637,20 @@ const LightingEducationHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/60 backdrop-blur-sm rounded text-white text-xs font-bold uppercase">Resultado Final</div>
                                 </div>
                                 {/* Diagram Image */}
-                                <div className="aspect-square md:aspect-auto h-[400px] md:h-[600px] relative bg-zinc-100 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800">
+                                <div className="aspect-square md:aspect-auto h-[400px] md:h-[600px] relative bg-zinc-900 border-l border-zinc-800">
                                     <img src={selectedTechnique.diagramImage} className="w-full h-full object-cover p-8" alt="Diagrama" />
-                                    <div className="absolute bottom-4 left-4 px-3 py-1 bg-zinc-200 dark:bg-zinc-800 rounded text-zinc-900 dark:text-white text-xs font-bold uppercase">Diagrama Técnico</div>
+                                    <div className="absolute bottom-4 left-4 px-3 py-1 bg-zinc-800 rounded text-white text-xs font-bold uppercase">Diagrama Técnico</div>
                                 </div>
                             </div>
 
                             {/* Details & Video */}
                             <div className="p-8 md:p-12 space-y-10">
                                 <div className="max-w-3xl mx-auto text-center">
-                                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4 flex items-center justify-center gap-2">
+                                    <h3 className="text-xl font-bold text-white mb-4 flex items-center justify-center gap-2">
                                         <Zap className="w-5 h-5 text-yellow-500" />
                                         Como Montar
                                     </h3>
-                                    <p className="text-lg text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                                    <p className="text-lg text-zinc-300 leading-relaxed">
                                         {selectedTechnique.setupDetails}
                                     </p>
                                 </div>
@@ -716,20 +716,20 @@ const SfxLibraryHub: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
-            <header className="p-6 md:p-10 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="flex flex-col h-full bg-zinc-950 animate-in fade-in duration-300">
+            <header className="p-6 md:p-10 border-b border-zinc-800 bg-zinc-900">
                 <div className="max-w-6xl mx-auto w-full">
-                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-6 transition-colors">
+                    <button onClick={onBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-6 transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                         <span>Voltar ao Dashboard</span>
                     </button>
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl">
+                        <div className="p-2.5 bg-rose-900/20 text-rose-400 rounded-xl">
                             <Music className="w-8 h-8" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white">Biblioteca SFX Pro</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white">Biblioteca SFX Pro</h1>
                     </div>
-                    <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-lg">Sampler educacional: Aprenda os efeitos sonoros essenciais e copie as palavras-chave para encontrar os melhores sons.</p>
+                    <p className="text-zinc-400 max-w-2xl text-lg">Sampler educacional: Aprenda os efeitos sonoros essenciais e copie as palavras-chave para encontrar os melhores sons.</p>
                 </div>
             </header>
 
@@ -872,30 +872,30 @@ const BrandKitModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (k
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-2xl p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <div className="bg-zinc-900 rounded-2xl w-full max-w-2xl p-6 shadow-2xl border border-zinc-800 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <Palette className="w-5 h-5 text-indigo-500" /> 
                         Gerenciar Brand Kits
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"><X className="w-5 h-5 text-zinc-500" /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full"><X className="w-5 h-5 text-zinc-500" /></button>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* Form */}
                     <div className="space-y-5">
-                        <h3 className="font-semibold text-zinc-700 dark:text-zinc-300 text-sm uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800 pb-2">{editId ? 'Editar Marca' : 'Nova Marca'}</h3>
+                        <h3 className="font-semibold text-zinc-300 text-sm uppercase tracking-wider border-b border-zinc-800 pb-2">{editId ? 'Editar Marca' : 'Nova Marca'}</h3>
                         
                         <div className="space-y-1">
                             <label className="text-xs text-zinc-500 font-bold">Nome da Marca</label>
-                            <input type="text" placeholder="Nome da Empresa/Projeto" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+                            <input type="text" placeholder="Nome da Empresa/Projeto" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-xl" />
                         </div>
                         
                         <div className="space-y-1">
                             <label className="text-xs text-zinc-500 font-bold">Tom de Voz</label>
                             <div className="flex gap-2">
                                 {(['Formal', 'Criativo'] as const).map(t => (
-                                    <button key={t} onClick={() => setTone(t)} className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold border transition-all ${tone === t ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-transparent text-zinc-500 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+                                    <button key={t} onClick={() => setTone(t)} className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold border transition-all ${tone === t ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-transparent text-zinc-500 border-zinc-700 hover:bg-zinc-800'}`}>
                                         {t}
                                     </button>
                                 ))}
@@ -931,23 +931,23 @@ const BrandKitModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (k
                             <label className="text-xs text-zinc-500 font-bold flex justify-between">Logotipo (Opcional) <span className="font-normal opacity-50">PNG/JPG</span></label>
                             <div 
                                 onClick={() => fileInputRef.current?.click()} 
-                                className="w-full p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-indigo-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer flex items-center justify-center gap-3 group relative overflow-hidden"
+                                className="w-full p-3 border-2 border-dashed border-zinc-800 rounded-xl hover:border-indigo-500 hover:bg-zinc-800/50 transition-all cursor-pointer flex items-center justify-center gap-3 group relative overflow-hidden"
                             >
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
                                 {logo ? (
                                     <>
                                         <img src={logo} alt="Logo Preview" className="h-8 w-auto object-contain z-10" />
                                         <div className="text-xs text-zinc-500 font-medium z-10">Trocar Logo</div>
-                                        <div className="absolute inset-0 bg-white/80 dark:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <Upload className="w-4 h-4 text-indigo-600" />
                                         </div>
                                     </>
                                 ) : (
                                     <>
-                                        <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg group-hover:text-indigo-500 transition-colors">
+                                        <div className="p-1.5 bg-zinc-800 rounded-lg group-hover:text-indigo-500 transition-colors">
                                             <Upload className="w-4 h-4 text-zinc-400" />
                                         </div>
-                                        <span className="text-sm text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">Carregar imagem</span>
+                                        <span className="text-sm text-zinc-500 group-hover:text-zinc-300">Carregar imagem</span>
                                     </>
                                 )}
                             </div>
@@ -957,11 +957,11 @@ const BrandKitModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (k
                             <label className="text-xs text-zinc-500 font-bold">Cor Primária (Hex)</label>
                             <div className="flex gap-2">
                                 <input type="color" value={color} onChange={e => setColor(e.target.value)} className="h-10 w-10 rounded-lg cursor-pointer border-0 p-0 shadow-sm" />
-                                <input type="text" value={color} onChange={e => setColor(e.target.value)} className="flex-1 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl font-mono text-sm uppercase" />
+                                <input type="text" value={color} onChange={e => setColor(e.target.value)} className="flex-1 p-2 bg-zinc-950 border border-zinc-800 rounded-xl font-mono text-sm uppercase" />
                             </div>
                         </div>
 
-                        <textarea placeholder="Texto de Rodapé (Endereço, CNPJ, Site...)" value={footerText} onChange={e => setFooterText(e.target.value)} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl h-20 resize-none text-sm" />
+                        <textarea placeholder="Texto de Rodapé (Endereço, CNPJ, Site...)" value={footerText} onChange={e => setFooterText(e.target.value)} className="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-xl h-20 resize-none text-sm" />
 
                         <div className="flex gap-2 pt-2">
                             {editId && <button onClick={resetForm} className="px-4 py-2 text-zinc-500 font-bold text-sm">Cancelar</button>}
@@ -972,8 +972,8 @@ const BrandKitModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (k
                     </div>
 
                     {/* List */}
-                    <div className="space-y-3 border-t md:border-t-0 md:border-l border-zinc-200 dark:border-zinc-800 pt-6 md:pt-0 md:pl-6">
-                        <h3 className="font-semibold text-zinc-700 dark:text-zinc-300 text-sm uppercase tracking-wider">Marcas Salvas</h3>
+                    <div className="space-y-3 border-t md:border-t-0 md:border-l border-zinc-800 pt-6 md:pt-0 md:pl-6">
+                        <h3 className="font-semibold text-zinc-300 text-sm uppercase tracking-wider">Marcas Salvas</h3>
                         {existingKits.length === 0 ? (
                             <div className="text-center py-10 opacity-50">
                                 <Palette className="w-10 h-10 mx-auto mb-2 text-zinc-300" />
@@ -981,7 +981,7 @@ const BrandKitModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (k
                             </div>
                         ) : (
                             existingKits.map(kit => (
-                                <div key={kit.id} className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl flex justify-between items-center group hover:border-indigo-300 transition-all">
+                                <div key={kit.id} className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex justify-between items-center group hover:border-indigo-300 transition-all">
                                     <div className="cursor-pointer flex-1" onClick={() => loadKit(kit)}>
                                         <div className="flex items-center gap-3 mb-1">
                                             {kit.logo ? (
@@ -989,14 +989,14 @@ const BrandKitModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (k
                                             ) : (
                                                 <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-white uppercase" style={{ backgroundColor: kit.color }}>{kit.name.substring(0, 1)}</div>
                                             )}
-                                            <span className="font-bold text-zinc-900 dark:text-white truncate">{kit.name}</span>
+                                            <span className="font-bold text-white truncate">{kit.name}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">{kit.tone}</span>
+                                            <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">{kit.tone}</span>
                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: kit.color }}></div>
                                         </div>
                                     </div>
-                                    <button onClick={() => { if(confirm('Excluir?')) onDelete(kit.id) }} className="p-2 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all"><Trash2 className="w-4 h-4" /></button>
+                                    <button onClick={() => { if(confirm('Excluir?')) onDelete(kit.id) }} className="p-2 text-zinc-300 hover:text-red-500 hover:bg-red-900/20 rounded-full transition-all"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             ))
                         )}
@@ -1031,21 +1031,21 @@ const InstagramQuiz: React.FC<{ onFinish: (p: InstagramProfile) => void, onCance
     };
 
     return (
-        <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-zinc-950 h-full animate-in fade-in duration-300">
+        <div className="flex flex-col items-center justify-center p-6 bg-zinc-950 h-full animate-in fade-in duration-300">
             <div className="w-full max-w-lg">
                 <div className="flex items-center justify-between mb-8">
-                    <button onClick={onCancel} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><X className="w-5 h-5 text-zinc-500"/></button>
+                    <button onClick={onCancel} className="p-2 hover:bg-zinc-800 rounded-full transition-colors"><X className="w-5 h-5 text-zinc-500"/></button>
                     <div className="flex gap-1">
                         {questions.map((_, i) => (
-                            <div key={i} className={`h-1.5 w-6 rounded-full transition-all ${i <= step ? 'bg-indigo-600' : 'bg-zinc-200 dark:bg-zinc-800'}`} />
+                            <div key={i} className={`h-1.5 w-6 rounded-full transition-all ${i <= step ? 'bg-indigo-600' : 'bg-zinc-800'}`} />
                         ))}
                     </div>
                 </div>
 
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
                     <div className="flex flex-col gap-2">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-wider">Passo {step + 1} de {questions.length}</span>
-                        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white leading-tight">{questions[step].label}</h2>
+                        <span className="text-indigo-400 font-bold text-xs uppercase tracking-wider">Passo {step + 1} de {questions.length}</span>
+                        <h2 className="text-2xl font-bold text-white leading-tight">{questions[step].label}</h2>
                     </div>
 
                     {questions[step].type === 'textarea' ? (
@@ -1054,7 +1054,7 @@ const InstagramQuiz: React.FC<{ onFinish: (p: InstagramProfile) => void, onCance
                             value={data[questions[step].field as keyof typeof data]}
                             onChange={(e) => setData({ ...data, [questions[step].field]: e.target.value })}
                             placeholder={questions[step].placeholder}
-                            className="w-full bg-zinc-50 dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-indigo-600 h-32 resize-none text-lg"
+                            className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-600 h-32 resize-none text-lg"
                         />
                     ) : (
                         <input
@@ -1064,14 +1064,14 @@ const InstagramQuiz: React.FC<{ onFinish: (p: InstagramProfile) => void, onCance
                             onChange={(e) => setData({ ...data, [questions[step].field]: e.target.value })}
                             placeholder={questions[step].placeholder}
                             onKeyDown={(e) => e.key === 'Enter' && isCurrentStepValid && handleNext()}
-                            className="w-full bg-zinc-50 dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-indigo-600 text-lg"
+                            className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-600 text-lg"
                         />
                     )}
 
                     <button
                         onClick={handleNext}
                         disabled={!isCurrentStepValid}
-                        className="w-full p-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-lg transition-all shadow-lg hover:shadow-indigo-500/20"
+                        className="w-full p-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-800 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-lg transition-all shadow-lg hover:shadow-indigo-500/20"
                     >
                         {step === questions.length - 1 ? 'Finalizar Configuração' : 'Continuar'}
                     </button>
@@ -1092,18 +1092,18 @@ const FeedbackModal: React.FC<{
     const handleSubmit = () => { if (rating) { onSubmit(rating, comment); setRating(null); setComment(''); } };
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 scale-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-zinc-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800 scale-100 animate-in zoom-in-95 duration-200">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Avaliar Resposta</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500"><X className="w-5 h-5" /></button>
+                    <h3 className="text-lg font-bold text-white">Avaliar Resposta</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded-full text-zinc-500"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="flex gap-4 mb-6">
-                    <button onClick={() => setRating('good')} className={`flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${rating === 'good' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-zinc-200 dark:border-zinc-700 hover:border-emerald-200 dark:hover:border-emerald-800'}`}><ThumbsUp className="w-6 h-6" /><span className="font-medium text-sm">Útil</span></button>
-                    <button onClick={() => setRating('bad')} className={`flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${rating === 'bad' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-500 text-rose-600 dark:text-rose-400' : 'border-zinc-200 dark:border-zinc-700 hover:border-rose-200 dark:hover:border-rose-800'}`}><ThumbsDown className="w-6 h-6" /><span className="font-medium text-sm">Ruim</span></button>
+                    <button onClick={() => setRating('good')} className={`flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${rating === 'good' ? 'bg-emerald-900/20 border-emerald-500 text-emerald-400' : 'border-zinc-700 hover:border-emerald-800'}`}><ThumbsUp className="w-6 h-6" /><span className="font-medium text-sm">Útil</span></button>
+                    <button onClick={() => setRating('bad')} className={`flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${rating === 'bad' ? 'bg-rose-900/20 border-rose-500 text-rose-400' : 'border-zinc-700 hover:border-rose-800'}`}><ThumbsDown className="w-6 h-6" /><span className="font-medium text-sm">Ruim</span></button>
                 </div>
-                <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Algum detalhe?" className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-sm mb-6 h-24 text-zinc-900 dark:text-white" />
+                <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Algum detalhe?" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm mb-6 h-24 text-white" />
                 <div className="flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 text-zinc-600 dark:text-zinc-400 text-sm font-medium">Cancelar</button>
+                    <button onClick={onClose} className="px-4 py-2 text-zinc-400 text-sm font-medium">Cancelar</button>
                     <button onClick={handleSubmit} disabled={!rating} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">Enviar Feedback</button>
                 </div>
             </div>
@@ -1119,9 +1119,9 @@ const PresetCard: React.FC<{ preset: StylePreset; onClick: () => void }> = ({ pr
     const handleMouseLeave = () => { setIsHovered(false); if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } };
     const displayImage = (isHovered && preset.gifUrl) ? preset.gifUrl : preset.thumbnail;
     return (
-        <button onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex flex-col text-left bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-indigo-500 hover:shadow-lg transition-all duration-300 group overflow-hidden h-full">
-            {displayImage && (<div className="w-full h-32 bg-zinc-200 dark:bg-zinc-800 overflow-hidden relative"><img src={displayImage} alt={preset.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>{preset.audioUrl && (<div className={`absolute bottom-2 right-2 p-1.5 rounded-full bg-black/50 text-white backdrop-blur-sm transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}><Volume2 className="w-4 h-4" /></div>)}</div>)}
-            <div className="p-4"><span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-indigo-600 transition-colors leading-tight">{preset.title}</span><p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">{preset.description}</p></div>
+        <button onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex flex-col text-left bg-zinc-900 border border-zinc-800 rounded-xl hover:border-indigo-500 hover:shadow-lg transition-all duration-300 group overflow-hidden h-full">
+            {displayImage && (<div className="w-full h-32 bg-zinc-800 overflow-hidden relative"><img src={displayImage} alt={preset.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>{preset.audioUrl && (<div className={`absolute bottom-2 right-2 p-1.5 rounded-full bg-black/50 text-white backdrop-blur-sm transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}><Volume2 className="w-4 h-4" /></div>)}</div>)}
+            <div className="p-4"><span className="font-semibold text-zinc-200 group-hover:text-indigo-600 transition-colors leading-tight">{preset.title}</span><p className="text-xs text-zinc-400 line-clamp-2">{preset.description}</p></div>
         </button>
     );
 };
@@ -1130,9 +1130,9 @@ const DetailView: React.FC<{ preset: StylePreset; onBack: () => void; agentId: A
     if (!preset.details) return null;
     const isShortcuts = agentId === AgentId.EDITING_SHORTCUTS;
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto animate-in fade-in duration-300">
+        <div className="flex flex-col h-full bg-zinc-950 overflow-y-auto animate-in fade-in duration-300">
             <div className="relative w-full h-64 md:h-80 flex-shrink-0"><img src={preset.thumbnail} alt={preset.title} className="w-full h-full object-cover"/><div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/40 to-transparent"></div><button onClick={onBack} className="absolute top-4 left-4 p-2 rounded-full bg-black/30 backdrop-blur-md text-white"><ArrowLeft className="w-6 h-6" /></button><div className="absolute bottom-6 left-6 md:left-10"><h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{preset.title}</h1><p className="text-zinc-200 text-lg md:text-xl max-w-2xl">{preset.description}</p></div></div>
-            <div className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10"><section><h2 className="text-xl font-bold text-indigo-600 mb-4 flex items-center gap-2">{isShortcuts ? <CheckCircle2 className="w-5 h-5"/> : <Lightbulb className="w-5 h-5"/>} {isShortcuts ? "Foco do Software" : "Quando Usar"}</h2><p className="text-zinc-700 dark:text-zinc-300 leading-relaxed text-lg">{preset.details.usage}</p></section><div className="h-px bg-zinc-200 dark:bg-zinc-800 w-full" /><section><h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-2"><Keyboard className="w-5 h-5 text-zinc-500"/> {isShortcuts ? "Atalhos Essenciais" : "Passo a Passo"}</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{preset.details.steps.map((step, idx) => { const parts = step.split(':'); return (<div key={idx} className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">{isShortcuts ? (<><span className="text-zinc-700 dark:text-zinc-300 font-medium">{parts[0]}</span>{parts[1] && (<span className="px-3 py-1 bg-white dark:bg-zinc-800 rounded-lg font-mono text-sm font-bold text-indigo-600 border border-zinc-200 dark:border-zinc-700 shadow-sm">{parts[1].trim()}</span>)}</>) : (<div className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs mt-0.5">{idx + 1}</span><p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">{step}</p></div>)}</div>);})}</div></section></div>
+            <div className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10"><section><h2 className="text-xl font-bold text-indigo-600 mb-4 flex items-center gap-2">{isShortcuts ? <CheckCircle2 className="w-5 h-5"/> : <Lightbulb className="w-5 h-5"/>} {isShortcuts ? "Foco do Software" : "Quando Usar"}</h2><p className="text-zinc-300 leading-relaxed text-lg">{preset.details.usage}</p></section><div className="h-px bg-zinc-800 w-full" /><section><h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Keyboard className="w-5 h-5 text-zinc-500"/> {isShortcuts ? "Atalhos Essenciais" : "Passo a Passo"}</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{preset.details.steps.map((step, idx) => { const parts = step.split(':'); return (<div key={idx} className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-4 rounded-xl bg-zinc-900 border border-zinc-800">{isShortcuts ? (<><span className="text-zinc-300 font-medium">{parts[0]}</span>{parts[1] && (<span className="px-3 py-1 bg-zinc-800 rounded-lg font-mono text-sm font-bold text-indigo-600 border border-zinc-700 shadow-sm">{parts[1].trim()}</span>)}</>) : (<div className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs mt-0.5">{idx + 1}</span><p className="text-zinc-300 leading-relaxed">{step}</p></div>)}</div>);})}</div></section></div>
         </div>
     );
 };
@@ -1539,13 +1539,13 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
 
   if (agent.id === AgentId.INSTAGRAM_CAPTIONS && !activeProfile) {
       return (
-          <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 animate-in fade-in duration-300">
+          <div className="flex flex-col h-full bg-zinc-950 animate-in fade-in duration-300">
               {/* Instagram Profile Selection UI (kept as is) */}
-              <header className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-zinc-900 shadow-sm">
+              <header className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900 shadow-sm">
                   <div className="flex items-center gap-4">
-                      <button onClick={onBack} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
+                      <button onClick={onBack} className="p-2 hover:bg-zinc-800 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
                       <div>
-                          <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Seus Perfis do Instagram</h1>
+                          <h1 className="text-xl font-bold text-white">Seus Perfis do Instagram</h1>
                           <p className="text-sm text-zinc-500">Selecione um cliente para começar</p>
                       </div>
                   </div>
@@ -1554,20 +1554,20 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                   <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       <button 
                         onClick={() => setIsQuizMode(true)}
-                        className="flex flex-col items-center justify-center p-8 bg-dashed bg-white dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-3xl hover:border-indigo-500 dark:hover:border-indigo-400 group transition-all"
+                        className="flex flex-col items-center justify-center p-8 bg-dashed bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-3xl hover:border-indigo-400 group transition-all"
                       >
-                          <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 mb-4 group-hover:scale-110 transition-transform"><UserPlus className="w-8 h-8"/></div>
-                          <h3 className="font-bold text-zinc-900 dark:text-white">Novo Perfil</h3>
+                          <div className="p-4 rounded-2xl bg-indigo-900/30 text-indigo-600 mb-4 group-hover:scale-110 transition-transform"><UserPlus className="w-8 h-8"/></div>
+                          <h3 className="font-bold text-white">Novo Perfil</h3>
                           <p className="text-xs text-zinc-500 text-center mt-2">Configure o nicho e público do seu cliente</p>
                       </button>
 
                       {instagramProfiles.map(p => (
-                          <div key={p.id} className="relative group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all">
+                          <div key={p.id} className="relative group bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all">
                               <button onClick={() => handleProfileSelect(p)} className="flex flex-col w-full text-left">
                                   <div className="p-3 rounded-xl bg-pink-50 dark:bg-pink-900/20 text-pink-600 w-fit mb-4"><UserCircle className="w-8 h-8"/></div>
-                                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">{p.name}</h3>
+                                  <h3 className="text-lg font-bold text-white mb-1">{p.name}</h3>
                                   <p className="text-xs text-zinc-500 uppercase tracking-tighter mb-4">{p.niche}</p>
-                                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
+                                  <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold">
                                       Abrir Painel <ChevronRight className="w-4 h-4"/>
                                   </div>
                               </button>
@@ -1589,7 +1589,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
   const recentSessions = sessions.filter(s => !activeProfile || s.profileId === activeProfile.id).slice(0, 3);
 
   return (
-    <div className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 relative overflow-hidden ${isFocusMode ? 'fixed inset-0 z-[70] h-screen' : 'min-h-screen h-full'}`}>
+    <div className={`flex flex-col bg-zinc-950 transition-colors duration-300 relative overflow-hidden ${isFocusMode ? 'fixed inset-0 z-[70] h-screen' : 'min-h-screen h-full'}`}>
       <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} onSubmit={(r, c) => { if (activeFeedbackMessageIndex !== null && currentSessionId) { const updated = [...messages]; updated[activeFeedbackMessageIndex] = { ...updated[activeFeedbackMessageIndex], feedback: { rating: r, comment: c, timestamp: Date.now() } }; setMessages(updated); onSaveSession({ ...sessions.find(s => s.id === currentSessionId)!, messages: updated, lastUpdated: Date.now() }); setIsFeedbackModalOpen(false); } }} />
       {onSaveBrandKit && onDeleteBrandKit && brandKits && (
           <BrandKitModal 
@@ -1603,27 +1603,27 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
       {/* Limit Reached Banner */}
       {limitReached && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="bg-zinc-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-zinc-800">
             <div className="text-center mb-6">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20">
                 <Zap className="h-7 w-7 text-amber-400" />
               </div>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Limite atingido</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{limitReached.message}</p>
+              <h3 className="text-xl font-bold text-white mb-2">Limite atingido</h3>
+              <p className="text-sm text-zinc-400">{limitReached.message}</p>
             </div>
-            <div className="mb-6 rounded-xl bg-zinc-100 dark:bg-zinc-800 p-4">
+            <div className="mb-6 rounded-xl bg-zinc-800 p-4">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-zinc-500">Usado</span>
-                <span className="font-bold text-zinc-900 dark:text-white">{limitReached.used.toLocaleString('pt-BR')} / {limitReached.limit.toLocaleString('pt-BR')}</span>
+                <span className="font-bold text-white">{limitReached.used.toLocaleString('pt-BR')} / {limitReached.limit.toLocaleString('pt-BR')}</span>
               </div>
-              <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+              <div className="h-2 rounded-full bg-zinc-700 overflow-hidden">
                 <div className="h-full rounded-full bg-red-500" style={{ width: '100%' }} />
               </div>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setLimitReached(null)}
-                className="flex-1 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-zinc-700 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 Fechar
               </button>
@@ -1645,20 +1645,20 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
       </div>
       
       {/* Sidebar Histórico */}
-      {showHistory && (<div className="fixed inset-0 z-50 flex"><div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowHistory(false)}></div><div className="relative w-4/5 max-w-xs h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 print:hidden"><div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between"><h2 className="font-bold text-zinc-900 dark:text-white">Histórico</h2><button onClick={() => setShowHistory(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"><X className="w-5 h-5 text-zinc-500" /></button></div><div className="p-4"><button onClick={() => startNewSession(activeProfile || undefined)} className="w-full flex items-center gap-3 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md"><Plus className="w-5 h-5" /><span className="font-medium">Nova Conversa</span></button></div><div className="flex-1 overflow-y-auto p-4 pt-0 space-y-2">{sessions.filter(s => !activeProfile || s.profileId === activeProfile.id).length === 0 ? (<p className="text-center text-zinc-400 text-sm mt-4">Vazio.</p>) : (sessions.filter(s => !activeProfile || s.profileId === activeProfile.id).map(session => (<div key={session.id} onClick={() => loadSession(session.id)} className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${currentSessionId === session.id ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300' : 'hover:bg-zinc-50 dark:hover:hover:bg-zinc-800/50 border-transparent'}`}><div className="flex items-center gap-3 overflow-hidden"><MessageSquare className={`w-4 h-4 flex-shrink-0 ${currentSessionId === session.id ? 'text-indigo-500' : 'text-zinc-400'}`} /><div className="flex flex-col min-w-0"><span className="text-sm font-medium truncate">{session.title}</span><span className="text-xs text-zinc-400">{new Date(session.lastUpdated).toLocaleDateString()}</span></div></div><button onClick={(e) => { e.stopPropagation(); if(confirm("Excluir?")) { onDeleteSession(session.id); if (currentSessionId === session.id) startNewSession(activeProfile || undefined); } }} className="p-1.5 text-zinc-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button></div>)))}</div></div></div>)}
+      {showHistory && (<div className="fixed inset-0 z-50 flex"><div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowHistory(false)}></div><div className="relative w-4/5 max-w-xs h-full bg-zinc-900 border-r border-zinc-800 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 print:hidden"><div className="p-4 border-b border-zinc-800 flex items-center justify-between"><h2 className="font-bold text-white">Histórico</h2><button onClick={() => setShowHistory(false)} className="p-2 hover:bg-zinc-800 rounded-full"><X className="w-5 h-5 text-zinc-500" /></button></div><div className="p-4"><button onClick={() => startNewSession(activeProfile || undefined)} className="w-full flex items-center gap-3 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md"><Plus className="w-5 h-5" /><span className="font-medium">Nova Conversa</span></button></div><div className="flex-1 overflow-y-auto p-4 pt-0 space-y-2">{sessions.filter(s => !activeProfile || s.profileId === activeProfile.id).length === 0 ? (<p className="text-center text-zinc-400 text-sm mt-4">Vazio.</p>) : (sessions.filter(s => !activeProfile || s.profileId === activeProfile.id).map(session => (<div key={session.id} onClick={() => loadSession(session.id)} className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${currentSessionId === session.id ? 'bg-zinc-800 border-zinc-300' : 'hover:bg-zinc-800/50 border-transparent'}`}><div className="flex items-center gap-3 overflow-hidden"><MessageSquare className={`w-4 h-4 flex-shrink-0 ${currentSessionId === session.id ? 'text-indigo-500' : 'text-zinc-400'}`} /><div className="flex flex-col min-w-0"><span className="text-sm font-medium truncate">{session.title}</span><span className="text-xs text-zinc-400">{new Date(session.lastUpdated).toLocaleDateString()}</span></div></div><button onClick={(e) => { e.stopPropagation(); if(confirm("Excluir?")) { onDeleteSession(session.id); if (currentSessionId === session.id) startNewSession(activeProfile || undefined); } }} className="p-1.5 text-zinc-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button></div>)))}</div></div></div>)}
 
-      <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-4 border-b border-zinc-200/70 dark:border-zinc-800/70 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-xl sticky top-0 z-10 print:hidden shadow-sm">
+      <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-4 border-b border-zinc-800/70 bg-zinc-900/60 backdrop-blur-xl sticky top-0 z-10 print:hidden shadow-sm">
         <div className="flex items-center gap-3 mb-2 md:mb-0">
-          <button onClick={activeProfile ? () => setActiveProfile(null) : onBack} className="p-2 -ml-2 text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className={`p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 ${agent.color}`}><Icon className="w-6 h-6" /></div>
+          <button onClick={activeProfile ? () => setActiveProfile(null) : onBack} className="p-2 -ml-2 text-zinc-600 hover:bg-zinc-800 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+          <div className={`p-2 rounded-lg bg-zinc-800/50 ${agent.color}`}><Icon className="w-6 h-6" /></div>
           <div>
-            <h1 className="font-bold text-lg leading-none text-zinc-900 dark:text-white">{activeProfile ? activeProfile.name : agent.title}</h1>
+            <h1 className="font-bold text-lg leading-none text-white">{activeProfile ? activeProfile.name : agent.title}</h1>
             <p className="text-xs text-zinc-500 mt-1">{activeProfile ? 'Agente de Captions Ativo' : (currentSessionId ? 'Conversa Ativa' : 'Nova Conversa')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
             {isFocusMode && (
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 text-[10px] font-black uppercase tracking-tighter">
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-900/20 text-emerald-400 border border-emerald-900/30 text-[10px] font-black uppercase tracking-tighter">
                     Modo Foco
                 </div>
             )}
@@ -1668,26 +1668,26 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                     <select 
                         value={activeBrandKitId || ''} 
                         onChange={(e) => setActiveBrandKitId(e.target.value === '' ? null : e.target.value)}
-                        className="text-xs p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-indigo-500 max-w-[120px]"
+                        className="text-xs p-2 rounded-xl bg-zinc-800 border border-zinc-700 focus:ring-2 focus:ring-indigo-500 max-w-[120px]"
                     >
                         <option value="">Sem Marca</option>
                         {brandKits?.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
                     </select>
-                    <button onClick={() => setIsBrandKitModalOpen(true)} className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40" title="Configurar Brand Kit">
+                    <button onClick={() => setIsBrandKitModalOpen(true)} className="p-2 bg-indigo-900/20 text-indigo-400 rounded-xl hover:bg-indigo-900/40" title="Configurar Brand Kit">
                         <Palette className="w-4 h-4" />
                     </button>
                 </div>
             )}
 
             {isProAgent && (
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 text-[10px] font-black uppercase tracking-tighter">
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-900/20 text-indigo-400 border border-indigo-900/30 text-[10px] font-black uppercase tracking-tighter">
                     <Zap className="w-3 h-3 fill-current" />
                     Nano Banana Pro Active
                 </div>
             )}
             <button 
                 onClick={() => setIsFocusMode(prev => !prev)} 
-                className="flex items-center gap-2 px-3 py-2 text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/40"
+                className="flex items-center gap-2 px-3 py-2 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-900/20 rounded-xl transition-all border border-transparent hover:border-emerald-900/40"
                 title={isFocusMode ? "Sair da tela cheia" : "Modo tela cheia"}
             >
                 {isFocusMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
@@ -1695,7 +1695,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
             </button>
             <button 
                 onClick={() => setShowHistory(true)} 
-                className="flex items-center gap-2 px-3 py-2 text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/40"
+                className="flex items-center gap-2 px-3 py-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-900/20 rounded-xl transition-all border border-transparent hover:border-indigo-900/40"
             >
                 <History className="w-5 h-5" />
                 <span className="text-sm font-bold hidden sm:inline">Histórico da Conversa</span>
@@ -1704,12 +1704,12 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 relative">
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/40 via-transparent to-white/40 dark:from-zinc-900/40 dark:to-zinc-900/40" />
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-thin scrollbar-thumb-zinc-700 relative">
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-zinc-900/40 via-transparent to-zinc-900/40" />
         <div className="relative max-w-5xl mx-auto w-full space-y-6">
         {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-full py-10 max-w-5xl mx-auto w-full">
-                <div className="text-zinc-400 dark:text-zinc-600 opacity-60 mb-8 flex flex-col items-center"><Icon className="w-16 h-16 mb-4 opacity-20" /><p className="text-sm font-medium tracking-wide uppercase">Selecione uma ação ou retome o histórico</p></div>
+                <div className="text-zinc-600 opacity-60 mb-8 flex flex-col items-center"><Icon className="w-16 h-16 mb-4 opacity-20" /><p className="text-sm font-medium tracking-wide uppercase">Selecione uma ação ou retome o histórico</p></div>
                 
                 {/* Seção de Histórico Recente diretamente na Landing Page do Agente */}
                 {recentSessions.length > 0 && (
@@ -1722,10 +1722,10 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {recentSessions.map(session => (
-                                <button key={session.id} onClick={() => loadSession(session.id)} className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-indigo-500 dark:hover:border-indigo-500 transition-all text-left shadow-sm group">
-                                    <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-zinc-400 group-hover:text-indigo-500 transition-colors"><MessageSquare className="w-5 h-5" /></div>
+                                <button key={session.id} onClick={() => loadSession(session.id)} className="flex items-center gap-4 p-4 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-indigo-500 transition-all text-left shadow-sm group">
+                                    <div className="p-2.5 rounded-xl bg-zinc-800 text-zinc-400 group-hover:text-indigo-500 transition-colors"><MessageSquare className="w-5 h-5" /></div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-zinc-800 dark:text-zinc-200 truncate">{session.title}</h3>
+                                        <h3 className="font-bold text-zinc-200 truncate">{session.title}</h3>
                                         <p className="text-xs text-zinc-500">{new Date(session.lastUpdated).toLocaleDateString()} • {session.messages.length} mensagens</p>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:translate-x-1 transition-transform" />
@@ -1753,18 +1753,18 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
           return (
           <div key={idx} className={`flex w-full flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-300 ${isProposal ? 'printable-proposal' : ''}`}>
             <div 
-                className={`max-w-[88%] md:max-w-[72%] rounded-3xl p-5 shadow-xl flex flex-col gap-3 relative ${msg.role === 'user' ? 'bg-gradient-to-br from-indigo-600 via-indigo-500 to-sky-500 text-white rounded-tr-none ring-1 ring-white/20' : 'bg-white/90 dark:bg-zinc-900/70 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-800 dark:text-zinc-200 rounded-tl-none backdrop-blur'} ${isProposal ? 'border-t-8' : ''}`}
+                className={`max-w-[88%] md:max-w-[72%] rounded-3xl p-5 shadow-xl flex flex-col gap-3 relative ${msg.role === 'user' ? 'bg-gradient-to-br from-indigo-600 via-indigo-500 to-sky-500 text-white rounded-tr-none ring-1 ring-white/20' : 'bg-zinc-900/70 border border-zinc-800/80 text-zinc-200 rounded-tl-none backdrop-blur'} ${isProposal ? 'border-t-8' : ''}`}
                 style={brandColor ? { borderTopColor: brandColor } : {}}
             >
               {isProposal && (
-                  <div className="absolute -top-3 left-4 px-3 py-1 bg-white dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold uppercase tracking-widest text-zinc-500 shadow-sm print:hidden">
+                  <div className="absolute -top-3 left-4 px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700 text-[10px] font-bold uppercase tracking-widest text-zinc-500 shadow-sm print:hidden">
                       Proposta: {activeBrandKit?.name}
                   </div>
               )}
 
               {msg.image && (
                 <div className="mb-2 relative group">
-                    <img src={msg.image} alt="Media" className="max-w-full h-auto rounded-lg max-h-[600px] object-cover border border-zinc-200 dark:border-zinc-700 shadow-md" />
+                    <img src={msg.image} alt="Media" className="max-w-full h-auto rounded-lg max-h-[600px] object-cover border border-zinc-700 shadow-md" />
                     <button 
                         onClick={() => window.open(msg.image, '_blank')}
                         className="absolute bottom-3 right-3 p-2 bg-black/50 backdrop-blur-md text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1783,15 +1783,15 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
               {msg.role === 'model' ? (<MarkdownRenderer content={msg.text} />) : (<p className="whitespace-pre-wrap">{msg.text}</p>)}
               
               {isProposal && (
-                  <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end print:hidden">
-                      <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-xs font-bold transition-colors">
+                  <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-end print:hidden">
+                      <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-xs font-bold transition-colors">
                           <Printer className="w-4 h-4" /> Imprimir / Salvar PDF
                       </button>
                   </div>
               )}
 
               {isScriptTable && !isProposal && (
-                  <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-2">
+                  <div className="mt-4 pt-4 border-t border-zinc-800 flex flex-wrap gap-2">
                       <button 
                         onClick={() => handleImportToShotList(msg.text)}
                         className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all group"
@@ -1803,8 +1803,8 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                         onClick={() => copyToClipboard(msg.text, idx)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
                           copiedId === idx 
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-200' 
-                          : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                          ? 'bg-emerald-900/20 text-emerald-600 border-emerald-200' 
+                          : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-100'
                         }`}
                       >
                           {copiedId === idx ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1835,12 +1835,12 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
             {msg.role === 'model' && (
               <div className="mt-2 flex items-center gap-2 max-w-[85%] md:max-w-[70%] print:hidden">
                 {msg.feedback ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs text-zinc-500">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800 text-xs text-zinc-500">
                     <ThumbsUp className="w-3 h-3 text-emerald-500" />
                     <span>Feedback enviado</span>
                   </div>
                 ) : (
-                  <button onClick={() => { setActiveFeedbackMessageIndex(idx); setIsFeedbackModalOpen(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-indigo-500 text-xs font-medium transition-colors">
+                  <button onClick={() => { setActiveFeedbackMessageIndex(idx); setIsFeedbackModalOpen(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-indigo-500 text-xs font-medium transition-colors">
                     <ThumbsUp className="w-3.5 h-3.5" />
                     <span>Avaliar</span>
                   </button>
@@ -1852,13 +1852,13 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
         }))}
         {loading && (
             <div className="flex justify-start w-full">
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl rounded-tl-none p-4 flex flex-col gap-3 max-w-[300px]">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl rounded-tl-none p-4 flex flex-col gap-3 max-w-[300px]">
                     <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
                         {isProAgent ? <Loader2 className="w-4 h-4 animate-spin text-indigo-500" /> : <div className="flex gap-1"><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} /><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} /><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} /></div>}
                         <span>{isProAgent ? "Gerando visual 4K..." : "IA pensando..."}</span>
                     </div>
                     {isProAgent && (
-                        <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
+                        <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
                             <div className="h-full bg-indigo-500 animate-[loading_30s_ease-in-out_infinite]" />
                         </div>
                     )}
@@ -1885,7 +1885,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
       )}
 
       {/* Input Area com melhorias de scroll e expansão */}
-      <div className={`p-4 border-t border-zinc-200/70 dark:border-zinc-800/70 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-xl transition-all duration-500 ease-in-out print:hidden ${isInputExpanded ? 'h-[450px]' : 'h-auto'} ${isFocusMode ? 'shadow-2xl' : ''}`}>
+      <div className={`p-4 border-t border-zinc-800/70 bg-zinc-900/80 backdrop-blur-xl transition-all duration-500 ease-in-out print:hidden ${isInputExpanded ? 'h-[450px]' : 'h-auto'} ${isFocusMode ? 'shadow-2xl' : ''}`}>
         <div className="max-w-5xl mx-auto relative h-full flex flex-col gap-2">
           
           {/* Seletor de Qualidade Nano Banana Pro */}
@@ -1894,12 +1894,12 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                 <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-400 tracking-widest">
                     <Monitor className="w-3 h-3" /> Resolução de Saída
                 </div>
-                <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <div className="flex bg-zinc-800 p-0.5 rounded-lg border border-zinc-700">
                     {(["1K", "2K", "4K"] as const).map(size => (
                         <button 
                             key={size}
                             onClick={() => setImageSize(size)}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${imageSize === size ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'}`}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${imageSize === size ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
                             {size}
                         </button>
@@ -1911,7 +1911,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
           {selectedImage && (<div className="relative w-fit"><img src={selectedImage} alt="Preview" className="h-20 w-auto rounded-lg border border-zinc-300 shadow-sm" /><button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"><X className="w-3 h-3" /></button></div>)}
           
           {transcribing && (
-              <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 animate-pulse bg-indigo-50 dark:bg-indigo-900/20 rounded-lg w-fit">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-indigo-400 animate-pulse bg-indigo-900/20 rounded-lg w-fit">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>IA Transcrevendo seu áudio...</span>
               </div>
@@ -1920,10 +1920,10 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
           <div className={`relative flex-1 flex flex-col gap-2 transition-all duration-300 ${isInputExpanded ? 'h-full' : ''}`}>
             
             {/* Input Wrapper Unificado Flexbox */}
-            <div className={`group flex items-end gap-2 w-full bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-100 dark:border-zinc-800 rounded-2xl p-2 transition-all duration-300 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 shadow-sm ${isInputExpanded ? 'h-full' : ''}`}>
+            <div className={`group flex items-end gap-2 w-full bg-zinc-950 border-2 border-zinc-800 rounded-2xl p-2 transition-all duration-300 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 shadow-sm ${isInputExpanded ? 'h-full' : ''}`}>
               
               {/* Botão de Upload */}
-              <button onClick={() => fileInputRef.current?.click()} className="p-2.5 text-zinc-400 hover:text-indigo-500 transition-colors rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex-shrink-0 mb-0.5" title="Anexar Imagem">
+              <button onClick={() => fileInputRef.current?.click()} className="p-2.5 text-zinc-400 hover:text-indigo-500 transition-colors rounded-xl hover:bg-zinc-800 flex-shrink-0 mb-0.5" title="Anexar Imagem">
                 <ImageIcon className="w-5 h-5" />
               </button>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -1936,7 +1936,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !isInputExpanded) { e.preventDefault(); handleSend(); } }} 
                 placeholder={transcribing ? "Transcrevendo..." : agent.placeholder} 
                 disabled={transcribing}
-                className={`flex-1 w-full bg-transparent border-none focus:ring-0 text-zinc-900 dark:text-white placeholder-zinc-400 resize-none overflow-y-auto py-3 px-2 leading-relaxed ${isInputExpanded ? 'h-full' : 'max-h-[160px]'}`} 
+                className={`flex-1 w-full bg-transparent border-none focus:ring-0 text-white placeholder-zinc-400 resize-none overflow-y-auto py-3 px-2 leading-relaxed ${isInputExpanded ? 'h-full' : 'max-h-[160px]'}`} 
                 style={{ minHeight: '48px', height: isInputExpanded ? '100%' : 'auto' }}
                 onInput={(e) => { 
                     const target = e.target as HTMLTextAreaElement; 
@@ -1951,7 +1951,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
               <div className="flex items-center gap-1 flex-shrink-0 mb-0.5">
                   <button 
                     onClick={() => setIsInputExpanded(!isInputExpanded)}
-                    className={`p-2 transition-all rounded-xl ${isInputExpanded ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                    className={`p-2 transition-all rounded-xl ${isInputExpanded ? 'text-indigo-600 bg-indigo-900/30' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-800'}`}
                     title={isInputExpanded ? "Recolher campo" : "Expandir para escrita longa"}
                   >
                     {isInputExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1960,7 +1960,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agent, onBack, sessions, onSaveSe
                   <button 
                     onClick={handleSend} 
                     disabled={(!input.trim() && !selectedImage) || loading || transcribing} 
-                    className={`p-2 rounded-xl transition-all ${(!input.trim() && !selectedImage) || loading ? 'bg-zinc-200 text-zinc-400 dark:bg-zinc-800' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20'}`}
+                    className={`p-2 rounded-xl transition-all ${(!input.trim() && !selectedImage) || loading ? 'bg-zinc-800 text-zinc-400' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20'}`}
                   >
                     {loading ? <StopCircle className="w-5 h-5 animate-pulse" /> : <Send className="w-5 h-5" />}
                   </button>
