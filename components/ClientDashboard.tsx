@@ -2173,93 +2173,70 @@ const ClientAcervoTab: React.FC<{ client: Client; onNavigateToArquivos?: () => v
         )}
       </div>
 
-      {/* ── Backup cards ── */}
-      {displayItems.map(rec => {
-        const hddNames = rec.hddIds.length > 0
-          ? rec.hddIds.map(id => getHddName(id))
-          : ['Sem HD cadastrado'];
-
-        return (
-          <div
-            key={rec.id}
-            className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-4"
-          >
-            {/* Title + date row */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Folder className="w-4 h-4 text-violet-500 flex-shrink-0" />
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug truncate">
-                    {rec.title}
-                  </h4>
+      {/* ── Backup cards grid ── */}
+      {displayItems.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {displayItems.map(rec => (
+            <div
+              key={rec.id}
+              className="group relative flex flex-col gap-2.5 p-4 bg-zinc-800/60 dark:bg-zinc-800/80 border border-zinc-700/40 dark:border-zinc-700/60 rounded-2xl hover:border-violet-500/50 transition-all min-h-[160px]"
+            >
+              {/* Icon + pending badge */}
+              <div className="flex items-start justify-between gap-1">
+                <div className="w-9 h-9 flex items-center justify-center bg-violet-500/15 rounded-xl flex-shrink-0">
+                  <Folder className="w-4 h-4 text-violet-400" />
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                  <span>{fmtDate(rec.recordedAt)}</span>
-                </div>
+                {rec.hasPendingTakes && (
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-400 border border-red-800/50 flex-shrink-0">
+                    ⚠️ Pendente
+                  </span>
+                )}
               </div>
-              {rec.hasPendingTakes && (
-                <span className="flex-shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50">
-                  ⚠️ Pendente
-                </span>
-              )}
-            </div>
 
-            {/* Summary */}
-            {rec.summary && (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                {rec.summary}
-              </p>
-            )}
+              {/* Title */}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm text-zinc-900 dark:text-white leading-tight line-clamp-2">
+                  {rec.title}
+                </p>
+                {rec.summary && (
+                  <p className="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-snug">
+                    {rec.summary}
+                  </p>
+                )}
+              </div>
 
-            {/* HD storage */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Armazenado em</p>
-              <div className="flex flex-wrap gap-1.5">
-                {hddNames.map((name, i) => (
+              {/* Date */}
+              <div className="flex items-center gap-1 text-[11px] text-zinc-500">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span>{fmtDate(rec.recordedAt)}</span>
+              </div>
+
+              {/* HDD badges */}
+              <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
+                {rec.hddIds.slice(0, 2).map(id => (
                   <span
-                    key={i}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 dark:bg-zinc-950 text-zinc-100 text-[11px] font-bold border border-zinc-700 dark:border-zinc-700/60"
+                    key={id}
+                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 bg-violet-900/30 text-violet-300 rounded-full border border-violet-800/50 truncate max-w-[90px]"
                   >
-                    <HardDrive className="w-3 h-3 text-violet-400" />
-                    {name}
+                    <HardDrive className="w-2.5 h-2.5 flex-shrink-0" />
+                    {getHddName(id)}
                   </span>
                 ))}
+                {rec.hddIds.length === 0 && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-zinc-700/50 text-zinc-500 rounded-full border border-zinc-700/50">
+                    Sem HD
+                  </span>
+                )}
+                {rec.hddIds.length > 2 && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-zinc-700/50 text-zinc-400 rounded-full border border-zinc-700/50">
+                    +{rec.hddIds.length - 2}
+                  </span>
+                )}
               </div>
             </div>
-
-            {/* Cameras + devices */}
-            {(rec.mediaDevices?.length || rec.cameraModels) ? (
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Equipamentos</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {rec.mediaDevices?.map(d => (
-                    <span
-                      key={d}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
-                    >
-                      <Camera className="w-2.5 h-2.5" />
-                      {ACERVO_DEVICE_LABELS[d] ?? d}
-                    </span>
-                  ))}
-                  {rec.cameraModels && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-                      {rec.cameraModels}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Technical notes */}
-            {rec.technicalNotes && (
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 italic border-t border-zinc-100 dark:border-zinc-800 pt-3">
-                📝 {rec.technicalNotes}
-              </p>
-            )}
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      )}
 
       {/* ── Empty state ── */}
       {displayItems.length === 0 && (
