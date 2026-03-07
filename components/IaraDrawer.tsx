@@ -14,6 +14,21 @@ import {
   Building2,
 } from 'lucide-react';
 import { useIara } from '@/components/IaraContext';
+import { fetchClientData, saveClientData } from '@/lib/clients-api';
+
+// Mirrors AgendaEvent from ClientDashboard (must stay in sync)
+interface AgendaEvent {
+  id: string;
+  title: string;
+  type: string;
+  location: 'Interna' | 'Externa' | 'Remoto';
+  address: string;
+  date: string;       // YYYY-MM-DD
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+  notes: string;
+  createdAt: number;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -350,7 +365,7 @@ export default function IaraDrawer() {
   };
 
   // Called when user clicks a client chip
-  const handleSelectClient = (clientName: string) => {
+  const handleSelectClient = async (clientName: string) => {
     if (!pendingTask) return;
 
     // Find the last client_selection message and mark it as answered
@@ -369,6 +384,46 @@ export default function IaraDrawer() {
 
     const task = pendingTask;
     setPendingTask(null);
+
+    // ── Save event to client's agenda via API ─────────────────────────────
+    const matchedClient = clients.find((c) => c.brandName === clientName);
+    if (matchedClient) {
+      try {
+        const now = new Date();
+        const day   = task.day  ? task.day.padStart(2, '0')  : String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year  = now.getFullYear();
+        const date  = `${year}-${month}-${day}`;
+
+        const startTime = task.time || '09:00';
+        const [startH] = startTime.split(':');
+        const endHour   = String(Math.min(parseInt(startH, 10) + 1, 23)).padStart(2, '0');
+        const endTime   = `${endHour}:${startTime.split(':')[1] ?? '00'}`;
+
+        const { context } = extractDateInfo(task.rawText);
+        const eventTitle  = context !== 'Estúdio' ? context : `Gravação — ${clientName}`;
+
+        const newEvent: AgendaEvent = {
+          id:        uid(),
+          title:     eventTitle,
+          type:      'Gravação',
+          location:  'Interna',
+          address:   '',
+          date,
+          startTime,
+          endTime,
+          notes:     `Criado pela IARA: "${task.rawText}"`,
+          createdAt: Date.now(),
+        };
+
+        const current  = await fetchClientData<AgendaEvent[]>(matchedClient.id, 'agenda');
+        const existing = Array.isArray(current) ? current : [];
+        await saveClientData(matchedClient.id, 'agenda', [newEvent, ...existing]);
+      } catch (err) {
+        console.error('[IARA] Falha ao salvar evento na agenda do cliente:', err);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     const delay = 700 + Math.random() * 400;
     setTimeout(() => {
