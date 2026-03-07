@@ -721,11 +721,11 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-    <div className="min-h-screen font-body selection:bg-indigo-500/30 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-zinc-950 font-body selection:bg-indigo-500/30 relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-48 right-0 h-[520px] w-[520px] rounded-full bg-emerald-400/20 blur-3xl dark:bg-emerald-500/10" />
-        <div className="absolute top-1/3 -left-48 h-[520px] w-[520px] rounded-full bg-sky-400/15 blur-3xl dark:bg-sky-500/10" />
-        <div className="absolute bottom-0 right-1/4 h-[420px] w-[420px] rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-400/10" />
+        <div className="absolute -top-48 right-0 h-[520px] w-[520px] rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute top-1/3 -left-48 h-[520px] w-[520px] rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 h-[420px] w-[420px] rounded-full bg-amber-400/10 blur-3xl" />
       </div>
       {/* Payment success toast */}
       {showPaymentSuccess && (
