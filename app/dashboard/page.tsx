@@ -797,26 +797,26 @@ export default function DashboardPage() {
           clients={clients}
         />
       ) : isProductionHubOpen ? (
-          <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
+          <main className="min-h-screen bg-zinc-950 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-8 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
                 <span>Voltar ao Dashboard</span>
             </button>
             <div className="mb-12">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Central de Criação</h1>
-                <p className="text-zinc-600 dark:text-zinc-400">Ferramentas criativas para planejar e executar seus vídeos.</p>
+                <h1 className="text-3xl font-bold text-white mb-2">Central de Criação</h1>
+                <p className="text-zinc-400">Ferramentas criativas para planejar e executar seus vídeos.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[AgentId.SCRIPT_GENERATOR, AgentId.SHOT_LIST, AgentId.MEDIA_ASSISTANT, AgentId.STORYBOARD_GENERATOR].map(id => {
                     const agent = AGENTS[id];
                     const Icon = agent.icon;
                     return (
-                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 dark:hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
-                            <div className={`p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 ${agent.color}`}>
+                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
+                            <div className={`p-4 rounded-xl bg-zinc-800 w-fit mb-4 ${agent.color}`}>
                                 <Icon className="w-8 h-8" />
                             </div>
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{agent.title}</h2>
-                            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
+                            <h2 className="text-xl font-bold text-white mb-2">{agent.title}</h2>
+                            <p className="text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
                             <span className={`mt-auto font-medium flex items-center gap-2 text-sm ${agent.color.replace('text-', 'text-opacity-80 text-')}`}>
                                 Acessar <ChevronRight className="w-4 h-4" />
                             </span>
@@ -826,54 +826,54 @@ export default function DashboardPage() {
                 {/* Assistente de Iluminação — opens Lighting Hub */}
                 <button
                     onClick={() => { setIsProductionHubOpen(false); setIsLightingHubOpen(true); }}
-                    className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 dark:hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]"
+                    className="flex flex-col p-6 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]"
                 >
-                    <div className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 text-yellow-600 dark:text-yellow-400">
+                    <div className="p-4 rounded-xl bg-zinc-800 w-fit mb-4 text-yellow-400">
                         <Zap className="w-8 h-8" />
                     </div>
-                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Assistente de Iluminação</h2>
-                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">Diagramas de luz personalizados e estilos cinematográficos clássicos para o seu set.</p>
-                    <span className="mt-auto text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2 text-sm">
+                    <h2 className="text-xl font-bold text-white mb-2">Assistente de Iluminação</h2>
+                    <p className="text-zinc-400 leading-relaxed mb-4 text-sm flex-1">Diagramas de luz personalizados e estilos cinematográficos clássicos para o seu set.</p>
+                    <span className="mt-auto text-yellow-400 font-medium flex items-center gap-2 text-sm">
                         Acessar <ChevronRight className="w-4 h-4" />
                     </span>
                 </button>
                 {/* Workflow de Edição — opens Editing Hub */}
                 <button
                     onClick={() => { setIsProductionHubOpen(false); setIsEditingHubOpen(true); }}
-                    className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 dark:hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]"
+                    className="flex flex-col p-6 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-emerald-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]"
                 >
-                    <div className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 text-blue-600 dark:text-blue-400">
+                    <div className="p-4 rounded-xl bg-zinc-800 w-fit mb-4 text-blue-400">
                         <BookOpen className="w-8 h-8" />
                     </div>
-                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Workflow de Edição</h2>
-                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">Atalhos de teclado, técnicas famosas e como recriar efeitos visuais cinematográficos.</p>
-                    <span className="mt-auto text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-sm">
+                    <h2 className="text-xl font-bold text-white mb-2">Workflow de Edição</h2>
+                    <p className="text-zinc-400 leading-relaxed mb-4 text-sm flex-1">Atalhos de teclado, técnicas famosas e como recriar efeitos visuais cinematográficos.</p>
+                    <span className="mt-auto text-blue-400 font-medium flex items-center gap-2 text-sm">
                         Acessar <ChevronRight className="w-4 h-4" />
                     </span>
                 </button>
             </div>
           </main>
       ) : isEditingHubOpen ? (
-         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
+         <main className="min-h-screen bg-zinc-950 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-8 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
                 <span>Voltar à Central de Criação</span>
             </button>
             <div className="mb-12">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Workflow de Edição</h1>
-                <p className="text-zinc-600 dark:text-zinc-400">Otimize seu fluxo de pós-produção e desbloqueie sua criatividade.</p>
+                <h1 className="text-3xl font-bold text-white mb-2">Workflow de Edição</h1>
+                <p className="text-zinc-400">Otimize seu fluxo de pós-produção e desbloqueie sua criatividade.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[AgentId.EDITING_SHORTCUTS, AgentId.EDITING_IDEA, AgentId.EDITING_TECHNIQUES].map(id => {
                     const agent = AGENTS[id];
                     const Icon = agent.icon;
                     return (
-                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
-                            <div className={`p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 w-fit mb-4 ${agent.color}`}>
+                        <button key={id} onClick={() => handleSubAgentClick(id)} className="flex flex-col p-6 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-blue-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
+                            <div className={`p-4 rounded-xl bg-zinc-800 w-fit mb-4 ${agent.color}`}>
                                 <Icon className="w-8 h-8" />
                             </div>
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{agent.title}</h2>
-                            <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
+                            <h2 className="text-xl font-bold text-white mb-2">{agent.title}</h2>
+                            <p className="text-zinc-400 leading-relaxed mb-4 text-sm flex-1">{agent.description}</p>
                             <span className={`mt-auto font-medium flex items-center gap-2 text-sm ${agent.color.replace('text-', 'text-opacity-80 text-')}`}>
                                 Abrir Ferramenta <ChevronRight className="w-4 h-4" />
                             </span>
@@ -909,28 +909,28 @@ export default function DashboardPage() {
      ) : isCreatorStockOpen ? (
           <CreatorStockView onBack={() => setIsCreatorStockOpen(false)} />
      ) : isLightingHubOpen ? (
-          <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 mb-8 transition-colors">
+          <main className="min-h-screen bg-zinc-950 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button onClick={handleBack} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-100 mb-8 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
                 <span>Voltar à Central de Criação</span>
             </button>
             <div className="mb-12">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Assistente de Iluminação</h1>
-                <p className="text-zinc-600 dark:text-zinc-400">Escolha como você quer trabalhar a luz do seu vídeo hoje.</p>
+                <h1 className="text-3xl font-bold text-white mb-2">Assistente de Iluminação</h1>
+                <p className="text-zinc-400">Escolha como você quer trabalhar a luz do seu vídeo hoje.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <button onClick={() => { setIsLightingHubOpen(false); setActiveAgentId(AgentId.LIGHTING_GENERATOR); }} className="flex flex-col p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-yellow-500 dark:hover:border-yellow-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
-                    <div className="p-4 rounded-xl bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 w-fit mb-6"><Zap className="w-10 h-10" /></div>
-                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Gerador de Iluminação</h2>
-                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">Envie uma foto do seu cenário e equipamentos. A IA analisará o ambiente e criará um diagrama de luz personalizado.</p>
-                    <span className="mt-auto text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2">Criar Setup <ChevronRight className="w-4 h-4" /></span>
+                <button onClick={() => { setIsLightingHubOpen(false); setActiveAgentId(AgentId.LIGHTING_GENERATOR); }} className="flex flex-col p-8 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-yellow-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
+                    <div className="p-4 rounded-xl bg-yellow-500/10 text-yellow-400 w-fit mb-6"><Zap className="w-10 h-10" /></div>
+                    <h2 className="text-2xl font-bold text-white mb-3">Gerador de Iluminação</h2>
+                    <p className="text-zinc-400 leading-relaxed mb-6">Envie uma foto do seu cenário e equipamentos. A IA analisará o ambiente e criará um diagrama de luz personalizado.</p>
+                    <span className="mt-auto text-yellow-400 font-medium flex items-center gap-2">Criar Setup <ChevronRight className="w-4 h-4" /></span>
                 </button>
-                <button onClick={() => { setIsLightingHubOpen(false); setActiveAgentId(AgentId.LIGHTING_STYLES); }} className="relative flex flex-col p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-orange-500 dark:hover:border-orange-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-10"><div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-xl flex items-center gap-1.5 whitespace-nowrap border border-zinc-700 dark:border-zinc-300"><Sparkles className="w-3 h-3 text-orange-400" /><span>6 Estilos Clássicos</span></div><div className="w-2 h-2 bg-zinc-900 dark:bg-zinc-100 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1 border-r border-b border-zinc-700 dark:border-zinc-300"></div></div>
-                    <div className="p-4 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 w-fit mb-6"><BookOpen className="w-10 h-10" /></div>
-                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Iluminações Famosas</h2>
-                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">Explore uma galeria interativa com estilos cinematográficos clássicos. Aprenda a recriar looks icônicos.</p>
-                    <span className="mt-auto text-orange-600 dark:text-orange-400 font-medium flex items-center gap-2">Explorar Estilos <ChevronRight className="w-4 h-4" /></span>
+                <button onClick={() => { setIsLightingHubOpen(false); setActiveAgentId(AgentId.LIGHTING_STYLES); }} className="relative flex flex-col p-8 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-orange-500 transition-all duration-300 text-left group shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01]">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-10"><div className="bg-zinc-100 text-zinc-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-xl flex items-center gap-1.5 whitespace-nowrap border border-zinc-300"><Sparkles className="w-3 h-3 text-orange-400" /><span>6 Estilos Clássicos</span></div><div className="w-2 h-2 bg-zinc-100 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1 border-r border-b border-zinc-300"></div></div>
+                    <div className="p-4 rounded-xl bg-orange-500/10 text-orange-400 w-fit mb-6"><BookOpen className="w-10 h-10" /></div>
+                    <h2 className="text-2xl font-bold text-white mb-3">Iluminações Famosas</h2>
+                    <p className="text-zinc-400 leading-relaxed mb-6">Explore uma galeria interativa com estilos cinematográficos clássicos. Aprenda a recriar looks icônicos.</p>
+                    <span className="mt-auto text-orange-400 font-medium flex items-center gap-2">Explorar Estilos <ChevronRight className="w-4 h-4" /></span>
                 </button>
             </div>
           </main>
