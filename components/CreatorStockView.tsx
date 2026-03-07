@@ -192,9 +192,10 @@ const TrackRow: React.FC<TrackRowProps> = ({ track, isPlaying, onPlay, onDownloa
 
     {/* Download — Coming Soon */}
     <button
+      disabled
       onClick={e => { e.stopPropagation(); onDownload(); }}
       title="Download — Em Breve"
-      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border border-gray-700 text-gray-600 hover:border-amber-500/60 hover:text-amber-400 transition-all opacity-0 group-hover:opacity-100"
+      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border border-gray-700 text-gray-600 cursor-not-allowed opacity-0 group-hover:opacity-40"
     >
       <Download className="w-3.5 h-3.5" />
     </button>
@@ -503,6 +504,17 @@ const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
           </span>
         </div>
       </header>
+
+      {/* ══ Em Breve Banner ══ */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3 bg-amber-500/10 border-b border-amber-500/20">
+        <span className="text-amber-400 text-base">🚧</span>
+        <p className="text-xs font-bold text-amber-300 tracking-wide">
+          Ferramenta em Desenvolvimento — Em Breve
+        </p>
+        <span className="ml-auto text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-widest whitespace-nowrap">
+          Preview
+        </span>
+      </div>
 
       {/* ══ Body: Sidebar + Main ══ */}
       <div className="flex flex-1 overflow-hidden">

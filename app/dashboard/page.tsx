@@ -1089,8 +1089,11 @@ export default function DashboardPage() {
               {/* Creator Stock */}
               <button
                 onClick={() => setIsCreatorStockOpen(true)}
-                className="group bg-gradient-to-b from-purple-900/20 to-transparent border border-purple-900/50 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col items-start text-left transition-all duration-300 hover:bg-purple-900/10"
+                className="group relative bg-gradient-to-b from-purple-900/20 to-transparent border border-purple-900/50 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col items-start text-left transition-all duration-300 hover:bg-purple-900/10"
               >
+                <span className="absolute top-3 right-3 text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-widest">
+                  Em Breve
+                </span>
                 <div className="p-2.5 rounded-xl bg-purple-900/30 border border-purple-800/50 mb-4">
                   <Library className="w-5 h-5 text-purple-400" />
                 </div>
