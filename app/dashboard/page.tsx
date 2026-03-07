@@ -53,13 +53,13 @@ const SupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-zinc-900 w-full max-w-lg p-6 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-300">
+            <div className="bg-zinc-900 w-full max-w-lg p-6 rounded-3xl shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-300">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
                         <MessageSquare className="w-5 h-5 text-indigo-500" />
                         Ajude-nos a melhorar
                     </h3>
-                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500 transition-colors">
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -68,15 +68,15 @@ const SupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
                     <div>
                         <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3 block">O que você deseja fazer?</label>
                         <div className="flex gap-3">
-                            <button 
+                            <button
                                 onClick={() => setType('bug')}
-                                className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 font-bold text-sm transition-all ${type === 'bug' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                                className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 font-bold text-sm transition-all ${type === 'bug' ? 'border-red-500 bg-red-900/20 text-red-400' : 'border-zinc-800 text-zinc-500 hover:bg-zinc-800'}`}
                             >
                                 <Bug className="w-4 h-4" /> Relatar Bug
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setType('suggestion')}
-                                className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 font-bold text-sm transition-all ${type === 'suggestion' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                                className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 font-bold text-sm transition-all ${type === 'suggestion' ? 'border-emerald-500 bg-emerald-900/20 text-emerald-400' : 'border-zinc-800 text-zinc-500 hover:bg-zinc-800'}`}
                             >
                                 <Sparkles className="w-4 h-4" /> Dar Sugestão
                             </button>
@@ -87,18 +87,18 @@ const SupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
                         <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block">
                             {type === 'bug' ? 'Descreva o problema' : 'Descreva sua ideia'}
                         </label>
-                        <textarea 
+                        <textarea
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             placeholder={type === 'bug' ? "Ex: O botão de salvar não funcionou quando eu..." : "Ex: Seria incrível se tivesse um agente para..."}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-zinc-900 dark:text-white focus:outline-none focus:border-indigo-500 h-32 resize-none text-sm"
+                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:outline-none focus:border-indigo-500 h-32 resize-none text-sm"
                         />
                     </div>
 
-                    <button 
+                    <button
                         onClick={handleSend}
                         disabled={!message.trim()}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-bold shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-white text-zinc-900 rounded-xl font-bold shadow-lg hover:opacity-90 disabled:opacity-50 transition-all"
                     >
                         <Send className="w-4 h-4" /> Enviar Feedback
                     </button>
@@ -132,37 +132,37 @@ const ReferralModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-8 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-300 relative overflow-hidden">
+            <div className="bg-zinc-900 w-full max-w-md p-8 rounded-3xl shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-300 relative overflow-hidden">
                 {/* Decorative background blur */}
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
                 <div className="flex justify-end absolute top-4 right-4">
-                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500 transition-colors">
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="text-center mb-8 relative z-10">
-                    <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-sm border border-amber-200 dark:border-amber-800">
+                    <div className="w-16 h-16 bg-amber-900/30 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-sm border border-amber-800">
                         🤝
                     </div>
-                    <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-2 leading-tight">
+                    <h3 className="text-2xl font-black text-white mb-2 leading-tight">
                         Convide amigos,<br/>ganhe acesso Pro 🚀
                     </h3>
-                    <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
-                        Para cada amigo que se cadastrar com seu link, vocês dois ganham <strong className="text-amber-600 dark:text-amber-400">1 mês de acesso premium extra.</strong>
+                    <p className="text-zinc-400 text-sm leading-relaxed">
+                        Para cada amigo que se cadastrar com seu link, vocês dois ganham <strong className="text-amber-400">1 mês de acesso premium extra.</strong>
                     </p>
                 </div>
 
                 <div className="space-y-6 relative z-10">
-                    <div className="bg-zinc-50 dark:bg-zinc-950 p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-                        <div className="flex-1 px-3 py-2 text-sm font-mono text-zinc-600 dark:text-zinc-400 truncate bg-transparent outline-none select-all">
+                    <div className="bg-zinc-950 p-1.5 rounded-xl border border-zinc-800 flex items-center gap-2">
+                        <div className="flex-1 px-3 py-2 text-sm font-mono text-zinc-400 truncate bg-transparent outline-none select-all">
                             {referralLink}
                         </div>
-                        <button 
+                        <button
                             onClick={handleCopy}
-                            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${copied ? 'bg-emerald-500 text-white shadow-emerald-500/20 shadow-lg' : 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50'}`}
+                            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${copied ? 'bg-emerald-500 text-white shadow-emerald-500/20 shadow-lg' : 'bg-zinc-800 text-white border border-zinc-700 hover:bg-zinc-700'}`}
                         >
                             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                             {copied ? 'Copiado!' : 'Copiar'}
@@ -174,7 +174,7 @@ const ReferralModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                             <MessageCircle className="w-4 h-4" />
                             WhatsApp
                         </button>
-                        <button onClick={() => handleShare('twitter')} className="flex items-center justify-center gap-2 py-3 px-4 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm transition-all shadow-lg">
+                        <button onClick={() => handleShare('twitter')} className="flex items-center justify-center gap-2 py-3 px-4 bg-white text-black rounded-xl font-bold text-sm transition-all shadow-lg">
                             <Twitter className="w-4 h-4" />
                             Postar
                         </button>

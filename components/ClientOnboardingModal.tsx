@@ -115,23 +115,23 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
     setDraft(p => ({ ...p, [key]: value }));
 
   const inputCls =
-    'w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-zinc-400';
+    'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-zinc-400';
   const textareaCls = `${inputCls} resize-none`;
   const labelCls = 'text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2 block';
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
+      <div className="bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300">
 
         {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-zinc-800">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+              <div className="p-2.5 bg-emerald-900/20 text-emerald-400 rounded-xl border border-emerald-900/40">
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white leading-tight">
+                <h2 className="text-lg font-bold text-white leading-tight">
                   Novo Cliente
                 </h2>
                 <p className="text-xs text-zinc-400">Onboarding & Briefing Estratégico</p>
@@ -139,20 +139,20 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
             </div>
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
+              className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl">
+          <div className="flex gap-1 p-1 bg-zinc-800/80 rounded-xl">
             <button
               onClick={() => setActiveTab('ai')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'ai'
-                  ? 'bg-white dark:bg-zinc-900 text-violet-600 dark:text-violet-400 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  ? 'bg-zinc-900 text-violet-400 shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" /> Extrair com IA
@@ -161,8 +161,8 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
               onClick={() => setActiveTab('manual')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'manual'
-                  ? 'bg-white dark:bg-zinc-900 text-violet-600 dark:text-violet-400 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  ? 'bg-zinc-900 text-violet-400 shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               <PenLine className="w-3.5 h-3.5" /> Preenchimento Manual
@@ -258,7 +258,7 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
                 </div>
               </div>
 
-              <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+              <div className="h-px bg-zinc-800" />
 
               {/* O Alvo */}
               <div className="space-y-4">
@@ -294,7 +294,7 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
                 </div>
               </div>
 
-              <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+              <div className="h-px bg-zinc-800" />
 
               {/* Comunicação */}
               <div className="space-y-4">
@@ -310,8 +310,8 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
                         onClick={() => set('voiceTone', tone)}
                         className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all ${
                           draft.voiceTone === tone
-                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
-                            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-emerald-300 dark:hover:border-emerald-700'
+                            ? 'border-emerald-500 bg-emerald-900/20 text-emerald-300'
+                            : 'border-zinc-800 text-zinc-400 hover:border-emerald-700'
                         }`}
                       >
                         {tone}
@@ -346,10 +346,10 @@ const ClientOnboardingModal: React.FC<ClientOnboardingModalProps> = ({
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 py-4 flex gap-3 border-t border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+        <div className="px-6 py-4 flex gap-3 border-t border-zinc-800 flex-shrink-0">
           <button
             onClick={handleClose}
-            className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+            className="px-5 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 transition-all"
           >
             Cancelar
           </button>
