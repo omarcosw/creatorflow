@@ -981,12 +981,6 @@ export default function DashboardPage() {
                 <span className="hidden sm:inline">Indique e Ganhe</span>
               </button>
               <button
-                onClick={toggleTheme}
-                className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-gray-200 hover:bg-white/10 transition-all"
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-              <button
                 onClick={() => { localStorage.removeItem('cf_token'); localStorage.removeItem('cf_email'); localStorage.removeItem('cf_name'); localStorage.removeItem('cf_plan'); router.push('/login'); }}
                 className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-red-400 hover:bg-red-900/10 transition-all"
                 title="Sair"
