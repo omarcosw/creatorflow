@@ -464,7 +464,7 @@ const CreatorStockView: React.FC<CreatorStockViewProps> = ({ onBack }) => {
   const totalActive = activeMoods.length + activeGenres.length + activeSfxCats.length;
 
   return (
-    <div className="flex flex-col h-full bg-gray-950 text-white animate-in fade-in duration-300 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-950 text-white animate-in fade-in duration-300 overflow-hidden">
 
       {/* ══ Header ══ */}
       <header className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-gray-950/95 backdrop-blur-sm z-10">
