@@ -178,6 +178,7 @@ export default function SignupPage() {
               value={name}
               onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
               placeholder="Seu nome"
+              autoComplete="name"
               className="w-full rounded-xl border border-white/[0.1] bg-[#1A1A1A] py-3 pl-11 pr-4 text-sm text-white placeholder:text-[#555] outline-none transition-all focus:border-[#8B5CF6]/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
             />
           </div>
@@ -194,6 +195,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: '' })); }}
               placeholder="seu@email.com"
+              autoComplete="email"
               className="w-full rounded-xl border border-white/[0.1] bg-[#1A1A1A] py-3 pl-11 pr-4 text-sm text-white placeholder:text-[#555] outline-none transition-all focus:border-[#8B5CF6]/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
             />
           </div>
@@ -210,6 +212,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: '' })); }}
               placeholder="Mínimo 8 caracteres"
+              autoComplete="new-password"
               className="w-full rounded-xl border border-white/[0.1] bg-[#1A1A1A] py-3 pl-11 pr-12 text-sm text-white placeholder:text-[#555] outline-none transition-all focus:border-[#8B5CF6]/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
             />
             <button
@@ -234,6 +237,7 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirmPassword: '' })); }}
               placeholder="Repita a senha"
+              autoComplete="new-password"
               className={`w-full rounded-xl border bg-[#1A1A1A] py-3 pl-11 pr-12 text-sm text-white placeholder:text-[#555] outline-none transition-all focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)] ${
                 passwordsMatch ? 'border-green-500/50 focus:border-green-500/60' : passwordsMismatch ? 'border-red-500/50 focus:border-red-500/60' : 'border-white/[0.1] focus:border-[#8B5CF6]/60'
               }`}

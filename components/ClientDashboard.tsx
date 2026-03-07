@@ -4774,10 +4774,10 @@ const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
         </div>
 
         {/* Step indicators */}
-        <div className="flex justify-between">
+        <div className="flex items-start justify-between gap-1">
           {BB_WIZARD_STEPS.map((s, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5">
-              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all ${
+            <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] font-black transition-all flex-shrink-0 ${
                 i + 1 < step
                   ? 'bg-indigo-500 border-indigo-500 text-white'
                   : i + 1 === step
@@ -4786,7 +4786,7 @@ const ClientBrandBrainTab: React.FC<{ client: Client }> = ({ client }) => {
               }`}>
                 {i + 1 < step ? <Check className="w-3 h-3" /> : i + 1}
               </div>
-              <span className={`text-[10px] font-bold hidden sm:block ${i + 1 === step ? 'text-indigo-400' : 'text-gray-600'}`}>
+              <span className={`text-[10px] font-bold text-center leading-tight ${i + 1 === step ? 'text-indigo-400' : 'text-gray-600'}`}>
                 {s.label}
               </span>
             </div>
